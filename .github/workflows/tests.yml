@@ -10,8 +10,16 @@ permissions:
 
 jobs:
   tests:
-    name: tests
-    runs-on: ubuntu-latest
+    # Vibe-check-cli shells out to git and to CLIs that are .cmd shims on Windows, and its tests
+    # write real temp projects and run real commands. Those differences are exactly where it has
+    # broken before, so every supported OS runs the suite rather than one standing in for the rest.
+    name: tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
     steps:
       - uses: actions/checkout@v4
 
@@ -27,6 +35,16 @@ jobs:
       - name: Integration tests
         working-directory: plugin
         run: npm test
+
+  validate:
+    name: plugin validator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
       - name: Claude Code plugin validator
         run: |

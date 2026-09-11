@@ -22,6 +22,7 @@ export const PLATFORM_NAMES = { macos: 'macOS', linux: 'Linux', wsl: 'Linux on W
 const EXTRA_BIN_DIRS = () => [
   join(homedir(), '.local', 'bin'), join(homedir(), '.cursor', 'bin'), join(homedir(), '.claude', 'local'),
   join(homedir(), '.npm-global', 'bin'), '/opt/homebrew/bin', '/usr/local/bin',
+  ...(process.env.APPDATA ? [join(process.env.APPDATA, 'npm')] : []),
 ];
 
 export const searchPath = () => [process.env.PATH ?? '', ...EXTRA_BIN_DIRS()].filter(Boolean).join(delimiter);

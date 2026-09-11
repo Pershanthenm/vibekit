@@ -294,6 +294,28 @@ Everything memory- and knowledge-related fails open. If the server is down, the 
 
 Hooks are silent in folders without `specs/project.json`, so installing the plugin at user level is safe.
 
+## Start from requirements you already have
+
+Not every feature starts from a blank menu. `vibecheck feature "<name>" --from <file>` reads a
+requirements document you already wrote — a bulleted list, a numbered spec, a page of prose —
+and seeds the feature's acceptance criteria from it.
+
+What matters is what it does with the weak lines. Each requirement is checked for an actor, an
+observable outcome, measurable wording and whether it is decided at all. Anything that fails is
+**kept and marked**, never dropped:
+
+```
+- [ ] AC-3: Asset tags should be easy to enter.  <!-- TODO(unknown): no actor — who does this?;
+      no observable outcome — what is true afterwards?; unmeasurable wording -->
+```
+
+It then reports how many are testable as written, lists the gaps with line numbers, and says
+whether the document is a reasonable starting point or too thin — in which case
+`/vibe-check-cli:clarify` asks about the gaps by menu and writes the answers back into the spec.
+
+The same applies to an existing feature: run `/vibe-check-cli:clarify` on it and
+`vibecheck analyze` to see which criteria are still undecided.
+
 ## Design before build, with a stop in the middle
 
 A layout settled after the code is written means building the screen twice. `new-project` now
@@ -430,7 +452,29 @@ After editing, Claude runs `vibecheck sync`. `AGENTS.md`, `CLAUDE.md`, the subag
 
 ## CLI reference
 
-`init` · `adopt [--force] [--json]` · `analyze [feature] [--json]` · `sync` · `feature "<name>"` · `status <id> <status>` · `list` · `check` · `next [--json]` · `lanes <id>` · `dispatch <id> [--engine] [--dry-run]` · `merge <id>` · `memory <status|recall|remember>` · `knowledge <status|search|manifest|publish>` · `context <feature|topic>` · `docs <status|new|stamp>` · `advise [next|recommend|apply [preset]|components|presets|prefer]` · `security [questions|apply|status]` · `verify [feature] [--run]` · `multica [status|sync|pull|selftest]` · `setup [--dry-run] [--only]` · `health [--live]` · `version` · `hook <event>`. Run `vibecheck --help` for details.
+`init` · `adopt [--force] [--json]` · `analyze [feature] [--json]` · `sync` · `feature "<name>" [--from <requirements file>]` · `status <id> <status>` · `list` · `check` · `next [--json]` · `lanes <id>` · `dispatch <id> [--engine] [--dry-run]` · `merge <id>` · `memory <status|recall|remember>` · `knowledge <status|search|manifest|publish>` · `context <feature|topic>` · `docs <status|new|stamp>` · `advise [next|recommend|apply [preset]|components|presets|prefer]` · `security [questions|apply|status]` · `verify [feature] [--run]` · `multica [status|sync|pull|selftest]` · `setup [--dry-run] [--only]` · `health [--live]` · `version` · `hook <event>`. Run `vibecheck --help` for details.
+
+## Every supported OS, proved by CI
+
+Windows, macOS and Linux (and WSL2) are supported, and the test suite runs on all three in CI
+on every pull request — a matrix rather than one OS standing in for the others. That is
+deliberate: nearly every platform bug this project has had came from something that works on
+POSIX and not on Windows.
+
+The differences that actually bite, and how they are handled:
+
+| Difference | Handling |
+|---|---|
+| npm installs CLIs as `.cmd` shims on Windows | Commands are resolved on PATH (`src/which.js`); Node cannot spawn a `.cmd` by name, and refuses to spawn one at all without a shell |
+| A Windows command line cannot carry a newline | A `.cmd` that wraps a Node script is run through Node directly, so multi-line arguments survive |
+| PATH separator is `;` not `:` | `path.delimiter` everywhere |
+| `where` lives in System32, absent from a trimmed PATH | PATH resolution is done in-process, with no subprocess |
+| `true`, `mktemp`, `mkdir -p`, `sh -c` do not exist in cmd.exe | The tests use Node equivalents |
+| npm's global directory | `%APPDATA%
+pm` is added to the tool search path alongside the POSIX ones |
+
+agentmemory is the one component with no automatic install on native Windows; it needs WSL2, and
+`vibecheck health` reports it rather than pretending otherwise.
 
 ## Limits worth knowing
 

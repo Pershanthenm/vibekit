@@ -36,6 +36,7 @@ flowchart LR
 | **Team skills** | A shared kit in [`team/`](team/), including a curated selection from [Everything Claude Code](https://github.com/affaan-m/ECC) (API design, TDD, security review, Docker, deployment and more) |
 | **Guardrails** | Hooks at session start, before every edit, and at the end of every turn |
 | **Artefacts that agree** | `analyze` reports criteria with no task, tasks pointing at criteria that no longer exist, and `[P]` tasks that would collide; `clarify` asks about what a spec left undecided before it is planned |
+| **Your requirements** | `feature --from <file>` seeds a spec from a requirements doc you already have, keeping and marking the lines that are not testable yet instead of dropping them |
 | **Design gate** | `new-project` designs the screens with Claude Design, stops for you to approve an artboard, and refuses to start a UI feature until one is recorded |
 | **Review gate** | A feature cannot be marked done without an approving `review.md` for the current commit; a review of code that has since changed does not count |
 | **Quality gates** | Acceptance-criteria traceability, test, smoke and UI evidence per commit, living docs, a security baseline mapped to OWASP ASVS |
@@ -98,7 +99,7 @@ Projects live in `~/projects/<name>` (on Windows, `C:\Users\<you>\projects\<name
   or memory provider later never leaves you missing a tool.
   On native Windows agentmemory has no automatic install and is reported as a manual WSL2
   step; `vibecheck health` will keep flagging it until you move to WSL2 or accept it.
-- Windows 10 22H2 or 11, macOS 14 or newer, or a modern Linux (WSL2 works too)
+- Windows 10 22H2 or 11, macOS 14 or newer, or a modern Linux (WSL2 works too). The test suite runs on all three in CI on every pull request
 
 ## Documentation
 

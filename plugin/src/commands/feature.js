@@ -1,5 +1,6 @@
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { FEATURES_DIR, findFeature, listFeatures, nextFeatureId, setFrontMatterValue } from '../features.js';
+import { readFile } from 'node:fs/promises';
 import { writeMissing, writeText } from '../fsutil.js';
 import { refreshRoadmap } from '../docs/index.js';
 import { mirrorFeature } from '../multica-board.js';
@@ -8,16 +9,41 @@ import { transitionProblems } from '../transitions.js';
 import { featureFiles } from '../generators/feature.js';
 import { recordStatusChange } from '../journal.js';
 import { loadProject } from '../project.js';
+import { extractRequirements, renderCriteria, summarise } from '../requirements.js';
 import { FEATURE_STATUSES } from '../schema.js';
 
-export async function feature({ root, args }) {
+export async function feature({ root, args, from }) {
   const title = args.join(' ').trim();
-  if (!title) throw new Error('Usage: vibecheck feature "<feature name>"');
+  if (!title) throw new Error('Usage: vibecheck feature "<feature name>" [--from <requirements file>]');
   const project = await loadProject(root);
   const id = nextFeatureId(await listFeatures(root), title);
   await writeMissing(root, featureFiles({ id, title, targets: project.targets }));
   await refreshRoadmap(root, project);
   console.log(`✔ Created ${FEATURES_DIR}/${id}/ (spec.md, plan.md, tasks.md, review.md)`);
+  if (from) await seedFromRequirements(root, id, resolve(from));
+}
+
+/**
+ * Seeds the spec from requirements someone already wrote, rather than making them retype it
+ * into menus. Lines that cannot be tested as written are kept, marked, and counted — dropping
+ * them would hide the work still to do.
+ */
+async function seedFromRequirements(root, id, source) {
+  const text = await readFile(source, 'utf8').catch(() => null);
+  if (text === null) throw new Error(`--from: cannot read ${source}`);
+  const requirements = extractRequirements(text);
+  if (!requirements.length) {
+    console.log(`
+! No requirements found in ${source}. Expected bullets, a numbered list, or sentences saying what must happen.`);
+    console.log('  Write the spec with /vibe-check-cli:spec-feature instead.');
+    return;
+  }
+
+  const specPath = join(root, FEATURES_DIR, id, 'spec.md');
+  const spec = await readFile(specPath, 'utf8');
+  await writeText(specPath, spec.replace(/- \[ \] AC-1:.*$/m, renderCriteria(requirements)));
+  console.log(`
+${summarise(requirements, source)}`);
 }
 
 export async function status({ root, args, force = false }) {
