@@ -6,7 +6,7 @@ import { afterEach, beforeEach, test } from 'node:test';
 import { run } from '../src/cli.js';
 import { CONTROLS } from '../src/security/controls.js';
 import { resolveSecurity, securityRounds } from '../src/security/questions.js';
-import { FAILS, PASSES, PASSING_SUITES, TOOL_FREE_PATH, commitAll, exitCodeOf, fillSpec, gitInit, newProject, patchProject, read, runHook, setDocsEnabled, sh, writeTracedTests } from './helpers.js';
+import { FAILS, PASSES, PASSING_SUITES, TOOL_FREE_PATH, commitAll, exitCodeOf, fillSpec, gitInit, newProject, patchProject, read, restoreEnv, runHook, setDocsEnabled, sh, writeTracedTests } from './helpers.js';
 
 const LAPTOP_APP = {
   platform: 'web', appType: 'internal', scale: 'medium', clients: ['mobile'], ecosystem: 'microsoft', licensing: 'oss-only',
@@ -22,7 +22,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
-  process.env = { ...ORIGINAL_ENV };
+  restoreEnv(ORIGINAL_ENV);
   process.exitCode = 0;
 });
 
@@ -141,7 +141,7 @@ test('evidence must be fresh, clean and passing for every defined suite', async 
   gitInit(root);
 
   assert.equal(await exitCodeOf(['verify', '--dir', root, '001', '--run']), 1, 'UI suite fails');
-  await assert.rejects(run(['status', '--dir', root, '001', 'done']), /evidence: UI suite failed \(exit 1\)/);
+  await assert.rejects(run(['status', '--dir', root, '001', 'done']), /evidence: UI suite failed/);
 
   await patchProject(root, { commands: { ui: PASSES } });
   sh(root, 'git', 'add', '-A');

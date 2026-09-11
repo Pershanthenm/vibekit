@@ -10,7 +10,7 @@ import { nextRound, recommend } from '../src/advisor/recommend.js';
 import { initialMenuState, reduceMenu, renderMenu } from '../src/menu.js';
 import { run } from '../src/cli.js';
 import { CURSOR_CONTEXT, SKILLS } from '../src/generators/workflow.js';
-import { BIN, TOOL_FREE_PATH, exitCodeOf, newProject, read } from './helpers.js';
+import { BIN, TOOL_FREE_PATH, exitCodeOf, newProject, read, restoreEnv } from './helpers.js';
 
 const BASE = { appType: 'internal', scale: 'medium', clients: [], ecosystem: 'mixed', licensing: 'oss-preferred', team: [], data: 'relational', architecture: 'recommend', signin: 'local-mfa', security: [], compliance: 'standard' };
 const LAPTOP_APP = { ...BASE, platform: 'web', clients: ['mobile'], ecosystem: 'microsoft', licensing: 'permissive', team: ['csharp', 'typescript'], data: 'reporting', signin: 'sso', security: ['rbac-audit', 'mfa'], compliance: 'privacy', hosting: 'linux', integrations: ['directory', 'devices'], autonomy: 'gated', engine: 'cursor', context: ['docs'] };
@@ -24,7 +24,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
-  process.env = { ...ORIGINAL_ENV };
+  restoreEnv(ORIGINAL_ENV);
   process.exitCode = 0;
 });
 

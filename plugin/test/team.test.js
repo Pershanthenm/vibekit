@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import { chmod, cp, mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { delimiter, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, test } from 'node:test';
 import { run } from '../src/cli.js';
 import { planFor } from '../src/commands/setup.js';
-import { newProject } from './helpers.js';
+import { TOOL_FREE_PATH, installFakeBin, newProject } from './helpers.js';
 
 const REPO = fileURLToPath(new URL('../../', import.meta.url));
 const KEYS = ['VIBECHECK_REPO_DIR', 'CLAUDE_CONFIG_DIR', 'VIBECHECK_CURSOR_DIR', 'VIBECHECK_HOME', 'PATH', 'AGENTMEMORY_URL'];
@@ -14,14 +14,11 @@ const saved = Object.fromEntries(KEYS.map((key) => [key, process.env[key]]));
 let repo;
 let claudeHome;
 
-const FAKE_CLAUDE = `#!/bin/sh
-case "$*" in
-  "plugin list --json") echo '[{"id":"draw-io@claude-drawio-skill","version":"1.0.0","enabled":true},{"id":"my-local@my-folder","enabled":true},{"id":"vibe-check-cli@vibe-check-cli","enabled":true}]';;
-  "plugin marketplace list --json")
-    if [ -n "$FAKE_TEAMMATE" ]; then echo '[{"name":"vibe-check-cli","source":"directory","path":"/x"}]'
-    else echo '[{"name":"claude-drawio-skill","source":"github","repo":"example/claude-drawio-skill"},{"name":"my-folder","source":"directory","path":"/somewhere"},{"name":"vibe-check-cli","source":"directory","path":"/x"}]'; fi;;
-  "--version") echo "2.1.268 (Claude Code)";;
-esac
+const FAKE_CLAUDE = `#!/usr/bin/env node
+const args = process.argv.slice(2).join(' ');
+if (args === 'plugin list --json') console.log('[{"id":"draw-io@claude-drawio-skill","version":"1.0.0","enabled":true},{"id":"my-local@my-folder","enabled":true},{"id":"vibe-check-cli@vibe-check-cli","enabled":true}]');
+else if (args === 'plugin marketplace list --json') console.log(process.env.FAKE_TEAMMATE ? '[{"name":"vibe-check-cli","source":"directory","path":"/x"}]' : '[{"name":"claude-drawio-skill","source":"github","repo":"example/claude-drawio-skill"},{"name":"my-folder","source":"directory","path":"/somewhere"},{"name":"vibe-check-cli","source":"directory","path":"/x"}]');
+else if (args === '--version') console.log('2.1.268 (Claude Code)');
 `;
 
 beforeEach(async () => {
@@ -38,11 +35,10 @@ beforeEach(async () => {
   await writeFile(join(claudeHome, 'agents', 'db-expert.md'), '---\nname: db-expert\ndescription: PostgreSQL tuning specialist.\ntools: Read, Grep, Bash\n---\nYou tune queries.\n');
   const bin = join(base, 'bin');
   await mkdir(bin);
-  await writeFile(join(bin, 'claude'), FAKE_CLAUDE);
-  await chmod(join(bin, 'claude'), 0o755);
+  await installFakeBin(bin, 'claude', FAKE_CLAUDE);
   Object.assign(process.env, {
     VIBECHECK_REPO_DIR: repo, CLAUDE_CONFIG_DIR: claudeHome, VIBECHECK_CURSOR_DIR: join(base, 'cursor'),
-    VIBECHECK_HOME: join(base, 'home'), PATH: `${bin}:${dirname(process.execPath)}:/usr/bin:/bin`, AGENTMEMORY_URL: 'http://127.0.0.1:9',
+    VIBECHECK_HOME: join(base, 'home'), PATH: [bin, TOOL_FREE_PATH].join(delimiter), AGENTMEMORY_URL: 'http://127.0.0.1:9',
   });
 });
 

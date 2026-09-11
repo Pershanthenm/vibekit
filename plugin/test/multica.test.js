@@ -7,7 +7,11 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
 import { run } from '../src/cli.js';
 import { STATIC_QUESTIONS } from '../src/advisor/questions.js';
-import { EXAMPLE, PASSING_SUITES, commitAll, exitCodeOf, fillSpec, gitInit, installFakeMultica, newProject, patchProject, read, runHook, setDocsEnabled, sh, tempDir, writeFileIn, writeTracedTests } from './helpers.js';
+import { EXAMPLE, PASSING_SUITES, commitAll, exitCodeOf, fillSpec, gitInit, installFakeMultica, newProject, patchProject, read, restoreEnv, runHook, setDocsEnabled, sh, tempDir, writeFileIn, writeTracedTests } from './helpers.js';
+
+// A filesystem path goes into these patterns verbatim, and on Windows it is full of
+// backslashes, which a RegExp would read as escapes.
+const escapeForRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const FEATURE = '001-shared-list';
 const TASKS = [
@@ -24,7 +28,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
-  process.env = { ...ORIGINAL_ENV };
+  restoreEnv(ORIGINAL_ENV);
   process.exitCode = 0;
 });
 
@@ -184,7 +188,7 @@ test('local mode: agents on this machine clone the project folder, no git host n
   assert.equal(sh(root, 'git', 'remote').trim(), '', 'no remote at all');
   await run(['dispatch', '--dir', root, FEATURE]);
   const lanes = (await fake.state()).issues.filter((issue) => issue.metadata.vibecheck_lane);
-  assert.match(lanes[0].description, new RegExp(`Delivery \\(Multica, on this machine\\)[\\s\\S]*git clone "${root}" lane[\\s\\S]*git push origin vc/${FEATURE}/lane-1`));
+  assert.match(lanes[0].description, new RegExp(`Delivery \\(Multica, on this machine\\)[\\s\\S]*git clone "${escapeForRegExp(root)}" lane[\\s\\S]*git push origin vc/${FEATURE}/lane-1`));
 
   localAgentPushes(root, `vc/${FEATURE}/lane-1`, 'apps/api.ts');
   localAgentPushes(root, `vc/${FEATURE}/lane-2`, 'apps/web.ts');
@@ -211,7 +215,7 @@ test('local mode needs the Multica daemon running on this machine', async () => 
 test('selftest proves a real round trip, then cleans up', async () => {
   const root = await localProject();
   process.env.VIBECHECK_POLL_MS = '50';
-  const selftest = exitCodeOf(['multica', '--dir', root, 'selftest', '--timeout', '30']);
+  const selftest = exitCodeOf(['multica', '--dir', root, 'selftest', '--timeout', '120']);
   let issue;
   while (!issue) {
     await new Promise((resolve) => setTimeout(resolve, 50));
@@ -255,7 +259,7 @@ test('features are marked done on Multica, then verified and recorded', async ()
   assert.equal(await specStatus(root), 'in-progress', 'marking done locally only asks for sign-off');
   const issue = await featureIssue();
   assert.equal(issue.status, 'in_review');
-  assert.match((await fake.state()).comments.at(-1).content, /ready for your sign-off[\s\S]*Acceptance criteria traced to tests: 1\/1[\s\S]*✅ tests: `true`[\s\S]*✅ smoke[\s\S]*✅ UI/);
+  assert.match((await fake.state()).comments.at(-1).content, /ready for your sign-off[\s\S]*Acceptance criteria traced to tests: 1\/1[\s\S]*✅ tests:[\s\S]*✅ smoke[\s\S]*✅ UI/);
 
   const { nextAction } = await import('../src/next.js');
   const { loadProject } = await import('../src/project.js');

@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { delimiter, join } from 'node:path';
 
 /**
@@ -39,9 +39,27 @@ export const needsShell = (resolved) => process.platform === 'win32' && /[.](cmd
 const quote = (arg) => (/[\s"&|<>^()]/.test(String(arg)) ? `"${String(arg).replace(/"/g, '""')}"` : String(arg));
 export const shellSafe = (args, useShell) => (useShell ? args.map(quote) : args);
 
+// cmd.exe parses a newline as the end of a command, so an argument containing one is
+// truncated and every argument after it is lost. Spawning an executable directly avoids
+// that: CreateProcess passes the command line through verbatim. A .cmd shim usually sits
+// beside the Node script it wraps, so run that script with this Node instead of the shim.
+function nodeScriptBeside(resolved) {
+  const bare = resolved.replace(/[.](cmd|bat)$/i, '');
+  if (bare === resolved || !existsSync(bare)) return null;
+  try {
+    const head = readFileSync(bare, 'utf8').slice(0, 200);
+    const shebang = head.split(String.fromCharCode(10))[0];
+    return shebang.startsWith('#!') && shebang.includes('node') ? bare : null;
+  } catch {
+    return null;
+  }
+}
+
 /** A command, its arguments and spawn options, ready to run on any platform. */
 export function runnable(command, args = []) {
   const resolved = resolveCommand(command);
+  const script = needsShell(resolved) ? nodeScriptBeside(resolved) : null;
+  if (script) return { command: process.execPath, args: [script, ...args], shell: false };
   const shell = needsShell(resolved);
   return { command: resolved, args: shellSafe(args, shell), shell };
 }

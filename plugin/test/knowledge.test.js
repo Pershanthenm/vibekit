@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
 import { run } from '../src/cli.js';
 import { toResults } from '../src/knowledge.js';
-import { EXAMPLE, TOOL_FREE_PATH, exitCodeOf, fillSpec, installFakeOpenContext, newProject, patchProject, read, runHook, setDocsEnabled, startFakeAgentmemory, writeTracedTests } from './helpers.js';
+import { EXAMPLE, TOOL_FREE_PATH, exitCodeOf, fillSpec, installFakeOpenContext, newProject, patchProject, read, restoreEnv, runHook, setDocsEnabled, startFakeAgentmemory, writeTracedTests } from './helpers.js';
 
 const FEATURE = '001-shared-list';
 const ORIGINAL_ENV = { ...process.env };
@@ -15,7 +15,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  process.env = { ...ORIGINAL_ENV };
+  restoreEnv(ORIGINAL_ENV);
   process.exitCode = 0;
 });
 

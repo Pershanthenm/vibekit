@@ -5,7 +5,7 @@ import { afterEach, beforeEach, test } from 'node:test';
 import { run } from '../src/cli.js';
 import { globToRegExp } from '../src/docs/files.js';
 import { joinDoc, splitDoc } from '../src/docs/freshness.js';
-import { EXAMPLE, TOOL_FREE_PATH, exitCodeOf, fillSpec, newProject, patchProject, read, runHook, sh, writeFileIn, writeTracedTests } from './helpers.js';
+import { EXAMPLE, TOOL_FREE_PATH, exitCodeOf, fillSpec, newProject, patchProject, read, restoreEnv, runHook, sh, writeFileIn, writeTracedTests } from './helpers.js';
 
 const FEATURE = '001-shared-list';
 const ORIGINAL_ENV = { ...process.env };
@@ -30,7 +30,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  process.env = { ...ORIGINAL_ENV };
+  restoreEnv(ORIGINAL_ENV);
   process.exitCode = 0;
 });
 

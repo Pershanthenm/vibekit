@@ -25,6 +25,14 @@ export const withRealPath = (env = {}) => ({ ...process.env, ...env, PATH: ORIGI
 // under test genuinely needs them — on POSIX the old '/usr/bin:/bin' happened to include
 // both, which is the behaviour this reproduces on every platform.
 const gitDir = which('git') ? dirname(which('git')) : '';
+// Restore the environment by mutating it, never by replacing process.env wholesale:
+// on Windows that drops entries Node itself needs, notably ComSpec, and without ComSpec
+// every `shell: true` spawn fails with ENOENT — so a passing test suite reports failure.
+export function restoreEnv(original) {
+  for (const key of Object.keys(process.env)) if (!(key in original)) delete process.env[key];
+  Object.assign(process.env, original);
+}
+
 export const TOOL_FREE_PATH = [dirname(process.execPath), gitDir].filter(Boolean).join(delimiter);
 export const sh = (cwd, command, ...args) => execFileSync(command, args, { cwd, encoding: 'utf8', env: withRealPath() });
 
@@ -109,7 +117,7 @@ export function gitInit(root) {
 
 // A shebang script is not executable on Windows. Each fake tool is a Node script, paired
 // with a .cmd shim so cmd.exe can run the same file through PATHEXT.
-async function installFakeBin(dir, name, source) {
+export async function installFakeBin(dir, name, source) {
   const { chmod, writeFile: write } = await import('node:fs/promises');
   await write(join(dir, name), source);
   await chmod(join(dir, name), 0o755);

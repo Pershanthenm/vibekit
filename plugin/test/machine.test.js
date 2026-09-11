@@ -9,7 +9,7 @@ import { planSteps, runSetup } from '../src/commands/setup.js';
 import { toolChecks } from '../src/machine/health.js';
 import { httpOk } from '../src/machine/probe.js';
 import { toolsFor } from '../src/machine/tools.js';
-import { BIN, exitCodeOf, gitInit, newProject, sh, startFakeAgentmemory } from './helpers.js';
+import { BIN, exitCodeOf, gitInit, newProject, restoreEnv, sh, startFakeAgentmemory } from './helpers.js';
 
 const ORIGINAL_ENV = { ...process.env };
 const NODE_DIR = dirname(process.execPath);
@@ -36,7 +36,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
-  process.env = { ...ORIGINAL_ENV };
+  restoreEnv(ORIGINAL_ENV);
   process.exitCode = 0;
 });
 

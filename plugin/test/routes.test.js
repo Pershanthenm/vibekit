@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import { chmod, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { delimiter, dirname, join } from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
 import { run } from '../src/cli.js';
 import { worktreeBase } from '../src/git.js';
 import { validate, normalize } from '../src/schema.js';
-import { EXAMPLE, fillSpec, gitInit, installFakeMultica, newProject, patchProject, setDocsEnabled, sh } from './helpers.js';
+import { EXAMPLE, TOOL_FREE_PATH, fillSpec, gitInit, installFakeBin, installFakeMultica, newProject, patchProject, restoreEnv, setDocsEnabled, sh } from './helpers.js';
 
 const FEATURE = '001-shared-list';
 const TASKS = [
@@ -15,7 +15,16 @@ const TASKS = [
   '- [ ] T-3 [impl] web dialog (AC-1) — apps/web/assign.vue [P]',
 ];
 const ORIGINAL_ENV = { ...process.env };
-const FAKE_AGENT = '#!/bin/sh\n[ "$1" = "--version" ] && { echo fake; exit 0; }\nname=$(basename "$0")\necho "$name" > built-by.txt && git add -A && git commit -qm "lane by $name"\n';
+const FAKE_AGENT = `#!/usr/bin/env node
+const { writeFileSync } = require('fs');
+const { execFileSync } = require('child_process');
+const { basename } = require('path');
+if (process.argv[2] === '--version') { console.log('fake'); process.exit(0); }
+const name = basename(process.argv[1]);
+writeFileSync('built-by.txt', name + String.fromCharCode(10));
+execFileSync('git', ['add', '-A'], { stdio: 'ignore' });
+execFileSync('git', ['commit', '-qm', 'lane by ' + name], { stdio: 'ignore' });
+`;
 
 beforeEach(async () => {
   process.env.AGENTMEMORY_URL = 'http://127.0.0.1:9';
@@ -23,7 +32,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
-  process.env = { ...ORIGINAL_ENV };
+  restoreEnv(ORIGINAL_ENV);
   process.exitCode = 0;
 });
 
@@ -42,10 +51,9 @@ async function inProgress(routes, extra = {}) {
 test('one batch runs Cursor and Claude side by side, routed by the files each lane touches', async () => {
   const bin = await mkdtemp(join(tmpdir(), 'fake-agents-'));
   for (const name of ['cursor-agent', 'claude']) {
-    await writeFile(join(bin, name), FAKE_AGENT);
-    await chmod(join(bin, name), 0o755);
+    await installFakeBin(bin, name, FAKE_AGENT);
   }
-  process.env.PATH = `${bin}:${dirname(process.execPath)}:/usr/bin:/bin`;
+  process.env.PATH = [bin, TOOL_FREE_PATH].join(delimiter);
   const root = await inProgress([{ match: 'apps/web/**', engine: 'claude' }], { workflow: { engine: 'cursor' } });
 
   await run(['dispatch', '--dir', root, FEATURE]);
