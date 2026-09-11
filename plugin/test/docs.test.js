@@ -121,7 +121,7 @@ test('--still-accurate records a review when sources changed but the doc needed 
 
 test('done requires fresh feature and design docs with the right diagrams', async () => {
   const root = await newProject('--from', EXAMPLE);
-  await patchProject(root, { workflow: { evidence: false } });
+  await patchProject(root, { workflow: { evidence: false, design: false } });
   await freshProjectDocs(root);
   await plannedFeature(root, '\n## UI states per target\n\nWeb and mobile: loading, empty, error, success.\n');
   writeFileIn(root, 'apps/api/.keep', '');

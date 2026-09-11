@@ -57,6 +57,7 @@ export const DEFAULT_PROJECT = {
     traceability: true,
     evidence: true,
     review: true,
+    design: true,
     routes: [],
   },
   memory: {
@@ -137,6 +138,7 @@ function validateWorkflow(workflow) {
     typeof workflow.traceability !== 'boolean' && 'workflow.traceability must be true or false',
     typeof workflow.evidence !== 'boolean' && 'workflow.evidence must be true or false',
     typeof workflow.review !== 'boolean' && 'workflow.review must be true or false',
+    typeof workflow.design !== 'boolean' && 'workflow.design must be true or false',
     ...validateRoutes(workflow.routes),
   ].filter(Boolean);
 }

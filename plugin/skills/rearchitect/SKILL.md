@@ -15,5 +15,5 @@ Change: $ARGUMENTS
 3. On approval: set the ADR to **accepted**, update `specs/01-architecture.md` and `specs/project.json` (stack, architecture notes), then `vibecheck sync`.
 4. In the same turn, update every document `vibecheck docs status` flags — architecture diagrams first, then deployment, data model and design system — using /vibe-check-cli:docs. The stop hook will not let the turn end with stale architecture docs.
 5. Impact: list in-flight and done features affected. Append a note to affected plans; for code that must move, create a migration feature (`vibecheck feature "migrate: <change>"`) whose acceptance criteria describe the end state.
-6. Save the reasoning to memory (`vibecheck memory remember`) and, if knowledge is on, run `vibecheck knowledge publish`.
+7. Save the reasoning to memory (`vibecheck memory remember`) and, if knowledge is on, run `vibecheck knowledge publish`.
 

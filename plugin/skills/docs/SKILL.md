@@ -17,5 +17,5 @@ Scope: $ARGUMENTS (empty = everything flagged)
    - feature → sequence diagram of the main flow (state diagram when lifecycle matters); design → user-flow flowchart plus screen and state tables per target.
 4. Keep `sources` honest: add files the doc now covers, drop ones it no longer describes.
 5. Run `vibecheck docs stamp <path>`. It refuses TODOs, invalid Mermaid and unchanged docs whose sources moved; use `--still-accurate` only after checking the doc against every changed source.
-6. Repeat until `vibecheck docs status` is clean for the scope, then commit (`docs: …`).
+7. Repeat until `vibecheck docs status` is clean for the scope, then commit (`docs: …`).
 

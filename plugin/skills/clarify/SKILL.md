@@ -26,5 +26,5 @@ is written, because an assumption baked into a plan is far more expensive to unp
 4. Write the answers into `spec.md` as acceptance criteria or explicit non-goals. Do not leave them in chat.
 5. For anything the user cannot answer yet, write `TODO(unknown): <question>` in the spec and say so plainly.
    An open question that is written down is cheap; one that is guessed at is not.
-6. Re-run `vibecheck analyze [feature]` and continue with /vibe-check-cli:plan-feature.
+7. Re-run `vibecheck analyze [feature]` and continue with /vibe-check-cli:plan-feature.
 

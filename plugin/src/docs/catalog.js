@@ -1,7 +1,7 @@
 import { sectionOf } from '../context-engine.js';
 import { filesOfTask, parseTasks } from '../lanes.js';
 
-const UI_TARGETS = ['web', 'ios', 'android', 'desktop'];
+export const UI_TARGETS = ['web', 'ios', 'android', 'desktop'];
 const NO_UI = /^(n\/?a|none|-|no ui)?\.?$/i;
 
 export const hasUi = (project) => project.targets.some((target) => UI_TARGETS.includes(target));

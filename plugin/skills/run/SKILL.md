@@ -16,7 +16,7 @@ Loop until you reach a human gate or nothing is left:
 3. If `gate` is `plan-approval`: summarise the plan and task lanes and ask to proceed. Stop — unless the user already approved this plan in this conversation.
 4. If `gate` is `board-done`: the feature is waiting for the user's sign-off on Multica. Say which issue to mark done and stop; run `vibecheck multica pull` when they say it's done.
 5. Otherwise execute the step by invoking its skill (/vibe-check-cli:plan-feature, /vibe-check-cli:implement-feature, /vibe-check-cli:review-feature) and let it finish.
-6. After each step run `vibecheck check`, fix what it reports, commit with a Conventional Commit message, and post one progress line: feature · step · result.
+7. After each step run `vibecheck check`, fix what it reports, commit with a Conventional Commit message, and post one progress line: feature · step · result.
 
 Restrict the loop to the scope above when one is given. If verification keeps failing after two focused attempts, stop and report the blocker instead of guessing.
 

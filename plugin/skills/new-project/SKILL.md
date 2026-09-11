@@ -41,8 +41,12 @@ Show a compact summary (stack, architecture, targets, sign-in, security and comp
 3. Fill `specs/00-product.md` (vision, users, capabilities, non-goals, success metrics) and `specs/01-architecture.md` (Mermaid component diagram, modules and responsibilities, data flow, cross-cutting concerns).
 4. Record each key choice as an ADR in `specs/decisions/` (context, decision, consequences).
 5. Draw the living docs with /vibe-check-cli:docs: `docs/architecture.md` (context and container diagrams), plus data model, deployment and design system when they apply. Stamp each one — planning is blocked until the architecture doc is fresh.
-6. Run `vibecheck feature "foundation"` first: repository skeleton matching the architecture, tooling that makes every command in project.json work (including the `smoke` and `ui` suites: Playwright for web, Maestro or integration tests for mobile, UI-category tests for desktop), and CI running those commands plus `vibecheck check`.
-7. Run `vibecheck feature "<name>"` for each v1 capability and fill its `spec.md` the way /vibe-check-cli:spec-feature does. Leave them in `draft`.
-8. Run `vibecheck check`, commit everything (`chore(specs): initial specification`), and show `vibecheck list`. If knowledge is on, run `vibecheck knowledge publish` so the architecture and ADRs are reusable from other projects.
-9. Ask the user to approve the foundation spec, then continue with /vibe-check-cli:run.
+6. **Design the screens, then stop.** If any target is web, mobile or desktop, run /vibe-check-cli:design:
+   it produces artboards with Claude Design, hands the user the canvas link and **waits**. Do not
+   scaffold features while the canvas is open. When the user approves one it is recorded in the
+   feature's design doc, and a feature with screens cannot start until that record exists.
+7. Run `vibecheck feature "foundation"` first: repository skeleton matching the architecture, tooling that makes every command in project.json work (including the `smoke` and `ui` suites: Playwright for web, Maestro or integration tests for mobile, UI-category tests for desktop), and CI running those commands plus `vibecheck check`.
+8. Run `vibecheck feature "<name>"` for each v1 capability and fill its `spec.md` the way /vibe-check-cli:spec-feature does. Leave them in `draft`.
+9. Run `vibecheck check`, commit everything (`chore(specs): initial specification`), and show `vibecheck list`. If knowledge is on, run `vibecheck knowledge publish` so the architecture and ADRs are reusable from other projects.
+10. Ask the user to approve the foundation spec, then continue with /vibe-check-cli:run.
 

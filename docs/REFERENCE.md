@@ -294,6 +294,34 @@ Everything memory- and knowledge-related fails open. If the server is down, the 
 
 Hooks are silent in folders without `specs/project.json`, so installing the plugin at user level is safe.
 
+## Design before build, with a stop in the middle
+
+A layout settled after the code is written means building the screen twice. `new-project` now
+has a design step, and `/vibe-check-cli:design` can be run on any feature:
+
+1. Artboards are generated for the screens the acceptance criteria imply — every state they
+   require, not only the happy path.
+2. **It stops.** You get the canvas link and it waits, the same way spec approval waits. You
+   edit the canvas yourself; the version handed over is rarely the version approved.
+3. The artboard you approve is recorded in the feature's design doc front matter
+   (`artboard`, `canvas`, `approved_by`).
+4. A feature targeting **web, ios, android or desktop** cannot move to `in-progress` until that
+   record exists. A feature with no screens — an API, a migration, CI — is never gated.
+
+It prefers the Claude Design MCP server, which needs connecting once:
+
+```bash
+claude mcp add --scope user --transport http claude-design https://api.anthropic.com/v1/design/mcp
+/design-login
+```
+
+With a design system already in the repo, `/design-sync` pulls it in first so artboards start
+from your real components. Without the MCP server it falls back to the built-in `/design`
+canvas and says which route it used, rather than implying a design system was applied.
+
+The record lives in a living doc, so the gate is off when `docs.enabled` is false — there would
+be nowhere to write it. `workflow.design: false` turns it off for teams who design elsewhere.
+
 ## Code review is a gate, not a suggestion
 
 Every feature is scaffolded with `specs/features/<id>/review.md`, and a feature cannot reach

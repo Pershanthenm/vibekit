@@ -21,6 +21,6 @@ Feature: $ARGUMENTS
    If the feature cannot fit the current architecture, draft an ADR in `specs/decisions/` and stop for approval.
 4. Fill the plan's `## Documentation` section: which docs this feature creates or changes (its feature doc, a design doc when there is UI, and architecture, data model or deployment diagrams if it touches them). Changing architecture means an ADR plus /vibe-check-cli:rearchitect, not a quiet edit.
 5. Write `tasks.md` as an ordered checklist: `- [ ] T-n [test|impl|docs] <what> (AC-n) — <files>`. Keep each task to one focused change, and end with a `[docs]` task covering the Documentation section.
-6. Design for parallelism: shared groundwork (contracts, types, schema) first as sequential tasks, then a block of consecutive `[P]` tasks that touch disjoint files (e.g. API, web UI, mobile UI), then integration and e2e tasks. Tag `[P]` only when files don't overlap.
-7. Run `vibecheck status <id> planned`, then `vibecheck lanes <id>` and summarise the plan and lanes in a few lines.
+7. Design for parallelism: shared groundwork (contracts, types, schema) first as sequential tasks, then a block of consecutive `[P]` tasks that touch disjoint files (e.g. API, web UI, mobile UI), then integration and e2e tasks. Tag `[P]` only when files don't overlap.
+8. Run `vibecheck status <id> planned`, then `vibecheck lanes <id>` and summarise the plan and lanes in a few lines.
 

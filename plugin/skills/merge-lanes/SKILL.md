@@ -15,6 +15,6 @@ Feature: $ARGUMENTS
 3. On a conflict: resolve it preserving both lanes' intent, commit, and run `vibecheck merge <id>` again.
 4. Run lint, typecheck and test on the merged result; fix failures with the implementer agent. Run `vibecheck docs status` — lane changes often make diagrams stale.
 5. Tick the merged tasks in `tasks.md` and any acceptance criteria now proven by passing tests, then commit.
-6. If a conflict or failure taught something reusable (e.g. two lanes both touched a shared file), save it: `vibecheck memory remember "<lesson and why>"`.
-7. Continue with /vibe-check-cli:run.
+7. If a conflict or failure taught something reusable (e.g. two lanes both touched a shared file), save it: `vibecheck memory remember "<lesson and why>"`.
+8. Continue with /vibe-check-cli:run.
 

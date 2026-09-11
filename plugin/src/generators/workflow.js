@@ -54,10 +54,14 @@ Show a compact summary (stack, architecture, targets, sign-in, security and comp
 3. Fill \`specs/00-product.md\` (vision, users, capabilities, non-goals, success metrics) and \`specs/01-architecture.md\` (Mermaid component diagram, modules and responsibilities, data flow, cross-cutting concerns).
 4. Record each key choice as an ADR in \`specs/decisions/\` (context, decision, consequences).
 5. Draw the living docs with ${cmd('docs')}: \`docs/architecture.md\` (context and container diagrams), plus data model, deployment and design system when they apply. Stamp each one — planning is blocked until the architecture doc is fresh.
-6. Run \`vibecheck feature "foundation"\` first: repository skeleton matching the architecture, tooling that makes every command in project.json work (including the \`smoke\` and \`ui\` suites: Playwright for web, Maestro or integration tests for mobile, UI-category tests for desktop), and CI running those commands plus \`vibecheck check\`.
-7. Run \`vibecheck feature "<name>"\` for each v1 capability and fill its \`spec.md\` the way ${cmd('spec-feature')} does. Leave them in \`draft\`.
-8. Run \`vibecheck check\`, commit everything (\`chore(specs): initial specification\`), and show \`vibecheck list\`. If knowledge is on, run \`vibecheck knowledge publish\` so the architecture and ADRs are reusable from other projects.
-9. Ask the user to approve the foundation spec, then continue with ${cmd('run')}.
+6. **Design the screens, then stop.** If any target is web, mobile or desktop, run ${cmd('design')}:
+   it produces artboards with Claude Design, hands the user the canvas link and **waits**. Do not
+   scaffold features while the canvas is open. When the user approves one it is recorded in the
+   feature's design doc, and a feature with screens cannot start until that record exists.
+7. Run \`vibecheck feature "foundation"\` first: repository skeleton matching the architecture, tooling that makes every command in project.json work (including the \`smoke\` and \`ui\` suites: Playwright for web, Maestro or integration tests for mobile, UI-category tests for desktop), and CI running those commands plus \`vibecheck check\`.
+8. Run \`vibecheck feature "<name>"\` for each v1 capability and fill its \`spec.md\` the way ${cmd('spec-feature')} does. Leave them in \`draft\`.
+9. Run \`vibecheck check\`, commit everything (\`chore(specs): initial specification\`), and show \`vibecheck list\`. If knowledge is on, run \`vibecheck knowledge publish\` so the architecture and ADRs are reusable from other projects.
+10. Ask the user to approve the foundation spec, then continue with ${cmd('run')}.
 `;
 
 const run = ({ input, cmd }) => `# Run the workflow
@@ -70,7 +74,7 @@ Loop until you reach a human gate or nothing is left:
 3. If \`gate\` is \`plan-approval\`: summarise the plan and task lanes and ask to proceed. Stop — unless the user already approved this plan in this conversation.
 4. If \`gate\` is \`board-done\`: the feature is waiting for the user's sign-off on Multica. Say which issue to mark done and stop; run \`vibecheck multica pull\` when they say it's done.
 5. Otherwise execute the step by invoking its skill (${cmd('plan-feature')}, ${cmd('implement-feature')}, ${cmd('review-feature')}) and let it finish.
-6. After each step run \`vibecheck check\`, fix what it reports, commit with a Conventional Commit message, and post one progress line: feature · step · result.
+7. After each step run \`vibecheck check\`, fix what it reports, commit with a Conventional Commit message, and post one progress line: feature · step · result.
 
 Restrict the loop to the scope above when one is given. If verification keeps failing after two focused attempts, stop and report the blocker instead of guessing.
 `;
@@ -106,8 +110,8 @@ Feature: ${input}
    If the feature cannot fit the current architecture, draft an ADR in \`specs/decisions/\` and stop for approval.
 4. Fill the plan's \`## Documentation\` section: which docs this feature creates or changes (its feature doc, a design doc when there is UI, and architecture, data model or deployment diagrams if it touches them). Changing architecture means an ADR plus ${cmd('rearchitect')}, not a quiet edit.
 5. Write \`tasks.md\` as an ordered checklist: \`- [ ] T-n [test|impl|docs] <what> (AC-n) — <files>\`. Keep each task to one focused change, and end with a \`[docs]\` task covering the Documentation section.
-6. Design for parallelism: shared groundwork (contracts, types, schema) first as sequential tasks, then a block of consecutive \`[P]\` tasks that touch disjoint files (e.g. API, web UI, mobile UI), then integration and e2e tasks. Tag \`[P]\` only when files don't overlap.
-7. Run \`vibecheck status <id> planned\`, then \`vibecheck lanes <id>\` and summarise the plan and lanes in a few lines.
+7. Design for parallelism: shared groundwork (contracts, types, schema) first as sequential tasks, then a block of consecutive \`[P]\` tasks that touch disjoint files (e.g. API, web UI, mobile UI), then integration and e2e tasks. Tag \`[P]\` only when files don't overlap.
+8. Run \`vibecheck status <id> planned\`, then \`vibecheck lanes <id>\` and summarise the plan and lanes in a few lines.
 `;
 
 const implementFeature = ({ input, cmd }) => `# Implement a feature
@@ -145,8 +149,8 @@ Feature: ${input}
 3. On a conflict: resolve it preserving both lanes' intent, commit, and run \`vibecheck merge <id>\` again.
 4. Run lint, typecheck and test on the merged result; fix failures with the implementer agent. Run \`vibecheck docs status\` — lane changes often make diagrams stale.
 5. Tick the merged tasks in \`tasks.md\` and any acceptance criteria now proven by passing tests, then commit.
-6. If a conflict or failure taught something reusable (e.g. two lanes both touched a shared file), save it: \`vibecheck memory remember "<lesson and why>"\`.
-7. Continue with ${cmd('run')}.
+7. If a conflict or failure taught something reusable (e.g. two lanes both touched a shared file), save it: \`vibecheck memory remember "<lesson and why>"\`.
+8. Continue with ${cmd('run')}.
 `;
 
 const reviewFeature = ({ input }) => `# Review a feature
@@ -159,7 +163,7 @@ Delegate to the read-only **reviewer** subagent, and write \`specs/features/<id>
 3. **Standards** — violations of \`specs/03-standards.md\` with file:line.
 4. **Security & NFRs** — every control in \`specs/security.md\` the change touches, plus input validation, authorisation, secrets, accessibility and performance budgets.
 5. **Docs** — do the feature doc, design doc and any touched diagrams match the code? \`vibecheck docs status\` must be clean for this feature.
-6. **Verdict** — blocking issues first, then suggestions.
+7. **Verdict** — blocking issues first, then suggestions.
 
 Record the outcome in \`specs/features/<id>/review.md\`, which is scaffolded with every feature. The
 done gate reads it, so it has to be accurate rather than tidy:
@@ -203,7 +207,7 @@ is written, because an assumption baked into a plan is far more expensive to unp
 4. Write the answers into \`spec.md\` as acceptance criteria or explicit non-goals. Do not leave them in chat.
 5. For anything the user cannot answer yet, write \`TODO(unknown): <question>\` in the spec and say so plainly.
    An open question that is written down is cheap; one that is guessed at is not.
-6. Re-run \`vibecheck analyze [feature]\` and continue with ${cmd('plan-feature')}.
+7. Re-run \`vibecheck analyze [feature]\` and continue with ${cmd('plan-feature')}.
 `;
 const checklistSkill = ({ input, cmd }) => `# Quality checklist for a feature
 
@@ -228,6 +232,60 @@ the states, limits and failures that criteria routinely miss. Treat it as unit t
    criterion instead, so a test can prove it. Say which items you promoted.
 5. Review the checklist with the user before ${cmd('implement-feature')}.
 `;
+const designSkill = ({ input, cmd }) => `# Design the screens, then wait
+
+Scope: ${input} (empty = the feature the workflow is on)
+
+A layout settled after the code is written means building it twice. This produces the screens,
+**stops for you**, and only resumes once you have approved one.
+
+## 1. Produce artboards
+
+Prefer the Claude Design MCP server. Check it is connected with \`claude mcp list\`; if it is missing
+or unauthenticated, say so and give the user these two steps rather than working around it:
+
+\`\`\`
+claude mcp add --scope user --transport http claude-design https://api.anthropic.com/v1/design/mcp
+/design-login
+\`\`\`
+
+If the project already has a design system, run \`/design-sync\` first so the artboards start from your
+real components rather than generic ones. Where the MCP server is unavailable, fall back to the
+built-in \`/design\` canvas and say which route you used — never imply a design system was applied
+when it was not.
+
+Generate **several options** per screen the feature needs, taken from its acceptance criteria:
+every state those criteria imply (empty, loading, error, full), not only the happy path.
+
+## 2. Stop
+
+Give the user the canvas link and a one-line description of each artboard, then **wait**. Do not
+scaffold, plan or write code while the design is open. This is a human gate like spec approval:
+summarise, ask which artboard they want, and wait for an explicit answer. They will often edit the
+canvas themselves, and the version you hand over is rarely the version they approve.
+
+## 3. Record what was approved
+
+Once they choose, create the design doc with \`vibecheck docs new design <feature>\` and fill in the
+front matter so the decision is recorded rather than remembered:
+
+\`\`\`
+artboard: <the approved artboard name or id>
+canvas: <the canvas URL>
+approved_by: <who approved it>
+\`\`\`
+
+In the body, describe the user flow as a Mermaid \`flowchart\` or \`journey\`, and the states each
+acceptance criterion requires. Then run \`vibecheck docs stamp <path>\`.
+
+## 4. Resume
+
+A feature targeting web, mobile or desktop cannot move to \`in-progress\` until its design doc names
+an approved artboard, so recording it is what unblocks the build. Continue with ${cmd('run')}.
+
+Features with no screens — an API, a migration, CI — are not gated and need no design.
+`;
+
 const docsSkill = ({ input, cmd }) => `# Update living docs
 
 Scope: ${input} (empty = everything flagged)
@@ -239,7 +297,7 @@ Scope: ${input} (empty = everything flagged)
    - feature → sequence diagram of the main flow (state diagram when lifecycle matters); design → user-flow flowchart plus screen and state tables per target.
 4. Keep \`sources\` honest: add files the doc now covers, drop ones it no longer describes.
 5. Run \`vibecheck docs stamp <path>\`. It refuses TODOs, invalid Mermaid and unchanged docs whose sources moved; use \`--still-accurate\` only after checking the doc against every changed source.
-6. Repeat until \`vibecheck docs status\` is clean for the scope, then commit (\`docs: …\`).
+7. Repeat until \`vibecheck docs status\` is clean for the scope, then commit (\`docs: …\`).
 `;
 
 const rearchitect = ({ input, cmd }) => `# Re-architect
@@ -251,7 +309,7 @@ Change: ${input}
 3. On approval: set the ADR to **accepted**, update \`specs/01-architecture.md\` and \`specs/project.json\` (stack, architecture notes), then \`vibecheck sync\`.
 4. In the same turn, update every document \`vibecheck docs status\` flags — architecture diagrams first, then deployment, data model and design system — using ${cmd('docs')}. The stop hook will not let the turn end with stale architecture docs.
 5. Impact: list in-flight and done features affected. Append a note to affected plans; for code that must move, create a migration feature (\`vibecheck feature "migrate: <change>"\`) whose acceptance criteria describe the end state.
-6. Save the reasoning to memory (\`vibecheck memory remember\`) and, if knowledge is on, run \`vibecheck knowledge publish\`.
+7. Save the reasoning to memory (\`vibecheck memory remember\`) and, if knowledge is on, run \`vibecheck knowledge publish\`.
 `;
 
 const securitySkill = ({ input, cmd }) => `# Security baseline
@@ -273,7 +331,7 @@ Scope: ${input} (empty = everything this machine and project need)
 3. Ask which steps to run with **AskUserQuestion**: multi-select questions of up to 4 options each (split into several questions if needed). Label = the tool's name plus " (Recommended)", description = what it's for and the command it runs. Don't offer steps marked \`manual\`; list them afterwards with their instructions. Steps marked \`interactive\` need a browser sign-in or prompts: mention that the user will run those in Cursor's terminal (View → Terminal).
 4. Run the chosen steps with \`vibecheck setup --yes --only "<id>,<id>"\` (quote the id list: PowerShell mangles an unquoted one). In this mode it never runs \`interactive\` steps: it prints them instead, for the user to run in Cursor's terminal. Installers print a lot; summarise what happened rather than repeating it. If a step waits for a password (\`sudo\`) or another prompt you can't answer, stop and ask the user to run that one command in Cursor's terminal (View → Terminal).
 5. Tell the user about sign-ins you can't do for them: Cursor's CLI (\`agent login\` in Cursor's terminal), and for Multica, creating agents in the Multica app (Command Palette → **Simple Browser: Show** → http://localhost:3000).
-6. Finish with ${cmd('health')}.
+7. Finish with ${cmd('health')}.
 `;
 
 const healthSkill = ({ input, cmd }) => `# Check this machine and project
@@ -366,6 +424,12 @@ export const SKILLS = [
     description: 'Check that every tool this project needs is installed and working (Claude Code, Cursor CLI, memory, knowledge, Multica, hooks), and explain fixes. Use when something seems broken or before a first run.',
     argumentHint: '[live]',
     body: healthSkill,
+  },
+  {
+    name: 'design',
+    description: 'Produce screen artboards with Claude Design, wait for the user to approve one, and record it so the build can start. Use before implementing any feature with a UI.',
+    argumentHint: '[feature]',
+    body: designSkill,
   },
   {
     name: 'clarify',

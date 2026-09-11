@@ -16,7 +16,7 @@ Delegate to the read-only **reviewer** subagent, and write `specs/features/<id>/
 3. **Standards** — violations of `specs/03-standards.md` with file:line.
 4. **Security & NFRs** — every control in `specs/security.md` the change touches, plus input validation, authorisation, secrets, accessibility and performance budgets.
 5. **Docs** — do the feature doc, design doc and any touched diagrams match the code? `vibecheck docs status` must be clean for this feature.
-6. **Verdict** — blocking issues first, then suggestions.
+7. **Verdict** — blocking issues first, then suggestions.
 
 Record the outcome in `specs/features/<id>/review.md`, which is scaffolded with every feature. The
 done gate reads it, so it has to be accurate rather than tidy:
