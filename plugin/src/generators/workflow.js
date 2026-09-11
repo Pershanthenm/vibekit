@@ -1,0 +1,321 @@
+const commandIn = (prefix) => (name, arg) => `/${prefix}${name}${arg ? ` ${arg}` : ''}`;
+
+export const PLUGIN_CONTEXT = {
+  menus: 'claude',
+  input: '$ARGUMENTS',
+  example: '[project.example.json](project.example.json)',
+  cmd: commandIn('vibe-check-cli:'),
+};
+export const PROJECT_CONTEXT = { ...PLUGIN_CONTEXT, example: '`.claude/skills/new-project/project.example.json`', cmd: commandIn('') };
+export const CURSOR_CONTEXT = { ...PROJECT_CONTEXT, input: 'the text typed after the command', menus: 'terminal' };
+
+export const contextFor = (project) => (project?.workflow.skills === 'project' ? PROJECT_CONTEXT : PLUGIN_CONTEXT);
+
+const MENU_FLOWS = {
+  claude: (cmd) => `## 2. Requirements and stack by menu — no typing
+Works for any developer: web, mobile, desktop or backend, any stack, any licensing policy.
+1. Run \`vibecheck advise next --json\`. It returns the next round (up to 4 questions, each with up to 4 options) based on the answers so far, or \`{ "complete": true }\`. Rounds adapt: platform first, then constraints, architecture and security, then one question per stack layer the app needs (backend, web, mobile, desktop) with scored options and licences, then data and delivery (database; hosting only when there is a server), then the agent workflow.
+2. Ask the round with **AskUserQuestion** (question, header, options with label and description, \`multiSelect\` for multi). Stack-layer options already carry "(Recommended)"; for other questions put the option you'd recommend first with " (Recommended)". Any stack not listed can be typed under Other.
+3. If a round comes back empty (a known glitch right after a skill starts), ask it again.
+4. Merge the answers into \`specs/requirements.json\` (\`{ "<question id>": "<option id>" }\`, arrays for multi, \`{ "other": "<text>" }\` for Other) and go back to step 1 until complete.
+5. Run \`vibecheck advise recommend\` and summarise the chosen stack per layer with its licence and main reasons, plus exclusions and warnings.
+6. Run \`vibecheck advise apply\`. It writes \`specs/project.json\`, the final \`specs/requirements.json\` and a technology-selection ADR with per-layer scores, licences and alternatives. For layers typed under Other, fill in their \`commands\` in \`specs/project.json\`, then \`vibecheck sync\`.
+7. **Security, by menu.** Run \`vibecheck security questions --json\`: rounds tailored to the chosen stack, targets, sign-in, licensing and hosting (server questions are skipped for device-only apps; client-app protections appear for mobile and desktop). Each question lists \`defaults\` (the secure choice) and \`required\` (from the compliance level). Ask each round with **AskUserQuestion**, appending " (Recommended)" to every default and keeping "(required)" visible.
+8. Write \`specs/security-answers.json\` the same way, then run \`vibecheck security apply\`. It stores the baseline in \`specs/project.json\`, generates \`specs/security.md\` and AGENTS.md rules, adds one acceptance criterion per control to the foundation feature, creates \`.github/workflows/security.yml\`, and saves a summary to memory and your knowledge library.
+9. If it reports accepted risks, ask with **AskUserQuestion** whether to keep each risk or add the control back; re-apply if anything changes.`,
+  terminal: () => `## 2. Requirements by menu — no typing
+1. Ask the user to run \`vibecheck advise\` in the integrated terminal (\`vibecheck init\` if the project doesn't exist yet). It shows arrow-key menus that adapt to the platform (web, mobile, desktop or backend), a scored choice per stack layer with licences, then the security baseline tailored to that stack (secure defaults pre-selected).
+2. When it finishes, read \`specs/requirements.json\`, the new technology-selection ADR in \`specs/decisions/\` and \`specs/security.md\`, so you know what was chosen and why.`,
+};
+
+const requirementsByMenu = (menus, cmd) => MENU_FLOWS[menus](cmd);
+
+const newProject = ({ input, example, cmd, menus }) => `# New project
+
+Turn this idea into a complete, reviewable specification before any code exists: ${input}
+
+## 0. Scaffold
+If the folder isn't a git repository yet, run \`git init\`. If \`specs/project.json\` doesn't exist, run \`vibecheck init --yes\` (the menus below fill it in). Code edits stay blocked until a feature is in progress, so nothing gets built before the spec.
+
+## 1. Load your playbook
+If knowledge is on, run \`vibecheck knowledge manifest\` and read the listed documents: your preferred stacks, standards and known pitfalls from earlier projects. Use them as the recommended defaults below, and say which document each default came from.
+
+${requirementsByMenu(menus, cmd)}
+
+## 3. What menus can't capture
+In plain conversation, briefly: the problem in the user's words, primary users, the 3–7 capabilities that make v1, explicit non-goals and success measures. Offer a draft they can correct rather than asking open questions one by one.
+
+## 4. Confirm
+Show a compact summary (stack, architecture, targets, sign-in, security and compliance, v1 capabilities) and wait for explicit approval before writing docs.
+
+## 5. Write the spec
+1. Review \`specs/project.json\` (written by \`vibecheck advise apply\`, shaped like ${example}). Adjust only what the menus couldn't express — for example an exact framework the user typed under Other — and keep \`commands\` runnable.
+2. Run \`vibecheck sync\` to regenerate AGENTS.md, CLAUDE.md, subagents and Cursor rules.
+3. Fill \`specs/00-product.md\` (vision, users, capabilities, non-goals, success metrics) and \`specs/01-architecture.md\` (Mermaid component diagram, modules and responsibilities, data flow, cross-cutting concerns).
+4. Record each key choice as an ADR in \`specs/decisions/\` (context, decision, consequences).
+5. Draw the living docs with ${cmd('docs')}: \`docs/architecture.md\` (context and container diagrams), plus data model, deployment and design system when they apply. Stamp each one — planning is blocked until the architecture doc is fresh.
+6. Run \`vibecheck feature "foundation"\` first: repository skeleton matching the architecture, tooling that makes every command in project.json work (including the \`smoke\` and \`ui\` suites: Playwright for web, Maestro or integration tests for mobile, UI-category tests for desktop), and CI running those commands plus \`vibecheck check\`.
+7. Run \`vibecheck feature "<name>"\` for each v1 capability and fill its \`spec.md\` the way ${cmd('spec-feature')} does. Leave them in \`draft\`.
+8. Run \`vibecheck check\`, commit everything (\`chore(specs): initial specification\`), and show \`vibecheck list\`. If knowledge is on, run \`vibecheck knowledge publish\` so the architecture and ADRs are reusable from other projects.
+9. Ask the user to approve the foundation spec, then continue with ${cmd('run')}.
+`;
+
+const run = ({ input, cmd }) => `# Run the workflow
+
+Scope: ${input} (empty = whole project)
+
+Loop until you reach a human gate or nothing is left:
+1. If a Multica board is on, run \`vibecheck multica pull\` first (it records features the user marked done on the board). Then run \`vibecheck next --json\`. It returns \`step\`, \`feature\`, \`command\`, \`gate\` and \`reason\`.
+2. If \`gate\` is \`spec-approval\`: complete the spec with ${cmd('spec-feature')} if it still has TODOs, summarise it (stories, acceptance criteria, open questions) and ask the user to approve. Stop.
+3. If \`gate\` is \`plan-approval\`: summarise the plan and task lanes and ask to proceed. Stop — unless the user already approved this plan in this conversation.
+4. If \`gate\` is \`board-done\`: the feature is waiting for the user's sign-off on Multica. Say which issue to mark done and stop; run \`vibecheck multica pull\` when they say it's done.
+5. Otherwise execute the step by invoking its skill (${cmd('plan-feature')}, ${cmd('implement-feature')}, ${cmd('review-feature')}) and let it finish.
+6. After each step run \`vibecheck check\`, fix what it reports, commit with a Conventional Commit message, and post one progress line: feature · step · result.
+
+Restrict the loop to the scope above when one is given. If verification keeps failing after two focused attempts, stop and report the blocker instead of guessing.
+`;
+
+const specFeature = ({ input }) => `# Spec a feature
+
+Feature: ${input}
+
+1. Read \`AGENTS.md\` and \`specs/00-product.md\` so the feature fits the product and respects its non-goals.
+2. Find the folder in \`specs/features/\`; if none exists, run \`vibecheck feature "<short name>"\`. Bugs get a small spec too (1–3 acceptance criteria).
+3. Fill \`spec.md\`, replacing every TODO:
+   - **Problem** — who has it and why it matters now.
+   - **User stories** — "As a <user>, I want <goal> so that <benefit>."
+   - **Acceptance criteria** — \`- [ ] AC-n: Given … when … then …\`, each independently testable. Note per-target differences for the targets in the front matter.
+   - **Edge cases** — empty, invalid, offline, slow, concurrent, unauthorised.
+   - **Out of scope** and **Open questions**.
+4. Describe what and why only — no frameworks, files or class names; those belong in the plan.
+5. Ask the user the open questions. Only after they explicitly approve, run \`vibecheck status <id> approved\`.
+`;
+
+const planFeature = ({ input, cmd }) => `# Plan a feature
+
+Feature: ${input}
+
+1. Open \`specs/features/<id>/spec.md\`. If its status is not \`approved\`, stop and say so.
+2. Run \`vibecheck context <id>\`: one brief with past-session memories (agentmemory) and documents from your knowledge library (OpenContext). Read any documents it points to that bear on the design, and fold earlier decisions, API contracts and pitfalls into the plan. Where they conflict with the spec or ADRs, the files win — flag it.
+3. Delegate to the **architect** subagent and write \`plan.md\`:
+   - Modules and layers touched, and why that placement follows \`specs/01-architecture.md\`.
+   - Data model and migration changes; contracts (requests, responses, errors, events).
+   - UI states per target (loading, empty, error, success) when there is UI.
+   - Test strategy: map every AC to at least one test and its level (unit, integration, UI). Every AC a user can see gets a **UI test** (browser, mobile or desktop, with an accessibility check). The feature's critical path gets at least one **smoke** test, tagged \`@smoke\` (or \`Category=Smoke\` / \`pytest.mark.smoke\`), fast enough to run on every build.
+   - How the NFRs in \`specs/04-nfr.md\` are met; risks and rollback.
+   If the feature cannot fit the current architecture, draft an ADR in \`specs/decisions/\` and stop for approval.
+4. Fill the plan's \`## Documentation\` section: which docs this feature creates or changes (its feature doc, a design doc when there is UI, and architecture, data model or deployment diagrams if it touches them). Changing architecture means an ADR plus ${cmd('rearchitect')}, not a quiet edit.
+5. Write \`tasks.md\` as an ordered checklist: \`- [ ] T-n [test|impl|docs] <what> (AC-n) — <files>\`. Keep each task to one focused change, and end with a \`[docs]\` task covering the Documentation section.
+6. Design for parallelism: shared groundwork (contracts, types, schema) first as sequential tasks, then a block of consecutive \`[P]\` tasks that touch disjoint files (e.g. API, web UI, mobile UI), then integration and e2e tasks. Tag \`[P]\` only when files don't overlap.
+7. Run \`vibecheck status <id> planned\`, then \`vibecheck lanes <id>\` and summarise the plan and lanes in a few lines.
+`;
+
+const implementFeature = ({ input, cmd }) => `# Implement a feature
+
+Feature: ${input}
+
+1. Read the feature's \`spec.md\`, \`plan.md\` and \`tasks.md\`. Its status must be \`planned\` or \`in-progress\`; run \`vibecheck status <id> in-progress\` and commit \`specs/\`.
+2. Work through open tasks in order:
+   - \`[test]\` tasks → **test-engineer** agent: unit, UI and smoke tests from the acceptance criteria that fail for the right reason, each named \`<feature number>:AC-<n> …\` (e.g. \`003:AC-2 rejects a retired laptop\`); smoke tests also carry the smoke tag.
+   - \`[impl]\` tasks → **implementer** agent: the smallest change that makes those tests pass, following AGENTS.md.
+   - \`[docs]\` tasks → ${cmd('docs')}: update documents and diagrams from the code as built, then stamp them.
+   - When the next open tasks form a block of \`[P]\` tasks, hand them to ${cmd('dispatch')} (parallel agents in git worktrees). For a block of two small tasks, parallel implementer subagents in this session are fine.
+3. After each task run the lint, typecheck and test commands from AGENTS.md and fix failures before moving on. Then tick the task, tick any AC now proven by a passing test (\`vibecheck verify <id>\` shows which are traced), and commit. Code touching auth, data access or configuration must follow \`specs/security.md\`.
+4. If a task shows the spec or plan is wrong, stop and propose the change instead of improvising.
+5. When every task is ticked, run ${cmd('review-feature')}.
+`;
+
+const dispatch = ({ input, cmd }) => `# Dispatch parallel lanes
+
+Feature: ${input}
+
+1. Run \`vibecheck lanes <id>\`. It shows each ready lane and who will build it: \`workflow.routes\` sends lanes to Cursor or Claude (or a specific Multica agent) by the files they touch, and everything else goes to \`workflow.engine\`. If no \`[P]\` tasks are ready, continue sequentially with ${cmd('implement-feature')}.
+2. Commit everything first — worktrees start from HEAD, so uncommitted specs or code are invisible to the lanes.
+3. Run \`vibecheck dispatch <id>\` **as a background command**. Engine comes from \`workflow.engine\` (override with \`--engine cursor|claude|manual\`). It creates a git worktree and branch per lane, installs dependencies and starts one headless agent per lane. With \`manual\` it only prepares worktrees and prompt files for the user to open as Cursor agents. With \`multica\` each lane becomes an issue on the Multica board assigned to \`multica.agent\`; the agent works on a Multica runtime from your git remote and pushes the lane branch (push HEAD first).
+4. While lanes run, do work that doesn't touch their files, or check progress with \`vibecheck lanes <id>\` (for Multica it reads each issue's status; answer agent questions on the board).
+5. When every lane has finished, run ${cmd('merge-lanes')}.
+`;
+
+const mergeLanes = ({ input, cmd }) => `# Merge parallel lanes
+
+Feature: ${input}
+
+1. Make sure the working tree is clean (commit or stash).
+2. Run \`vibecheck merge <id>\`. It merges each finished lane branch with \`--no-ff\`, removes its worktree and prints the tasks each lane covered. Multica lane issues stay In review until \`vibecheck verify <id> --run\` passes on the merged code; then they move to Done.
+3. On a conflict: resolve it preserving both lanes' intent, commit, and run \`vibecheck merge <id>\` again.
+4. Run lint, typecheck and test on the merged result; fix failures with the implementer agent. Run \`vibecheck docs status\` — lane changes often make diagrams stale.
+5. Tick the merged tasks in \`tasks.md\` and any acceptance criteria now proven by passing tests, then commit.
+6. If a conflict or failure taught something reusable (e.g. two lanes both touched a shared file), save it: \`vibecheck memory remember "<lesson and why>"\`.
+7. Continue with ${cmd('run')}.
+`;
+
+const reviewFeature = ({ input }) => `# Review a feature
+
+Feature: ${input}
+
+Delegate to the read-only **reviewer** subagent, and write \`specs/features/<id>/review.md\`:
+1. **Spec coverage** — run \`vibecheck verify <id> --run\`: every AC traced to a passing test, or ❌ missing.
+2. **Architecture** — dependency direction and module boundaries per \`specs/01-architecture.md\`.
+3. **Standards** — violations of \`specs/03-standards.md\` with file:line.
+4. **Security & NFRs** — every control in \`specs/security.md\` the change touches, plus input validation, authorisation, secrets, accessibility and performance budgets.
+5. **Docs** — do the feature doc, design doc and any touched diagrams match the code? \`vibecheck docs status\` must be clean for this feature.
+6. **Verdict** — blocking issues first, then suggestions.
+
+Present the findings and ask before fixing anything. When nothing blocking remains:
+1. Commit everything (review, docs, ticks) — evidence is tied to a clean commit.
+2. Run \`vibecheck verify <id> --run\`: tests, smoke and UI suites run, criteria are traced, and the result is recorded as evidence for that commit.
+3. Run \`vibecheck status <id> done\`. With a Multica board, this moves the feature's issue to In review with the evidence checklist; **the user marks it done on Multica**, and Vibe-check-cli re-checks and records it. Without a board it marks done locally. It refuses while criteria, tasks, docs or evidence fall short. Save any non-obvious lesson from the review with \`vibecheck memory remember\`; if it applies beyond this project, add it to your playbook with /opencontext-iterate. Finishing publishes the feature record to OpenContext automatically.
+`;
+
+const specCheck = () => `# Spec check
+
+1. Run \`vibecheck check\` and \`vibecheck list\`.
+2. Summarise problems grouped by feature, then drift in generated files.
+3. Propose fixes and ask before applying them. Generated files are fixed by editing \`specs/project.json\` and running \`vibecheck sync\`, never by hand.
+`;
+
+const docsSkill = ({ input, cmd }) => `# Update living docs
+
+Scope: ${input} (empty = everything flagged)
+
+1. Run \`vibecheck docs status\`. Create missing required docs with \`vibecheck docs new <kind> [feature]\` (kinds: architecture, data-model, deployment, design-system, feature, design).
+2. For each flagged doc, read every file in its \`sources\` front matter — specs, plans and code — and rewrite it to describe how the system works **now**. Specs describe intent, docs describe reality; where they differ, flag it to the user.
+3. Diagrams are Mermaid, drawn from the code rather than from memory, small and labelled:
+   - architecture → context + container flowcharts (or C4); data model → \`erDiagram\` from the actual schema; deployment → flowchart of environments and services;
+   - feature → sequence diagram of the main flow (state diagram when lifecycle matters); design → user-flow flowchart plus screen and state tables per target.
+4. Keep \`sources\` honest: add files the doc now covers, drop ones it no longer describes.
+5. Run \`vibecheck docs stamp <path>\`. It refuses TODOs, invalid Mermaid and unchanged docs whose sources moved; use \`--still-accurate\` only after checking the doc against every changed source.
+6. Repeat until \`vibecheck docs status\` is clean for the scope, then commit (\`docs: …\`).
+`;
+
+const rearchitect = ({ input, cmd }) => `# Re-architect
+
+Change: ${input}
+
+1. Capture the current state: \`specs/01-architecture.md\`, \`docs/architecture.md\`, the ADRs in \`specs/decisions/\`, \`vibecheck docs status\` and \`vibecheck context "<change>"\`.
+2. Draft the next ADR (\`specs/decisions/NNNN-<slug>.md\`, status **proposed**): context, options considered with trade-offs, decision, consequences, migration steps. Present it and stop until the user approves.
+3. On approval: set the ADR to **accepted**, update \`specs/01-architecture.md\` and \`specs/project.json\` (stack, architecture notes), then \`vibecheck sync\`.
+4. In the same turn, update every document \`vibecheck docs status\` flags — architecture diagrams first, then deployment, data model and design system — using ${cmd('docs')}. The stop hook will not let the turn end with stale architecture docs.
+5. Impact: list in-flight and done features affected. Append a note to affected plans; for code that must move, create a migration feature (\`vibecheck feature "migrate: <change>"\`) whose acceptance criteria describe the end state.
+6. Save the reasoning to memory (\`vibecheck memory remember\`) and, if knowledge is on, run \`vibecheck knowledge publish\`.
+`;
+
+const securitySkill = ({ input, cmd }) => `# Security baseline
+
+Change: ${input} (empty = review the whole baseline)
+
+1. Run \`vibecheck security status\` to see current controls, how each is implemented on this stack, accepted risks and test traceability.
+2. Run \`vibecheck security questions --json\` and ask the relevant rounds with **AskUserQuestion**, marking the current selections and secure defaults " (Recommended)" and keeping "(required)" visible.
+3. Write \`specs/security-answers.json\` and run \`vibecheck security apply\`. New controls become acceptance criteria in the foundation or security-baseline feature; existing ones are not duplicated.
+4. Confirm any accepted risks with the user. Update \`docs/security/threat-model.md\` with ${cmd('docs')} if data flows or trust boundaries changed.
+`;
+
+const setupSkill = ({ input, cmd }) => `# Set up this machine from Claude
+
+Scope: ${input} (empty = everything this machine and project need)
+
+1. Run \`vibecheck setup --json\`. It lists what is already working (\`ready\`) and the steps still needed (\`steps\`: install, configure or start), each with its exact command.
+2. If \`steps\` is empty, say everything is installed and continue with ${cmd('health')}.
+3. Ask which steps to run with **AskUserQuestion**: multi-select questions of up to 4 options each (split into several questions if needed). Label = the tool's name plus " (Recommended)", description = what it's for and the command it runs. Don't offer steps marked \`manual\`; list them afterwards with their instructions. Steps marked \`interactive\` need a browser sign-in or prompts: mention that the user will run those in Cursor's terminal (View → Terminal).
+4. Run the chosen steps with \`vibecheck setup --yes --only <id>,<id>\`. In this mode it never runs \`interactive\` steps: it prints them instead, for the user to run in Cursor's terminal. Installers print a lot; summarise what happened rather than repeating it. If a step waits for a password (\`sudo\`) or another prompt you can't answer, stop and ask the user to run that one command in Cursor's terminal (View → Terminal).
+5. Tell the user about sign-ins you can't do for them: Cursor's CLI (\`agent login\` in Cursor's terminal), and for Multica, creating agents in the Multica app (Command Palette → **Simple Browser: Show** → http://localhost:3000).
+6. Finish with ${cmd('health')}.
+`;
+
+const healthSkill = ({ input, cmd }) => `# Check this machine and project
+
+Scope: ${input}
+
+1. Run \`vibecheck health --json\`. Add \`--live\` before a first real run, or when the user asks for a full check (it sends a few one-line prompts to Claude and Cursor).
+2. Summarise briefly: what works, then each problem with its fix. Group by tools, project and live checks.
+3. For problems whose fix is a command, offer to run it through ${cmd('setup')}. Explain the ones only the user can do: signing in, starting Docker Desktop, creating agents in Multica.
+4. If the project uses Multica and everything else is green, suggest \`vibecheck multica selftest\` as the final proof.
+`;
+
+export const SKILLS = [
+  {
+    name: 'new-project',
+    description: 'Interview the user and produce a complete project specification: specs/project.json, product and architecture docs, ADRs and first feature specs. Use when starting a new project.',
+    argumentHint: '[idea]',
+    userOnly: true,
+    body: newProject,
+  },
+  {
+    name: 'run',
+    description: 'Autopilot for the spec-driven workflow: repeatedly executes the next step (spec, plan, implement, dispatch, review) until a human gate. Use when the user says continue, build it, next, or keep going.',
+    argumentHint: '[feature id or goal]',
+    body: run,
+  },
+  {
+    name: 'spec-feature',
+    description: 'Write or refine a feature spec with user stories and testable acceptance criteria. Use when the user describes a new feature, a behaviour change or a bug.',
+    argumentHint: '<feature description>',
+    body: specFeature,
+  },
+  {
+    name: 'plan-feature',
+    description: 'Turn an approved feature spec into a technical plan and a task list designed for parallel lanes.',
+    argumentHint: '<feature id>',
+    body: planFeature,
+  },
+  {
+    name: 'implement-feature',
+    description: 'Implement a planned feature task by task with tests first, dispatching [P] blocks to parallel agents.',
+    argumentHint: '<feature id>',
+    body: implementFeature,
+  },
+  {
+    name: 'dispatch',
+    description: 'Run a ready block of [P] tasks in parallel: one git worktree and one Cursor or headless Claude agent per lane.',
+    argumentHint: '<feature id>',
+    body: dispatch,
+  },
+  {
+    name: 'merge-lanes',
+    description: 'Merge finished parallel lanes back, verify, and tick their tasks.',
+    argumentHint: '<feature id>',
+    body: mergeLanes,
+  },
+  {
+    name: 'review-feature',
+    description: 'Review a feature against its spec, the architecture and the coding standards.',
+    argumentHint: '<feature id>',
+    body: reviewFeature,
+  },
+  {
+    name: 'docs',
+    description: 'Create or update living documentation and Mermaid diagrams (architecture, data model, deployment, design system, feature and design docs) from the code as built, then stamp them fresh. Use after building, merging lanes, or when docs are flagged stale.',
+    argumentHint: '[doc path, feature id or "all"]',
+    body: docsSkill,
+  },
+  {
+    name: 'rearchitect',
+    description: 'Change the architecture safely: ADR for approval, spec and project.json updates, then every affected diagram and document in the same turn, plus a migration feature. Use when the user wants to restructure, swap technology or change boundaries.',
+    argumentHint: '<architecture change>',
+    body: rearchitect,
+  },
+  {
+    name: 'security',
+    description: 'Review or change the security baseline by menu: controls tailored to the stack, required controls by compliance level, accepted risks, and test traceability. Use when the user asks about security, auth, secrets or compliance.',
+    argumentHint: '[change]',
+    body: securitySkill,
+  },
+  {
+    name: 'setup',
+    description: 'Install, configure and start everything this machine and project need, chosen from a menu. Use when setting up a new machine, after changing the project\'s engine or tools, or when the health check reports missing pieces.',
+    argumentHint: '[tool ids, e.g. multica]',
+    userOnly: true,
+    body: setupSkill,
+  },
+  {
+    name: 'health',
+    description: 'Check that every tool this project needs is installed and working (Claude Code, Cursor CLI, memory, knowledge, Multica, hooks), and explain fixes. Use when something seems broken or before a first run.',
+    argumentHint: '[live]',
+    body: healthSkill,
+  },
+  {
+    name: 'spec-check',
+    description: 'Validate specs and detect drift in generated agent files.',
+    body: specCheck,
+  },
+];

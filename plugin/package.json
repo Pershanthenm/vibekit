@@ -1,0 +1,28 @@
+{
+  "name": "vibe-check-cli",
+  "version": "0.1.9-beta",
+  "description": "Vibe-check-cli: spec-driven, multi-agent development for Claude Code, Cursor and Multica",
+  "type": "module",
+  "bin": {
+    "vibecheck": "bin/vibecheck",
+    "vibe-check-cli": "bin/vibecheck"
+  },
+  "files": [
+    "bin",
+    "src",
+    "examples",
+    "scripts",
+    "skills",
+    "agents",
+    "hooks",
+    ".claude-plugin"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build-plugin.js",
+    "test": "node --test test/*.test.js"
+  },
+  "license": "MIT"
+}

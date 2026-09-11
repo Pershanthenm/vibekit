@@ -1,0 +1,105 @@
+export const ARCHITECTURES = {
+  clean: {
+    label: 'Clean Architecture',
+    summary: 'Business rules sit at the centre; frameworks, UI and I/O are replaceable details at the edges.',
+    rules: [
+      'Dependencies point inward: presentation and infrastructure → application → domain.',
+      'The domain layer imports no framework, database, network or UI code.',
+      'Use cases live in the application layer and depend on interfaces (ports) that infrastructure implements.',
+      'Map between transport/persistence models and domain entities at layer boundaries.',
+    ],
+    diagram: [
+      'flowchart LR',
+      '  UI[Presentation] --> APP[Application / use cases]',
+      '  INFRA[Infrastructure] --> APP',
+      '  APP --> DOMAIN[Domain]',
+    ],
+  },
+  hexagonal: {
+    label: 'Hexagonal (ports & adapters)',
+    summary: 'The core exposes ports; every interaction with the outside world goes through an adapter.',
+    rules: [
+      'The core defines ports (interfaces) for everything it needs or offers.',
+      'Adapters (HTTP, database, queue, UI, third-party APIs) implement ports and contain no business rules.',
+      'The core never imports an adapter.',
+      'Core tests use in-memory adapters; adapter tests are integration tests.',
+    ],
+    diagram: [
+      'flowchart LR',
+      '  HTTP[HTTP adapter] --> IN((Inbound ports))',
+      '  UI[UI adapter] --> IN',
+      '  IN --> CORE[Core]',
+      '  CORE --> OUT((Outbound ports))',
+      '  OUT --> DB[DB adapter]',
+      '  OUT --> EXT[External API adapter]',
+    ],
+  },
+  'modular-monolith': {
+    label: 'Modular monolith',
+    summary: 'One deployable, split into modules by business capability with strict boundaries.',
+    rules: [
+      'Each module owns its data; no module reads another module\'s tables.',
+      'Modules talk only through each other\'s public API or domain events, never internals.',
+      'Shared code is limited to a small kernel (types, utilities) with no business rules.',
+      'Boundaries are enforced by lint/import rules, not convention alone.',
+    ],
+    diagram: [
+      'flowchart LR',
+      '  API[API / UI shell] --> A[Module A]',
+      '  API --> B[Module B]',
+      '  A -- public API / events --> B',
+      '  A --> K[Shared kernel]',
+      '  B --> K',
+    ],
+  },
+  layered: {
+    label: 'Layered',
+    summary: 'Presentation → services → data access, each layer using only the one below it.',
+    rules: [
+      'Calls flow downward only: presentation → service → repository → storage.',
+      'No layer skipping: presentation never calls repositories directly.',
+      'Business rules live in services, not controllers or repositories.',
+    ],
+    diagram: [
+      'flowchart TB',
+      '  P[Presentation] --> S[Services]',
+      '  S --> R[Repositories]',
+      '  R --> D[(Storage)]',
+    ],
+  },
+  microservices: {
+    label: 'Microservices',
+    summary: 'Independently deployable services, one per bounded context, each owning its data.',
+    rules: [
+      'One service per bounded context; each service owns its datastore. No shared databases.',
+      'Contracts are versioned (OpenAPI / AsyncAPI) and backward compatible.',
+      'Event consumers are idempotent; every call has a timeout and retry policy.',
+      'Every service ships logs, metrics and traces with a shared correlation id.',
+    ],
+    diagram: [
+      'flowchart LR',
+      '  GW[API gateway] --> S1[Service A]',
+      '  GW --> S2[Service B]',
+      '  S1 --> D1[(DB A)]',
+      '  S2 --> D2[(DB B)]',
+      '  S1 -- events --> BUS{{Event bus}}',
+      '  BUS --> S2',
+    ],
+  },
+  'feature-sliced': {
+    label: 'Feature-sliced',
+    summary: 'Code is grouped by feature (vertical slices) rather than by technical layer.',
+    rules: [
+      'Each feature folder contains its own UI, logic and data access.',
+      'Features never import another feature\'s internals; share through `shared/` or explicit public exports.',
+      '`shared/` holds only generic, business-agnostic code.',
+    ],
+    diagram: [
+      'flowchart LR',
+      '  APP[App shell] --> F1[Feature A]',
+      '  APP --> F2[Feature B]',
+      '  F1 --> SH[shared]',
+      '  F2 --> SH',
+    ],
+  },
+};

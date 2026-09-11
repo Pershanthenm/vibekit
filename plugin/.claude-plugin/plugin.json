@@ -1,0 +1,9 @@
+{
+  "name": "vibe-check-cli",
+  "description": "Vibe-check-cli: always-on spec-driven workflow, platform-agnostic stack advice, security baseline, and parallel lanes on Cursor, Claude or a local Multica.",
+  "version": "0.1.9-beta",
+  "license": "MIT",
+  "author": {
+    "name": "Vibe-check-cli"
+  }
+}
