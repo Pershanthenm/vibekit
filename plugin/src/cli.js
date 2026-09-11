@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
+import { adopt } from './commands/adopt.js';
 import { advise } from './commands/advise.js';
 import { check } from './commands/check.js';
 import { context } from './commands/context.js';
@@ -24,7 +25,7 @@ import { sync } from './commands/sync.js';
 import { verify } from './commands/verify.js';
 import { security } from './commands/security.js';
 
-const COMMANDS = { init, sync, feature, status, list, check, next, lanes, dispatch, merge, memory, knowledge, context, docs, advise, security, verify, multica, health, doctor: health, setup, version, 'cursor-agents': cursorAgents, 'cursor-kit': cursorAgents, team, projects, hook };
+const COMMANDS = { init, adopt, sync, feature, status, list, check, next, lanes, dispatch, merge, memory, knowledge, context, docs, advise, security, verify, multica, health, doctor: health, setup, version, 'cursor-agents': cursorAgents, 'cursor-kit': cursorAgents, team, projects, hook };
 
 const OPTIONS = {
   dir: { type: 'string' },
@@ -55,6 +56,7 @@ Usage
                                                          Install, configure and start what this machine/project needs
   vibecheck health [--live] [--json]                     Check everything (--live proves Claude, Cursor, memory end to end)
   vibecheck init [--yes | --from <file.json>] [--force]  Menu-driven setup: requirements → stack recommendation → project
+  vibecheck adopt [--force] [--json]                     Adopt an existing codebase: detect the as-is stack and write as-is docs
   vibecheck advise [next | recommend | apply [preset] | components [layer] | presets | prefer <ids...>]
                                                          Platform-first menus; per-layer stack and licence advice
   vibecheck sync [--force]                               Regenerate agent files from specs/project.json
