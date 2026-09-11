@@ -28,6 +28,19 @@ export const WORKFLOW = [
   '9. Done = every acceptance criterion checked and traced to a test, the test, smoke and UI suites pass on a clean commit (`vibecheck verify <id> --run` records this as evidence), docs fresh, `vibecheck check` passes. With a Multica board, the user marks features done on Multica; Vibe-check-cli verifies and records it.',
 ].join('\n');
 
+export const EVIDENCE = [
+  '1. Every factual claim about this codebase must be checked before it is written down. Read the file, run the command, or say you have not.',
+  '2. Cite where a claim comes from: `path/to/file.ts:42`, a command and its output, or the spec section. A reviewer must be able to reach the same conclusion without rerunning your reasoning.',
+  '3. Never invent an API, package, function, flag, config key or version. Before using one, confirm it exists in the manifest, the lockfile, the installed source or the official docs. A plausible name is not evidence.',
+  '4. Unknown is a valid answer, and always better than a guess. Write `TODO(unknown): <question>` in the spec or plan and raise it, rather than filling the gap with something that reads well.',
+  '5. Do not invent commands. Use the ones under "Commands"; if the one you need is absent, say so instead of assuming a conventional name.',
+  '6. Never claim a test, build or check passed unless you ran it and saw it pass. Report failures with the actual output. "Should work" is not a result.',
+  '7. Do not fabricate test fixtures that encode assumed behaviour, then assert against them. A test that passes because both sides share your assumption proves nothing.',
+  '8. Acceptance criteria come from the spec. Do not soften, drop or add one to make an implementation fit; change the spec and say why.',
+  '9. When the spec, the code and your expectation disagree, the code is the evidence. Report the conflict rather than resolving it silently.',
+  '10. Say plainly what you did not do: parts skipped, checks not run, criteria not met. Unreported gaps are the costliest kind.',
+].join('\n');
+
 const REVIEW_CHECKLIST = bullets([
   'Every acceptance criterion has a test that fails without the change.',
   'No dependency points the wrong way across architecture boundaries.',
@@ -92,6 +105,7 @@ function renderAgentsMd(project) {
     section('Language rules', languageBullets(project)),
     section('Non-functional requirements', nfrBullets(project.nfr)),
     section('Spec-driven workflow (mandatory)', WORKFLOW),
+    section('Evidence over guesswork (mandatory)', EVIDENCE),
     section('Agent roles', agentRolesSection()),
     project.memory.provider === 'agentmemory' && section('Memory', MEMORY_RULES),
     project.security.controls.length && section('Security baseline (mandatory)', `${bullets(securityRules(project))}\n\nDetails, implementation per control and accepted risks: \`specs/security.md\`.`),
