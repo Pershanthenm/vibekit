@@ -174,6 +174,51 @@ const specCheck = () => `# Spec check
 3. Propose fixes and ask before applying them. Generated files are fixed by editing \`specs/project.json\` and running \`vibecheck sync\`, never by hand.
 `;
 
+const clarifySkill = ({ input, cmd }) => `# Clarify a spec before it is planned
+
+Scope: ${input} (empty = the feature the workflow is on)
+
+A spec that reads well can still be undecided. This finds what is not settled **before** a plan
+is written, because an assumption baked into a plan is far more expensive to unpick later.
+
+1. Run \`vibecheck analyze [feature] --json\`. Anything under \`vague\` is already flagged: read those criteria first.
+2. Read the feature's \`spec.md\` and look for what it does **not** say:
+   - acceptance criteria that cannot be turned into a passing test as written (no observable outcome, no threshold, no actor);
+   - nouns used but never defined, and states no criterion covers (empty, expired, duplicate, offline, unauthorised);
+   - limits nobody has set: how many, how large, how long, how old;
+   - error paths: what the user sees, and what the system does, when each step fails;
+   - anything that reads as a decision but names no alternative that was rejected.
+3. Ask the user **only** about the gaps that would change what gets built. Use **AskUserQuestion**,
+   at most 4 at a time, each option a concrete choice rather than a restatement of the question.
+   Put the option you would pick first, with \" (Recommended)\" and one line saying why.
+4. Write the answers into \`spec.md\` as acceptance criteria or explicit non-goals. Do not leave them in chat.
+5. For anything the user cannot answer yet, write \`TODO(unknown): <question>\` in the spec and say so plainly.
+   An open question that is written down is cheap; one that is guessed at is not.
+6. Re-run \`vibecheck analyze [feature]\` and continue with ${cmd('plan-feature')}.
+`;
+const checklistSkill = ({ input, cmd }) => `# Quality checklist for a feature
+
+Scope: ${input} (empty = the feature the workflow is on)
+
+Acceptance criteria say what the feature must do. A checklist covers what it must not get wrong:
+the states, limits and failures that criteria routinely miss. Treat it as unit tests for the spec.
+
+1. Run \`vibecheck analyze [feature]\` and read the feature's \`spec.md\`, the project's security baseline
+   (\`specs/security.md\`) and its non-functional requirements (\`specs/04-nfr.md\`).
+2. Generate a checklist under \`## Checklist\` in the feature's \`spec.md\`, as \`- [ ] CL-n: <check>\`,
+   drawn from what this feature actually touches:
+   - **States**: empty, one, many, maximum; loading, error, partial, offline.
+   - **Boundaries**: the smallest and largest allowed value, and the first one rejected.
+   - **Permissions**: every role that must be refused, not only the one that is allowed.
+   - **Data**: what is written, what is audited, what is exported, what must never leave.
+   - **Failure**: what the user sees, what is logged, what is rolled back.
+   - **Accessibility and NFRs**: only the targets this project has actually set.
+3. Keep each item checkable by a person in under a minute. Delete anything generic enough to
+   apply to any feature: a checklist nobody reads is worse than none.
+4. Anything that turns out to be a missing requirement belongs in the spec as an acceptance
+   criterion instead, so a test can prove it. Say which items you promoted.
+5. Review the checklist with the user before ${cmd('implement-feature')}.
+`;
 const docsSkill = ({ input, cmd }) => `# Update living docs
 
 Scope: ${input} (empty = everything flagged)
@@ -312,6 +357,18 @@ export const SKILLS = [
     description: 'Check that every tool this project needs is installed and working (Claude Code, Cursor CLI, memory, knowledge, Multica, hooks), and explain fixes. Use when something seems broken or before a first run.',
     argumentHint: '[live]',
     body: healthSkill,
+  },
+  {
+    name: 'clarify',
+    description: 'Find what a feature spec has not decided yet and ask the user, before a plan is written. Use after writing a spec and before planning.',
+    argumentHint: '[feature]',
+    body: clarifySkill,
+  },
+  {
+    name: 'checklist',
+    description: 'Generate a quality checklist for a feature: the states, limits and failures acceptance criteria usually miss.',
+    argumentHint: '[feature]',
+    body: checklistSkill,
   },
   {
     name: 'spec-check',

@@ -35,6 +35,7 @@ flowchart LR
 | **Subagents** | **architect**, **test-engineer**, **implementer**, **reviewer**, plus the team's own (for example **database-reviewer**, **security-reviewer**), in Claude Code and Cursor |
 | **Team skills** | A shared kit in [`team/`](team/), including a curated selection from [Everything Claude Code](https://github.com/affaan-m/ECC) (API design, TDD, security review, Docker, deployment and more) |
 | **Guardrails** | Hooks at session start, before every edit, and at the end of every turn |
+| **Artefacts that agree** | `analyze` reports criteria with no task, tasks pointing at criteria that no longer exist, and `[P]` tasks that would collide; `clarify` asks about what a spec left undecided before it is planned |
 | **Quality gates** | Acceptance-criteria traceability, test, smoke and UI evidence per commit, living docs, a security baseline mapped to OWASP ASVS |
 | **Machine setup** | `setup` installs and configures what each machine needs; `health` checks everything and names the fix |
 | **Any agent editor** | One project, four front ends: Claude Code, Cursor, Google Antigravity and Windsurf each get their own generated config from a single `specs/project.json`; Codex reads `AGENTS.md` directly |

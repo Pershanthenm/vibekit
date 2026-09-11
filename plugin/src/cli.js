@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { adopt } from './commands/adopt.js';
+import { analyze } from './commands/analyze.js';
 import { advise } from './commands/advise.js';
 import { check } from './commands/check.js';
 import { context } from './commands/context.js';
@@ -26,7 +27,7 @@ import { sync } from './commands/sync.js';
 import { verify } from './commands/verify.js';
 import { security } from './commands/security.js';
 
-const COMMANDS = { init, adopt, sync, feature, status, list, check, next, lanes, dispatch, merge, memory, knowledge, context, docs, advise, security, standards, verify, multica, health, doctor: health, setup, version, 'cursor-agents': cursorAgents, 'cursor-kit': cursorAgents, team, projects, hook };
+const COMMANDS = { init, adopt, analyze, sync, feature, status, list, check, next, lanes, dispatch, merge, memory, knowledge, context, docs, advise, security, standards, verify, multica, health, doctor: health, setup, version, 'cursor-agents': cursorAgents, 'cursor-kit': cursorAgents, team, projects, hook };
 
 const OPTIONS = {
   dir: { type: 'string' },
@@ -66,6 +67,7 @@ Usage
   vibecheck status <feature> <status>                    draft | approved | planned | in-progress | done
   vibecheck list                                         Features with status and progress
   vibecheck check                                        Validate specs and detect drift (exit 1 on problems)
+  vibecheck analyze [feature] [--json]                   Do the spec, plan, tasks and tests agree? (exit 1 on contradictions)
   vibecheck next [--json]                                The next workflow step (what /run executes)
   vibecheck lanes <feature>                              Ready [P] lanes, or the status of dispatched lanes
   vibecheck dispatch <feature> [--engine cursor|claude|manual|multica] [--dry-run]

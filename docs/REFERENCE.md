@@ -294,6 +294,37 @@ Everything memory- and knowledge-related fails open. If the server is down, the 
 
 Hooks are silent in folders without `specs/project.json`, so installing the plugin at user level is safe.
 
+## Do the artefacts agree? `vibecheck analyze`
+
+`vibecheck check` validates the schema and detects drift. `vibecheck verify` traces acceptance
+criteria to tests. Neither asks whether the spec, the plan and the tasks **agree with each
+other** — and that is where specs quietly rot.
+
+`vibecheck analyze [feature] [--json]` reports, per feature:
+
+| Problem | Why it matters |
+|---|---|
+| An acceptance criterion with no task | It will not get built, and nothing will say so |
+| A task pointing at a criterion the spec does not define | The spec changed and the tasks did not |
+| A task naming no criterion, or no files | Lanes cannot tell whether it overlaps another task |
+| Two `[P]` tasks sharing a file | `[P]` promises they do not; dispatched lanes would collide |
+| A criterion still saying TODO, TBD or ??? | It cannot be turned into a passing test |
+| A planned feature with an empty or TODO plan | The status claims more than the artefacts support |
+| A criterion with no test naming it | Carried through from `verify` |
+
+It exits 1 when anything is found, so it belongs in CI beside `vibecheck check`. The output
+names contradictions between artefacts: fix the artefacts, not the report.
+
+Two skills cover the judgement half, which a CLI cannot do:
+
+- **/vibe-check-cli:clarify** — reads a spec for what it does *not* say (undefined nouns, unset
+  limits, uncovered states, missing error paths) and asks the user through menus **before** a
+  plan exists. Answers go into the spec; anything still unknown is written as
+  `TODO(unknown): <question>` rather than guessed.
+- **/vibe-check-cli:checklist** — generates per-feature checks for the states, boundaries,
+  permissions and failures acceptance criteria routinely miss. Anything that turns out to be a
+  real requirement is promoted into the spec so a test can prove it.
+
 ## Evidence over guesswork
 
 Every generated `AGENTS.md` carries a mandatory **Evidence over guesswork** section. It exists
@@ -348,7 +379,7 @@ After editing, Claude runs `vibecheck sync`. `AGENTS.md`, `CLAUDE.md`, the subag
 
 ## CLI reference
 
-`init` · `adopt [--force] [--json]` · `sync` · `feature "<name>"` · `status <id> <status>` · `list` · `check` · `next [--json]` · `lanes <id>` · `dispatch <id> [--engine] [--dry-run]` · `merge <id>` · `memory <status|recall|remember>` · `knowledge <status|search|manifest|publish>` · `context <feature|topic>` · `docs <status|new|stamp>` · `advise [next|recommend|apply [preset]|components|presets|prefer]` · `security [questions|apply|status]` · `verify [feature] [--run]` · `multica [status|sync|pull|selftest]` · `setup [--dry-run] [--only]` · `health [--live]` · `version` · `hook <event>`. Run `vibecheck --help` for details.
+`init` · `adopt [--force] [--json]` · `analyze [feature] [--json]` · `sync` · `feature "<name>"` · `status <id> <status>` · `list` · `check` · `next [--json]` · `lanes <id>` · `dispatch <id> [--engine] [--dry-run]` · `merge <id>` · `memory <status|recall|remember>` · `knowledge <status|search|manifest|publish>` · `context <feature|topic>` · `docs <status|new|stamp>` · `advise [next|recommend|apply [preset]|components|presets|prefer]` · `security [questions|apply|status]` · `verify [feature] [--run]` · `multica [status|sync|pull|selftest]` · `setup [--dry-run] [--only]` · `health [--live]` · `version` · `hook <event>`. Run `vibecheck --help` for details.
 
 ## Limits worth knowing
 
