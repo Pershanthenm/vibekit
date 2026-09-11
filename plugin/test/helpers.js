@@ -1,10 +1,12 @@
 import { execFile, execFileSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { delimiter, dirname, join } from 'node:path';
+import { which } from '../src/which.js';
 import { run } from '../src/cli.js';
 
 console.log = () => {};
@@ -12,7 +14,34 @@ console.log = () => {};
 export const EXAMPLE = fileURLToPath(new URL('../examples/project.example.json', import.meta.url));
 export const BIN = fileURLToPath(new URL('../bin/vibecheck', import.meta.url));
 export const read = (root, path) => readFile(join(root, path), 'utf8');
-export const sh = (cwd, command, ...args) => execFileSync(command, args, { cwd, encoding: 'utf8' });
+// Tests scrub process.env.PATH so the code under test cannot find real tools. The harness
+// itself still has to run git and node, so it never relies on the scrubbed PATH: setup
+// commands get the PATH this process started with, and node is spawned by absolute path.
+const ORIGINAL_PATH = process.env.PATH;
+export const withRealPath = (env = {}) => ({ ...process.env, ...env, PATH: ORIGINAL_PATH });
+
+// A PATH with no agent tools on it (claude, cursor-agent, oc, multica), used by tests that
+// assert what happens when a tool is missing. git and node stay reachable because the code
+// under test genuinely needs them — on POSIX the old '/usr/bin:/bin' happened to include
+// both, which is the behaviour this reproduces on every platform.
+const gitDir = which('git') ? dirname(which('git')) : '';
+export const TOOL_FREE_PATH = [dirname(process.execPath), gitDir].filter(Boolean).join(delimiter);
+export const sh = (cwd, command, ...args) => execFileSync(command, args, { cwd, encoding: 'utf8', env: withRealPath() });
+
+// Cross-platform stand-ins for the POSIX utilities the tests used to shell out to
+// (mktemp -d, mkdir -p, echo > file, sh -c '… && …'). Windows has none of them.
+export const tempDir = (prefix = 'vibecheck-') => mkdtempSync(join(tmpdir(), prefix));
+
+export function writeFileIn(root, relativePath, content) {
+  const target = join(root, relativePath);
+  mkdirSync(dirname(target), { recursive: true });
+  writeFileSync(target, content);
+}
+
+export function commitAll(root, message) {
+  sh(root, 'git', 'add', '-A');
+  sh(root, 'git', 'commit', '-qm', message);
+}
 
 export async function newProject(...initArgs) {
   const root = await mkdtemp(join(tmpdir(), 'vibecheck-'));
@@ -21,9 +50,14 @@ export async function newProject(...initArgs) {
 }
 
 export async function exitCodeOf(argv) {
+  // node:test sets process.exitCode to 1 as soon as any test fails, so it must be cleared
+  // first: otherwise a command that succeeds reads the runner's failure state and every
+  // later assertion in the run inherits it. The runner's value is put back afterwards.
+  const runnerState = process.exitCode;
+  process.exitCode = 0;
   await run(argv);
   const code = process.exitCode ?? 0;
-  process.exitCode = 0;
+  process.exitCode = runnerState;
   return code;
 }
 
@@ -38,7 +72,7 @@ export async function fillSpec(root, id, { tasks }) {
 const execFileAsync = promisify(execFile);
 
 export async function runHook(root, event, input, env = {}) {
-  const child = execFileAsync('node', [BIN, 'hook', event], { cwd: root, env: { ...process.env, ...env } });
+  const child = execFileAsync(process.execPath, [BIN, 'hook', event], { cwd: root, env: { ...process.env, ...env } });
   child.child.stdin.end(JSON.stringify({ cwd: root, ...input }));
   try {
     const { stdout } = await child;
@@ -73,26 +107,30 @@ export function gitInit(root) {
   sh(root, 'git', 'commit', '-qm', 'chore: specs');
 }
 
+// A shebang script is not executable on Windows. Each fake tool is a Node script, paired
+// with a .cmd shim so cmd.exe can run the same file through PATHEXT.
+async function installFakeBin(dir, name, source) {
+  const { chmod, writeFile: write } = await import('node:fs/promises');
+  await write(join(dir, name), source);
+  await chmod(join(dir, name), 0o755);
+  if (process.platform === 'win32') await write(join(dir, `${name}.cmd`), `@node "%~dp0${name}" %*`);
+}
+
 export async function installFakeOpenContext(results = []) {
   const { mkdtemp: makeTemp, writeFile: write, chmod } = await import('node:fs/promises');
   const dir = await makeTemp(join(tmpdir(), 'fake-oc-'));
   const contextsRoot = join(dir, 'contexts');
   const log = join(dir, 'calls.log');
-  const script = `#!/bin/sh
-echo "$*" >> "${log}"
-case "$1" in
-  --version) echo "oc 0.0.0-fake" ;;
-  search) cat <<'JSON'
-${JSON.stringify({ results })}
-JSON
-  ;;
-  context) echo "- playbook/stack.md — Preferred stack: TypeScript, Expo, Postgres" ;;
-esac
-exit 0
+  const script = `#!/usr/bin/env node
+const fs = require('fs');
+const args = process.argv.slice(2);
+fs.appendFileSync(${JSON.stringify(log)}, args.join(' ') + String.fromCharCode(10));
+if (args[0] === '--version') console.log('oc 0.0.0-fake');
+else if (args[0] === 'search') console.log(${JSON.stringify(JSON.stringify({ results }))});
+else if (args[0] === 'context') console.log('- playbook/stack.md — Preferred stack: TypeScript, Expo, Postgres');
 `;
-  await write(join(dir, 'oc'), script);
-  await chmod(join(dir, 'oc'), 0o755);
-  const env = { PATH: `${dir}:${process.env.PATH}`, OPENCONTEXT_CONTEXTS_ROOT: contextsRoot };
+  await installFakeBin(dir, 'oc', script);
+  const env = { PATH: [dir, process.env.PATH].join(delimiter), OPENCONTEXT_CONTEXTS_ROOT: contextsRoot };
   return { dir, contextsRoot, log, env };
 }
 
@@ -150,10 +188,9 @@ export async function installFakeMultica() {
   const { chmod, mkdtemp: makeTemp, writeFile: write, readFile: readRaw } = await import('node:fs/promises');
   const { dirname } = await import('node:path');
   const dir = await makeTemp(join(tmpdir(), 'fake-multica-'));
-  await write(join(dir, 'multica'), FAKE_MULTICA);
-  await chmod(join(dir, 'multica'), 0o755);
+  await installFakeBin(dir, 'multica', FAKE_MULTICA);
   const statePath = join(dir, 'state.json');
-  const env = { PATH: `${dir}:${dirname(process.execPath)}:/usr/bin:/bin`, FAKE_MULTICA_STATE: statePath };
+  const env = { PATH: [dir, dirname(process.execPath), ORIGINAL_PATH].join(delimiter), FAKE_MULTICA_STATE: statePath };
   const state = async () => JSON.parse(await readRaw(statePath, 'utf8'));
   const update = async (change) => {
     const current = await state();
@@ -173,4 +210,8 @@ export async function patchProject(root, patch) {
   await run(['sync', '--dir', root]);
 }
 
-export const PASSING_SUITES = { commands: { test: 'true', smoke: 'true', ui: 'true' } };
+// `true` is POSIX-only; cmd.exe has no such command, so a suite meant to pass would fail
+// on Windows. Node exits 0 the same way everywhere.
+export const PASSES = 'node -e ""';
+export const FAILS = 'node -e "process.exit(1)"';
+export const PASSING_SUITES = { commands: { test: PASSES, smoke: PASSES, ui: PASSES } };

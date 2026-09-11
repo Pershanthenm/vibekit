@@ -9,7 +9,7 @@ import { worktreeBase } from '../src/git.js';
 import { nextAction } from '../src/next.js';
 import { loadProject } from '../src/project.js';
 import { pluginSkillFiles } from '../src/team.js';
-import { EXAMPLE, exitCodeOf, fillSpec, gitInit, newProject, read, runHook, setDocsEnabled, sh } from './helpers.js';
+import { EXAMPLE, commitAll, exitCodeOf, fillSpec, gitInit, newProject, read, runHook, setDocsEnabled, sh, writeFileIn } from './helpers.js';
 
 const FEATURE = '001-shared-list';
 const TASKS = [
@@ -90,8 +90,9 @@ test('dispatch creates a worktree per lane and merge integrates their commits', 
   await assert.rejects(run(['dispatch', '--dir', root, FEATURE, '--engine', 'manual']), /already dispatched/);
 
   lanes.forEach((lane, index) => {
-    sh(lane, 'mkdir', '-p', 'apps');
-    sh(lane, 'sh', '-c', `echo lane${index} > apps/lane${index}.ts && git add -A && git commit -qm "feat: T-${index + 2} lane work"`);
+    writeFileIn(lane, `apps/lane${index}.ts`, `lane${index}
+`);
+    commitAll(lane, `feat: T-${index + 2} lane work`);
   });
   assert.equal(await exitCodeOf(['merge', '--dir', root, FEATURE]), 0);
   assert.ok(existsSync(join(root, 'apps/lane0.ts')) && existsSync(join(root, 'apps/lane1.ts')));

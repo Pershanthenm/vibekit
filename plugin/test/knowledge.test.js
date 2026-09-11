@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
 import { run } from '../src/cli.js';
 import { toResults } from '../src/knowledge.js';
-import { EXAMPLE, exitCodeOf, fillSpec, installFakeOpenContext, newProject, patchProject, read, runHook, setDocsEnabled, startFakeAgentmemory, writeTracedTests } from './helpers.js';
+import { EXAMPLE, TOOL_FREE_PATH, exitCodeOf, fillSpec, installFakeOpenContext, newProject, patchProject, read, runHook, setDocsEnabled, startFakeAgentmemory, writeTracedTests } from './helpers.js';
 
 const FEATURE = '001-shared-list';
 const ORIGINAL_ENV = { ...process.env };
@@ -93,7 +93,7 @@ test('playbook manifest is available for new projects', async () => {
 });
 
 test('without the oc CLI everything still works and status explains why', async () => {
-  process.env.PATH = '/usr/bin:/bin';
+  process.env.PATH = TOOL_FREE_PATH;
   const root = await finishedFeature();
   for (const status of ['approved', 'planned', 'in-progress', 'done']) await run(['status', '--dir', root, FEATURE, status]);
   assert.match(await read(root, `specs/features/${FEATURE}/spec.md`), /^status: done$/m);

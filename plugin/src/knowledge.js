@@ -5,6 +5,7 @@ import { promisify } from 'node:util';
 import { slugify } from './features.js';
 import { writeText } from './fsutil.js';
 import { isInstalled } from './git.js';
+import { runnable } from './which.js';
 
 const execFileAsync = promisify(execFile);
 const TIMEOUT_MS = 5000;
@@ -15,7 +16,8 @@ export const knowledgeFolder = (project) => project.knowledge.folder || `project
 const contextsRoot = () => process.env.OPENCONTEXT_CONTEXTS_ROOT || join(homedir(), '.opencontext', 'contexts');
 
 async function oc(...args) {
-  const { stdout } = await execFileAsync('oc', args, { timeout: TIMEOUT_MS });
+  const oc = runnable('oc', args);
+  const { stdout } = await execFileAsync(oc.command, oc.args, { timeout: TIMEOUT_MS, shell: oc.shell });
   return stdout;
 }
 

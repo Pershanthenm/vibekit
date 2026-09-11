@@ -6,7 +6,7 @@ import { afterEach, beforeEach, test } from 'node:test';
 import { run } from '../src/cli.js';
 import { CONTROLS } from '../src/security/controls.js';
 import { resolveSecurity, securityRounds } from '../src/security/questions.js';
-import { PASSING_SUITES, exitCodeOf, fillSpec, gitInit, newProject, patchProject, read, runHook, setDocsEnabled, sh, writeTracedTests } from './helpers.js';
+import { FAILS, PASSES, PASSING_SUITES, TOOL_FREE_PATH, commitAll, exitCodeOf, fillSpec, gitInit, newProject, patchProject, read, runHook, setDocsEnabled, sh, writeTracedTests } from './helpers.js';
 
 const LAPTOP_APP = {
   platform: 'web', appType: 'internal', scale: 'medium', clients: ['mobile'], ecosystem: 'microsoft', licensing: 'oss-only',
@@ -18,7 +18,7 @@ const ORIGINAL_ENV = { ...process.env };
 beforeEach(async () => {
   process.env.VIBECHECK_HOME = await mkdtemp(join(tmpdir(), 'vibecheck-home-'));
   process.env.AGENTMEMORY_URL = 'http://127.0.0.1:9';
-  process.env.PATH = '/usr/bin:/bin';
+  process.env.PATH = TOOL_FREE_PATH;
 });
 
 afterEach(() => {
@@ -131,7 +131,7 @@ test('verify traces criteria to tests and the done gate enforces it', async () =
 test('evidence must be fresh, clean and passing for every defined suite', async () => {
   const root = await newProject('--yes');
   await setDocsEnabled(root, false);
-  await patchProject(root, { commands: { test: 'true', smoke: 'true', ui: 'exit 1' } });
+  await patchProject(root, { commands: { test: PASSES, smoke: PASSES, ui: FAILS } });
   await run(['feature', '--dir', root, 'Assign laptop']);
   await fillSpec(root, '001-assign-laptop', { tasks: ['- [x] T-1 [impl] assign (AC-1)'] });
   const specPath = join(root, 'specs/features/001-assign-laptop/spec.md');
@@ -143,11 +143,12 @@ test('evidence must be fresh, clean and passing for every defined suite', async 
   assert.equal(await exitCodeOf(['verify', '--dir', root, '001', '--run']), 1, 'UI suite fails');
   await assert.rejects(run(['status', '--dir', root, '001', 'done']), /evidence: UI suite failed \(exit 1\)/);
 
-  await patchProject(root, { commands: { ui: 'true' } });
-  sh(root, 'sh', '-c', 'git add -A && git commit -qm "fix ui"');
+  await patchProject(root, { commands: { ui: PASSES } });
+  sh(root, 'git', 'add', '-A');
+  sh(root, 'git', 'commit', '-qm', 'fix ui');
   assert.equal(await exitCodeOf(['verify', '--dir', root, '001', '--run']), 0);
   await writeFile(join(root, 'src.ts'), 'export {}\n');
-  sh(root, 'sh', '-c', 'git add -A && git commit -qm "more code"');
+  commitAll(root, 'more code');
   await assert.rejects(run(['status', '--dir', root, '001', 'done']), /evidence: code changed since the last run/);
 });
 

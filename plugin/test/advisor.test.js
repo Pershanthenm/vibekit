@@ -10,7 +10,7 @@ import { nextRound, recommend } from '../src/advisor/recommend.js';
 import { initialMenuState, reduceMenu, renderMenu } from '../src/menu.js';
 import { run } from '../src/cli.js';
 import { CURSOR_CONTEXT, SKILLS } from '../src/generators/workflow.js';
-import { BIN, exitCodeOf, newProject, read } from './helpers.js';
+import { BIN, TOOL_FREE_PATH, exitCodeOf, newProject, read } from './helpers.js';
 
 const BASE = { appType: 'internal', scale: 'medium', clients: [], ecosystem: 'mixed', licensing: 'oss-preferred', team: [], data: 'relational', architecture: 'recommend', signin: 'local-mfa', security: [], compliance: 'standard' };
 const LAPTOP_APP = { ...BASE, platform: 'web', clients: ['mobile'], ecosystem: 'microsoft', licensing: 'permissive', team: ['csharp', 'typescript'], data: 'reporting', signin: 'sso', security: ['rbac-audit', 'mfa'], compliance: 'privacy', hosting: 'linux', integrations: ['directory', 'devices'], autonomy: 'gated', engine: 'cursor', context: ['docs'] };
@@ -20,7 +20,7 @@ const top = (result, layer) => result.layers[layer]?.ranked[0]?.id;
 beforeEach(async () => {
   process.env.VIBECHECK_HOME = await mkdtemp(join(tmpdir(), 'vibecheck-home-'));
   process.env.AGENTMEMORY_URL = 'http://127.0.0.1:9';
-  process.env.PATH = '/usr/bin:/bin';
+  process.env.PATH = TOOL_FREE_PATH;
 });
 
 afterEach(() => {
@@ -175,7 +175,7 @@ test('menu keys: arrows wrap, space toggles, enter confirms, Other and cancel', 
 
 test('init walks the adaptive menus end to end without a terminal', async () => {
   const root = await mkdtemp(join(tmpdir(), 'vibecheck-wizard-'));
-  const child = promisify(execFile)('node', [BIN, 'init', '--dir', root], { env: { ...process.env } });
+  const child = promisify(execFile)(process.execPath, [BIN, 'init', '--dir', root], { env: { ...process.env } });
   child.child.stdin.end(['laptop-tracker', 'Track company laptops', ...Array(60).fill('')].join('\n') + '\n');
   const { stdout } = await child;
   assert.match(stdout, /── Stack ──[\s\S]*Recommendation[\s\S]*★[\s\S]*Security baseline: \d+ controls/);

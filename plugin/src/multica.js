@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { isInstalled } from './git.js';
+import { runnable } from './which.js';
 
 const execFileAsync = promisify(execFile);
 const TIMEOUT_MS = 30000;
@@ -10,7 +11,8 @@ const UUID = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/;
 export const multicaInstalled = () => isInstalled('multica');
 
 export async function mc(args) {
-  const { stdout } = await execFileAsync('multica', args, { timeout: TIMEOUT_MS, maxBuffer: 10 * 1024 * 1024 });
+  const cli = runnable('multica', args);
+  const { stdout } = await execFileAsync(cli.command, cli.args, { timeout: TIMEOUT_MS, maxBuffer: 10 * 1024 * 1024, shell: cli.shell });
   return stdout;
 }
 

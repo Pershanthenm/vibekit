@@ -30,7 +30,7 @@ export async function toolChecks(project, platform, tools = toolsFor(project)) {
 
 function hookSelfTest(root) {
   try {
-    const output = execFileSync('node', [BIN, 'hook', 'session-start'], { cwd: root, input: JSON.stringify({ cwd: root }), encoding: 'utf8', env: toolEnv(), timeout: 30000 });
+    const output = execFileSync(process.execPath, [BIN, 'hook', 'session-start'], { cwd: root, input: JSON.stringify({ cwd: root }), encoding: 'utf8', env: toolEnv(), timeout: 30000 });
     return JSON.parse(output).hookSpecificOutput.additionalContext.includes('orchestrator protocol');
   } catch {
     return false;

@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
 import { run } from '../src/cli.js';
 import { STATIC_QUESTIONS } from '../src/advisor/questions.js';
-import { EXAMPLE, PASSING_SUITES, exitCodeOf, fillSpec, gitInit, installFakeMultica, newProject, patchProject, read, runHook, setDocsEnabled, sh, writeTracedTests } from './helpers.js';
+import { EXAMPLE, PASSING_SUITES, commitAll, exitCodeOf, fillSpec, gitInit, installFakeMultica, newProject, patchProject, read, runHook, setDocsEnabled, sh, tempDir, writeFileIn, writeTracedTests } from './helpers.js';
 
 const FEATURE = '001-shared-list';
 const TASKS = [
@@ -52,12 +52,14 @@ async function inProgressWithRemote({ push = true } = {}) {
 }
 
 function agentPushes(remote, baseCommit, branch, file) {
-  const clone = sh(tmpdir(), 'mktemp', '-d').trim();
+  const clone = tempDir('vibecheck-clone-');
   sh(clone, 'git', 'clone', '-q', remote, '.');
   sh(clone, 'git', 'config', 'user.email', 'agent@example.com');
   sh(clone, 'git', 'config', 'user.name', 'Agent');
   sh(clone, 'git', 'checkout', '-q', '-b', branch, baseCommit);
-  sh(clone, 'sh', '-c', `mkdir -p apps && echo done > ${file} && git add -A && git commit -qm "feat: lane work" && git push -q origin ${branch}`);
+  writeFileIn(clone, file, 'done\n');
+  commitAll(clone, 'feat: lane work');
+  sh(clone, 'git', 'push', '-q', 'origin', branch);
 }
 
 test('lanes become Multica issues and pushed branches merge back', async () => {
@@ -166,13 +168,15 @@ async function localProject() {
 }
 
 function localAgentPushes(root, branch, file) {
-  const clone = sh(tmpdir(), 'mktemp', '-d').trim();
+  const clone = tempDir('vibecheck-clone-');
   const base = sh(root, 'git', 'rev-parse', 'HEAD').trim();
   sh(clone, 'git', 'clone', '-q', root, '.');
   sh(clone, 'git', 'config', 'user.email', 'agent@example.com');
   sh(clone, 'git', 'config', 'user.name', 'Agent');
   sh(clone, 'git', 'checkout', '-q', '-b', branch, base);
-  sh(clone, 'sh', '-c', `mkdir -p apps && echo ok > ${file} && git add -A && git commit -qm "chore: agent" && git push -q origin ${branch}`);
+  writeFileIn(clone, file, 'ok\n');
+  commitAll(clone, 'chore: agent');
+  sh(clone, 'git', 'push', '-q', 'origin', branch);
 }
 
 test('local mode: agents on this machine clone the project folder, no git host needed', async () => {
@@ -192,7 +196,7 @@ test('local mode: agents on this machine clone the project folder, no git host n
 
   await patchProject(root, PASSING_SUITES);
   await writeTracedTests(root, FEATURE);
-  sh(root, 'sh', '-c', 'git add -A && git commit -qm "chore: suites and traced tests"');
+  commitAll(root, 'chore: suites and traced tests');
   assert.equal(await exitCodeOf(['verify', '--dir', root, FEATURE, '--run']), 0);
   assert.deepEqual(await laneStatus(), ['done', 'done'], 'lanes close once verification passes');
   assert.match((await fake.state()).comments.at(-1).content, /Verified at [0-9a-f]{8}: ✅ test · ✅ smoke · ✅ ui\. Done\./);
@@ -237,7 +241,7 @@ async function readyFeature() {
   await writeFile(tasksPath, (await readFile(tasksPath, 'utf8')).replaceAll('- [ ]', '- [x]'));
   await writeFile(specPath, (await readFile(specPath, 'utf8')).replace(/- \[ \] AC-/g, '- [x] AC-'));
   await writeTracedTests(root, FEATURE);
-  sh(root, 'sh', '-c', 'git add -A && git commit -qm "feat: shared list"');
+  commitAll(root, 'feat: shared list');
   assert.equal(await exitCodeOf(['verify', '--dir', root, FEATURE, '--run']), 0);
   return root;
 }
@@ -271,7 +275,7 @@ test('a board sign-off on stale code is sent back to review with the reason', as
   const root = await readyFeature();
   await run(['status', '--dir', root, FEATURE, 'done']);
   await writeFile(join(root, 'late-change.ts'), 'export const late = true;\n');
-  sh(root, 'sh', '-c', 'git add -A && git commit -qm "feat: late change"');
+  commitAll(root, 'feat: late change');
   const issue = await featureIssue();
   await fake.update((current) => { current.issues.find((entry) => entry.key === issue.key).status = 'done'; });
 
@@ -287,7 +291,7 @@ test('--force cannot mark done locally when sign-off lives on Multica; turning i
 
   const ready = await readyFeature();
   await patchProject(ready, { multica: { doneOnBoard: false } });
-  sh(ready, 'sh', '-c', 'git add -A && git commit -qm "chore: local done"');
+  commitAll(ready, 'chore: local done');
   assert.equal(await exitCodeOf(['verify', '--dir', ready, FEATURE, '--run']), 0);
   await run(['status', '--dir', ready, FEATURE, 'done']);
   assert.equal(await specStatus(ready), 'done');

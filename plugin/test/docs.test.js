@@ -5,7 +5,7 @@ import { afterEach, beforeEach, test } from 'node:test';
 import { run } from '../src/cli.js';
 import { globToRegExp } from '../src/docs/files.js';
 import { joinDoc, splitDoc } from '../src/docs/freshness.js';
-import { EXAMPLE, exitCodeOf, fillSpec, newProject, patchProject, read, runHook, sh, writeTracedTests } from './helpers.js';
+import { EXAMPLE, TOOL_FREE_PATH, exitCodeOf, fillSpec, newProject, patchProject, read, runHook, sh, writeFileIn, writeTracedTests } from './helpers.js';
 
 const FEATURE = '001-shared-list';
 const ORIGINAL_ENV = { ...process.env };
@@ -26,7 +26,7 @@ flowchart LR
 
 beforeEach(() => {
   process.env.AGENTMEMORY_URL = 'http://127.0.0.1:9';
-  process.env.PATH = '/usr/bin:/bin';
+  process.env.PATH = TOOL_FREE_PATH;
 });
 
 afterEach(() => {
@@ -48,7 +48,7 @@ async function freshProjectDocs(root) {
   await writeDocBody(root, 'docs/design/system.md', '# Design system\n\nTokens: 8px spacing grid, Inter type scale.\n');
   await run(['docs', '--dir', root, 'stamp', 'docs/architecture.md', 'docs/deployment.md', 'docs/design/system.md']);
   await writeFile(join(root, 'db/schema.sql'), 'create table households (id uuid primary key);\n').catch(async () => {
-    sh(root, 'mkdir', '-p', 'db');
+    writeFileIn(root, 'db/.keep', '');
     await writeFile(join(root, 'db/schema.sql'), 'create table households (id uuid primary key);\n');
   });
   await run(['docs', '--dir', root, 'stamp', 'docs/data-model.md']);
@@ -124,7 +124,7 @@ test('done requires fresh feature and design docs with the right diagrams', asyn
   await patchProject(root, { workflow: { evidence: false } });
   await freshProjectDocs(root);
   await plannedFeature(root, '\n## UI states per target\n\nWeb and mobile: loading, empty, error, success.\n');
-  sh(root, 'mkdir', '-p', 'apps/api');
+  writeFileIn(root, 'apps/api/.keep', '');
   await writeFile(join(root, 'apps/api/list.ts'), 'export const listRoute = () => [];\n');
   for (const status of ['planned', 'in-progress']) await run(['status', '--dir', root, FEATURE, status]);
   for (const name of ['spec.md', 'tasks.md']) {
