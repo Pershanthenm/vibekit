@@ -1,0 +1,135 @@
+{
+  "source": "ecc-universal",
+  "version": "2.2.1",
+  "requested": [
+    "agentic-engineering",
+    "ai-first-engineering",
+    "api-design",
+    "backend-patterns",
+    "code-review",
+    "coding-standards",
+    "configure-ecc",
+    "continuous-agent-loop",
+    "continuous-learning",
+    "continuous-learning-v2",
+    "cost-aware-llm-pipeline",
+    "database-migrations",
+    "database-reviewer",
+    "deployment-patterns",
+    "docker-patterns",
+    "frontend-patterns",
+    "frontend-slides",
+    "liquid-glass-design",
+    "multi-frontend",
+    "multi-workflow",
+    "plan",
+    "projects",
+    "quality-gate",
+    "resume-session",
+    "save-session",
+    "security-review",
+    "security-reviewer",
+    "security-scan",
+    "sessions",
+    "setup-pm",
+    "skill-create",
+    "strategic-compact",
+    "tdd-workflow",
+    "verification-loop",
+    "verify"
+  ],
+  "items": [
+    {
+      "name": "agentic-engineering",
+      "kind": "skill"
+    },
+    {
+      "name": "ai-first-engineering",
+      "kind": "skill"
+    },
+    {
+      "name": "api-design",
+      "kind": "skill"
+    },
+    {
+      "name": "backend-patterns",
+      "kind": "skill"
+    },
+    {
+      "name": "code-review",
+      "kind": "command"
+    },
+    {
+      "name": "coding-standards",
+      "kind": "skill"
+    },
+    {
+      "name": "continuous-agent-loop",
+      "kind": "skill"
+    },
+    {
+      "name": "cost-aware-llm-pipeline",
+      "kind": "skill"
+    },
+    {
+      "name": "database-migrations",
+      "kind": "skill"
+    },
+    {
+      "name": "database-reviewer",
+      "kind": "agent"
+    },
+    {
+      "name": "deployment-patterns",
+      "kind": "skill"
+    },
+    {
+      "name": "docker-patterns",
+      "kind": "skill"
+    },
+    {
+      "name": "frontend-patterns",
+      "kind": "skill"
+    },
+    {
+      "name": "frontend-slides",
+      "kind": "skill"
+    },
+    {
+      "name": "liquid-glass-design",
+      "kind": "skill"
+    },
+    {
+      "name": "resume-session",
+      "kind": "command"
+    },
+    {
+      "name": "save-session",
+      "kind": "command"
+    },
+    {
+      "name": "security-review",
+      "kind": "skill"
+    },
+    {
+      "name": "security-reviewer",
+      "kind": "agent"
+    },
+    {
+      "name": "security-scan",
+      "kind": "skill"
+    },
+    {
+      "name": "skill-create",
+      "kind": "command"
+    },
+    {
+      "name": "tdd-workflow",
+      "kind": "skill"
+    },
+    {
+      "name": "verification-loop",
+      "kind": "skill"
+    }
+  ]
+}
