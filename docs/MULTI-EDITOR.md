@@ -1,7 +1,7 @@
 # Multi-editor — one project, many agent tools
 
 - **Product:** Vibe-check-cli
-- **Status:** Claude Code, Cursor and Antigravity implemented. `editors` selection not built.
+- **Status:** Claude Code, Cursor, Antigravity and Windsurf implemented; Codex works through `AGENTS.md`. `editors` selection not built.
 - **Date:** 2026-09-11
 
 ## 1. Problem
@@ -28,8 +28,22 @@ file under `src/generators/`, so adding an editor is additive.
 AGENTS.md                     neutral spine — every editor reads this
 ├── CLAUDE.md, .claude/       Claude Code
 ├── .cursor/                  Cursor: rules, commands, agents, worktrees
-└── .agents/                  Antigravity: rules, workflows
+├── .agents/                  Antigravity: rules, workflows
+├── .windsurf/                Windsurf: compact pointer rules
+└── (Codex needs nothing)     OpenAI's Codex reads the root AGENTS.md directly
 ```
+
+`AGENTS.md` is not a Vibe-check-cli invention: OpenAI created it and contributed it to the
+Agentic AI Foundation under the Linux Foundation in December 2025. Anything that reads it —
+Codex included — gets the full brief with no adapter at all.
+
+### Windsurf's budget is the tight one
+
+Windsurf caps each rule file at 6,000 characters **and all rules combined at 12,000**
+([Windsurf docs](https://docs.windsurf.com/windsurf/cascade/agents-md)). Mirroring the full
+Cursor rule set would blow that, so the Windsurf adapter deliberately emits three short
+pointer rules and leans on the root `AGENTS.md`, which Cascade already treats as an always-on
+rule. A test asserts both limits, because the alternative is rules that silently stop loading.
 
 ## 3. What a new project gets
 

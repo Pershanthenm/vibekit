@@ -21,11 +21,12 @@ import { memory } from './commands/memory.js';
 import { merge } from './commands/merge.js';
 import { multica } from './commands/multica.js';
 import { next } from './commands/next.js';
+import { standards } from './commands/standards.js';
 import { sync } from './commands/sync.js';
 import { verify } from './commands/verify.js';
 import { security } from './commands/security.js';
 
-const COMMANDS = { init, adopt, sync, feature, status, list, check, next, lanes, dispatch, merge, memory, knowledge, context, docs, advise, security, verify, multica, health, doctor: health, setup, version, 'cursor-agents': cursorAgents, 'cursor-kit': cursorAgents, team, projects, hook };
+const COMMANDS = { init, adopt, sync, feature, status, list, check, next, lanes, dispatch, merge, memory, knowledge, context, docs, advise, security, standards, verify, multica, health, doctor: health, setup, version, 'cursor-agents': cursorAgents, 'cursor-kit': cursorAgents, team, projects, hook };
 
 const OPTIONS = {
   dir: { type: 'string' },
@@ -43,6 +44,7 @@ const OPTIONS = {
   remove: { type: 'boolean' },
   repo: { type: 'string' },
   skip: { type: 'string' },
+  paths: { type: 'string' },
   prune: { type: 'boolean' },
   version: { type: 'string' },
   from: { type: 'string' },
@@ -77,6 +79,7 @@ Usage
   vibecheck docs <status | new <kind> [feature] | stamp <path...> [--still-accurate]>
                                                          Living docs & diagrams with freshness tracking
   vibecheck security [questions | apply | status]       Security baseline by menu, tailored to your stack
+  vibecheck standards <list | index | inject "<task>">   Your coding standards, injected only where relevant
   vibecheck verify [feature] [--run]                     Trace acceptance criteria to tests (and run them)
   vibecheck multica <status | sync | pull | selftest>    Multica: health, board mirror, done sign-offs, real agent round trip
   vibecheck projects [--prune] [--json]                  Every Vibe-check-cli project on this machine: where it is and what's next

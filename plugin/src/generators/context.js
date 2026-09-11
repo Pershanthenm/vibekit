@@ -41,6 +41,14 @@ export const EVIDENCE = [
   '10. Say plainly what you did not do: parts skipped, checks not run, criteria not met. Unreported gaps are the costliest kind.',
 ].join('\n');
 
+export const STANDARDS = [
+  'Project standards live in `standards/`, one topic per file, grouped into domain folders and indexed by `standards/index.yml`.',
+  'Read the index first, then open only the standards that match the task. Loading the whole library wastes context and buries the rules that matter.',
+  '`vibecheck standards inject "<task>"` lists the relevant ones; add `--paths a,b` to match standards scoped by globs to the files you are touching.',
+  'If nothing matches, say so. Do not invent a convention and do not assume one from another project.',
+  'After adding or editing a standard, run `vibecheck standards index` so the index stays true.',
+].join('\n');
+
 const REVIEW_CHECKLIST = bullets([
   'Every acceptance criterion has a test that fails without the change.',
   'No dependency points the wrong way across architecture boundaries.',
@@ -106,6 +114,7 @@ function renderAgentsMd(project) {
     section('Non-functional requirements', nfrBullets(project.nfr)),
     section('Spec-driven workflow (mandatory)', WORKFLOW),
     section('Evidence over guesswork (mandatory)', EVIDENCE),
+    section('Standards', STANDARDS),
     section('Agent roles', agentRolesSection()),
     project.memory.provider === 'agentmemory' && section('Memory', MEMORY_RULES),
     project.security.controls.length && section('Security baseline (mandatory)', `${bullets(securityRules(project))}\n\nDetails, implementation per control and accepted risks: \`specs/security.md\`.`),

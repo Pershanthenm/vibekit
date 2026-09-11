@@ -70,13 +70,25 @@ test('every editor gets its own folder from one project definition', () => {
   assert.ok(paths.includes('CLAUDE.md'), 'Claude Code');
   assert.ok(paths.some((path) => path.startsWith('.cursor/rules/')), 'Cursor');
   assert.ok(paths.some((path) => path.startsWith('.agents/rules/')), 'Antigravity');
+  assert.ok(paths.some((path) => path.startsWith('.windsurf/rules/')), 'Windsurf');
   assert.equal(new Set(paths).size, paths.length, 'no two generators may claim the same path');
+});
+
+// Windsurf caps individual rules at 6,000 characters and ALL rules combined at 12,000.
+test('Windsurf rules stay inside the combined 12,000 character budget', () => {
+  const rules = buildManagedFiles(projectWith({ security: { controls: ['rbac', 'object-level', 'field-encryption'] }, docs: { enabled: true } }))
+    .filter((entry) => entry.path.startsWith('.windsurf/rules/'));
+
+  assert.ok(rules.length, 'expected Windsurf rules');
+  for (const entry of rules) assert.ok(entry.content.length <= 6000, `${entry.path} is ${entry.content.length} characters, over the 6,000 per-file limit`);
+  const total = rules.reduce((sum, entry) => sum + entry.content.length, 0);
+  assert.ok(total <= 12000, `Windsurf rules total ${total} characters, over the 12,000 combined limit`);
 });
 
 test('a new project is scaffolded with every editor folder on disk', async () => {
   const root = await newProject('--from', EXAMPLE);
 
-  for (const path of ['AGENTS.md', 'CLAUDE.md', '.claude/settings.json', '.cursor/rules', '.agents/rules', '.agents/workflows']) {
+  for (const path of ['AGENTS.md', 'CLAUDE.md', '.claude/settings.json', '.cursor/rules', '.agents/rules', '.agents/workflows', '.windsurf/rules']) {
     assert.ok(existsSync(join(root, path)), `${path} is missing from a new project`);
   }
 
