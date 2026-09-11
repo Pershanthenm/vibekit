@@ -36,7 +36,11 @@ An always-on, spec-driven agent workflow. **Claude Code is the orchestrator; Cur
 /reload-plugins
 ```
 
-The plugin puts the `vibecheck` CLI on Claude Code's PATH, registers the hooks and adds the `/vibe-check-cli:*` skills. No separate terminal needed. For parallel lanes on Cursor, install the Cursor CLI (`cursor-agent`) and log in once. Optional: `npm install -g ./plugin` to use `vibecheck` in a normal terminal too.
+The plugin puts the `vibecheck` CLI on Claude Code's PATH, registers the hooks and adds the `/vibe-check-cli:*` skills. No separate terminal needed. Optional: `npm install -g ./plugin` to use `vibecheck` in a normal terminal too.
+
+**Required tools.** `vibecheck setup` installs **Docker**, the **Cursor CLI** (`cursor-agent`), **agentmemory** and **Multica** on every machine, alongside Node.js, Git and Claude Code. These are requirements rather than per-project extras: a project that picks one engine or memory provider would otherwise never install the others, and the gap only surfaces the day you switch. Run `vibecheck setup --dry-run` to see the plan without changing anything, and `vibecheck health` to see what is still missing.
+
+Two costs worth knowing up front. Docker Desktop is a heavy install that wants a reboot, and it is now proposed on every machine. And agentmemory has **no automatic install on native Windows**: setup prints it as a manual WSL2 step rather than running it, so `vibecheck health` keeps reporting it until you move to WSL2 or accept a standing red line. Sign-ins are yours to do: `agent login` for the Cursor CLI, and `claude` once for Claude Code.
 
 **Memory (agentmemory).** Start the memory server once (`npx -y @agentmemory/agentmemory@latest`, keep it running), then `/plugin install agentmemory@agentmemory` (projects created by Vibe-check-cli already list its marketplace and enable it in `.claude/settings.json`). For Cursor, run `agentmemory connect cursor` or install its Cursor plugin, so Cursor agents read and write the same memory.
 
@@ -66,6 +70,43 @@ Then it moves to the next feature. Every step ends with verification, `vibecheck
 **Where Cursor fits.** Plans put shared groundwork (contracts, schema) first, then a block of `[P]` tasks with disjoint files (API · web UI · mobile UI), then integration and e2e. Claude runs `vibecheck dispatch <id>` in the background: one git worktree and branch per lane, dependencies installed, one headless `cursor-agent` per lane with a focused brief. Lanes commit with task ids and never touch `specs/`. When they finish, `vibecheck merge <id>` merges each branch, removes worktrees and hands back to Claude to verify and tick tasks.
 
 Prefer watching agents in Cursor's UI? Set `"engine": "manual"`. Dispatch then only prepares the worktrees and prompt files; open each worktree in Cursor, start an agent, paste its prompt, and tell Claude when they're done. `"engine": "claude"` uses headless Claude Code instead.
+
+## Adopting an existing codebase
+
+Most work isn't greenfield. `vibecheck adopt` points Vibe-check-cli at a repository that already
+exists and describes it **as it is**, without a rewrite.
+
+It walks the tree once and detects languages by share of files, plus frameworks and versions from
+`package.json`, `*.csproj`, `packages.config`, `pom.xml`, `build.gradle`, `requirements*.txt`,
+`pyproject.toml`, `composer.json` and `go.mod`. Dependency and build folders (`node_modules`,
+`bin`, `obj`, `vendor`, `packages`, …) are skipped, so vendored code can't skew the result.
+
+It writes four things:
+
+| File | What it holds |
+|---|---|
+| `specs/project.json` | The as-is stack, marked `"origin": "adopted"` |
+| `assessment/adopt.md` | What was found, what was **not**, and every manifest it read |
+| `docs/architecture.md` | As-is structure from the top-level folders |
+| `docs/data-model.md` | An `erDiagram` parsed from EF6 or EF Core migrations, stamped against them |
+
+**Nothing is guessed.** Where a command can't be detected it is left empty and listed under "Not
+determined" — including where a language preset would otherwise have supplied a plausible
+default. An invented test command is worse than an absent one, because agents trust it. For the
+same reason the data model shows columns but never infers relationships, and says so plainly when
+no migration parses rather than emitting an empty diagram.
+
+Adopting a repository that already has `specs/project.json` changes nothing: it reports what it
+would have recorded and exits. Use `--force` to overwrite, `--json` for machine-readable output.
+
+Existing code needs no specs. New work goes through features as usual.
+
+**One consequence to expect:** `vibecheck check` requires a test command, so an adopted project
+isn't green until you supply one. That's deliberate — agents have no way to verify their work
+without it.
+
+Assess, modernize and migrate are specified but not built. See
+[BROWNFIELD.md](BROWNFIELD.md), which marks every acceptance criterion as built or not.
 
 ## Claude Code and Cursor, working together
 
@@ -253,6 +294,29 @@ Everything memory- and knowledge-related fails open. If the server is down, the 
 
 Hooks are silent in folders without `specs/project.json`, so installing the plugin at user level is safe.
 
+## Evidence over guesswork
+
+Every generated `AGENTS.md` carries a mandatory **Evidence over guesswork** section. It exists
+because the expensive failure mode isn't obvious nonsense — it's confident, plausible output: an
+invented config key, a test command that follows the usual convention but doesn't exist here, a
+criterion quietly softened so an implementation fits, a check reported as passing because it
+should have passed.
+
+The ten rules require agents to:
+
+- check a claim before writing it down, and cite where it came from (`path/to/file.ts:42`, a
+  command and its output, or the spec section);
+- never invent an API, package, flag, config key or version without confirming it exists;
+- treat **unknown as a valid answer**, recorded as `TODO(unknown): <question>` and raised, rather
+  than filled with something that reads well;
+- never report a test, build or check as passing without running it and seeing it pass;
+- avoid fixtures that merely encode the same assumption the code makes;
+- take acceptance criteria from the spec rather than reshaping them to fit;
+- treat the code as the evidence when spec, code and expectation disagree;
+- state plainly what was **not** done — skipped parts, unrun checks, unmet criteria.
+
+This is the same rule `vibecheck adopt` enforces in code, extended to work agents do by hand.
+
 ## Configuration — `specs/project.json` → `workflow`
 
 ```jsonc
@@ -284,7 +348,7 @@ After editing, Claude runs `vibecheck sync`. `AGENTS.md`, `CLAUDE.md`, the subag
 
 ## CLI reference
 
-`init` · `sync` · `feature "<name>"` · `status <id> <status>` · `list` · `check` · `next [--json]` · `lanes <id>` · `dispatch <id> [--engine] [--dry-run]` · `merge <id>` · `memory <status|recall|remember>` · `knowledge <status|search|manifest|publish>` · `context <feature|topic>` · `docs <status|new|stamp>` · `advise [next|recommend|apply [preset]|components|presets|prefer]` · `security [questions|apply|status]` · `verify [feature] [--run]` · `multica [status|sync|pull|selftest]` · `setup [--dry-run] [--only]` · `health [--live]` · `version` · `hook <event>`. Run `vibecheck --help` for details.
+`init` · `adopt [--force] [--json]` · `sync` · `feature "<name>"` · `status <id> <status>` · `list` · `check` · `next [--json]` · `lanes <id>` · `dispatch <id> [--engine] [--dry-run]` · `merge <id>` · `memory <status|recall|remember>` · `knowledge <status|search|manifest|publish>` · `context <feature|topic>` · `docs <status|new|stamp>` · `advise [next|recommend|apply [preset]|components|presets|prefer]` · `security [questions|apply|status]` · `verify [feature] [--run]` · `multica [status|sync|pull|selftest]` · `setup [--dry-run] [--only]` · `health [--live]` · `version` · `hook <event>`. Run `vibecheck --help` for details.
 
 ## Limits worth knowing
 
