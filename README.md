@@ -37,6 +37,7 @@ flowchart LR
 | **Guardrails** | Hooks at session start, before every edit, and at the end of every turn |
 | **Quality gates** | Acceptance-criteria traceability, test, smoke and UI evidence per commit, living docs, a security baseline mapped to OWASP ASVS |
 | **Machine setup** | `setup` installs and configures what each machine needs; `health` checks everything and names the fix |
+| **Any agent editor** | One project, three front ends: Claude Code, Cursor and Google Antigravity each get their own generated config from a single `specs/project.json` |
 | **Brownfield** | `adopt` detects the stack of an existing repository and writes as-is docs, guessing nothing |
 | **Anti-hallucination** | Every generated `AGENTS.md` carries mandatory evidence rules: cite the source, never invent an API or command, never report an unrun check as passing |
 
@@ -85,7 +86,7 @@ Projects live in `~/projects/<name>` (on Windows, `C:\Users\<you>\projects\<name
 
 ## Requirements
 
-- **Cursor** with the **Claude Code** extension, or Claude Code on its own
+- **Cursor** with the **Claude Code** extension, Claude Code on its own, or **Google Antigravity** — every project is scaffolded for all three
 - A Claude plan that includes Claude Code, and a Cursor account
 - **Git**, and **Node.js 20+** (the setup installs Node.js if it's missing)
 - **Docker**, the **Cursor CLI**, **agentmemory** and **Multica** — `vibecheck setup` installs
@@ -104,6 +105,7 @@ Projects live in `~/projects/<name>` (on Windows, `C:\Users\<you>\projects\<name
 | [SETUP-WINDOWS.md](SETUP-WINDOWS.md) · [SETUP-MAC.md](SETUP-MAC.md) | A detailed personal setup, including WSL2 and Multica |
 | [GUIDE.md](GUIDE.md) | Working day to day: parallel agents, testing, reviews, troubleshooting |
 | [docs/BROWNFIELD.md](docs/BROWNFIELD.md) | Existing codebases: adopt, and the assess/modernize/migrate plan |
+| [docs/MULTI-EDITOR.md](docs/MULTI-EDITOR.md) | Using Claude Code, Cursor or Antigravity on the same project |
 | [docs/REFERENCE.md](docs/REFERENCE.md) | Every feature, setting and command |
 
 ## Updating and starting over
