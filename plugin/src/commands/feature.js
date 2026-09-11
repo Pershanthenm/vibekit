@@ -17,7 +17,7 @@ export async function feature({ root, args }) {
   const id = nextFeatureId(await listFeatures(root), title);
   await writeMissing(root, featureFiles({ id, title, targets: project.targets }));
   await refreshRoadmap(root, project);
-  console.log(`✔ Created ${FEATURES_DIR}/${id}/ (spec.md, plan.md, tasks.md)`);
+  console.log(`✔ Created ${FEATURES_DIR}/${id}/ (spec.md, plan.md, tasks.md, review.md)`);
 }
 
 export async function status({ root, args, force = false }) {

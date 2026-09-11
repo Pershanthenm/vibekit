@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
 import { run } from '../src/cli.js';
 import { STATIC_QUESTIONS } from '../src/advisor/questions.js';
-import { EXAMPLE, PASSING_SUITES, commitAll, exitCodeOf, fillSpec, gitInit, installFakeMultica, newProject, patchProject, read, restoreEnv, runHook, setDocsEnabled, sh, tempDir, writeFileIn, writeTracedTests } from './helpers.js';
+import { EXAMPLE, PASSING_SUITES, approveReview, commitAll, exitCodeOf, fillSpec, gitInit, installFakeMultica, newProject, patchProject, read, restoreEnv, runHook, setDocsEnabled, sh, tempDir, writeFileIn, writeTracedTests } from './helpers.js';
 
 // A filesystem path goes into these patterns verbatim, and on Windows it is full of
 // backslashes, which a RegExp would read as escapes.
@@ -255,6 +255,7 @@ const specStatus = async (root) => (await read(root, `specs/features/${FEATURE}/
 
 test('features are marked done on Multica, then verified and recorded', async () => {
   const root = await readyFeature();
+  await approveReview(root, FEATURE);
   await run(['status', '--dir', root, FEATURE, 'done']);
   assert.equal(await specStatus(root), 'in-progress', 'marking done locally only asks for sign-off');
   const issue = await featureIssue();
@@ -277,6 +278,7 @@ test('features are marked done on Multica, then verified and recorded', async ()
 
 test('a board sign-off on stale code is sent back to review with the reason', async () => {
   const root = await readyFeature();
+  await approveReview(root, FEATURE);
   await run(['status', '--dir', root, FEATURE, 'done']);
   await writeFile(join(root, 'late-change.ts'), 'export const late = true;\n');
   commitAll(root, 'feat: late change');
@@ -297,6 +299,7 @@ test('--force cannot mark done locally when sign-off lives on Multica; turning i
   await patchProject(ready, { multica: { doneOnBoard: false } });
   commitAll(ready, 'chore: local done');
   assert.equal(await exitCodeOf(['verify', '--dir', ready, FEATURE, '--run']), 0);
+  await approveReview(ready, FEATURE);
   await run(['status', '--dir', ready, FEATURE, 'done']);
   assert.equal(await specStatus(ready), 'done');
 });

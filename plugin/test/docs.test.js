@@ -5,7 +5,7 @@ import { afterEach, beforeEach, test } from 'node:test';
 import { run } from '../src/cli.js';
 import { globToRegExp } from '../src/docs/files.js';
 import { joinDoc, splitDoc } from '../src/docs/freshness.js';
-import { EXAMPLE, TOOL_FREE_PATH, exitCodeOf, fillSpec, newProject, patchProject, read, restoreEnv, runHook, sh, writeFileIn, writeTracedTests } from './helpers.js';
+import { EXAMPLE, TOOL_FREE_PATH, approveReview, exitCodeOf, fillSpec, newProject, patchProject, read, restoreEnv, runHook, sh, writeFileIn, writeTracedTests } from './helpers.js';
 
 const FEATURE = '001-shared-list';
 const ORIGINAL_ENV = { ...process.env };
@@ -148,6 +148,7 @@ test('done requires fresh feature and design docs with the right diagrams', asyn
   assert.equal(await exitCodeOf(['check', '--dir', root]), 0, 'code drift is a warning mid-feature');
   await assert.rejects(run(['status', '--dir', root, FEATURE, 'done']), /features\/001-shared-list\.md — its sources changed/);
   await run(['docs', '--dir', root, 'stamp', `docs/features/${FEATURE}.md`, `docs/design/${FEATURE}.md`, '--still-accurate']);
+  await approveReview(root, FEATURE);
   await run(['status', '--dir', root, FEATURE, 'done']);
   assert.match(await read(root, 'docs/roadmap.md'), /subgraph done\["Done"\]/);
 });

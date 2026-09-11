@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
 import { run } from '../src/cli.js';
 import { toResults } from '../src/knowledge.js';
-import { EXAMPLE, TOOL_FREE_PATH, exitCodeOf, fillSpec, installFakeOpenContext, newProject, patchProject, read, restoreEnv, runHook, setDocsEnabled, startFakeAgentmemory, writeTracedTests } from './helpers.js';
+import { EXAMPLE, TOOL_FREE_PATH, approveReview, exitCodeOf, fillSpec, installFakeOpenContext, newProject, patchProject, read, restoreEnv, runHook, setDocsEnabled, startFakeAgentmemory, writeTracedTests } from './helpers.js';
 
 const FEATURE = '001-shared-list';
 const ORIGINAL_ENV = { ...process.env };
@@ -33,7 +33,7 @@ async function finishedFeature() {
   await fillSpec(root, FEATURE, { tasks: ['- [ ] T-1 [impl] build it (AC-1)'] });
   const dir = join(root, 'specs/features', FEATURE);
   await writeFile(join(dir, 'plan.md'), '# Plan\n\n## Approach\n\nRow-level security per household.\n');
-  await writeFile(join(dir, 'review.md'), '# Review\n\n## Verdict\n\nNo blocking issues.\n');
+  await writeFile(join(dir, 'review.md'), '---\nverdict: approved\nreviewer: Test Reviewer\n---\n\n# Review\n\n## Verdict\n\nNo blocking issues.\n');
   for (const name of ['spec.md', 'tasks.md']) {
     await writeFile(join(dir, name), (await readFile(join(dir, name), 'utf8')).replaceAll('- [ ]', '- [x]'));
   }
@@ -44,7 +44,8 @@ async function finishedFeature() {
 test('finishing a feature publishes a feature record to the OpenContext library', async () => {
   const fake = await useFakeOpenContext();
   const root = await finishedFeature();
-  for (const status of ['approved', 'planned', 'in-progress', 'done']) await run(['status', '--dir', root, FEATURE, status]);
+  for (const status of ['approved', 'planned', 'in-progress']) await run(['status', '--dir', root, FEATURE, status]);
+  await run(['status', '--dir', root, FEATURE, 'done']);
 
   const record = await readFile(join(fake.contextsRoot, 'projects/mealmate', `${FEATURE}.md`), 'utf8');
   assert.match(record, /# 001-shared-list — Shared list[\s\S]*AC-1[\s\S]*Row-level security[\s\S]*No blocking issues/);
@@ -95,7 +96,9 @@ test('playbook manifest is available for new projects', async () => {
 test('without the oc CLI everything still works and status explains why', async () => {
   process.env.PATH = TOOL_FREE_PATH;
   const root = await finishedFeature();
-  for (const status of ['approved', 'planned', 'in-progress', 'done']) await run(['status', '--dir', root, FEATURE, status]);
+  for (const status of ['approved', 'planned', 'in-progress']) await run(['status', '--dir', root, FEATURE, status]);
+  await approveReview(root, FEATURE);
+  await run(['status', '--dir', root, FEATURE, 'done']);
   assert.match(await read(root, `specs/features/${FEATURE}/spec.md`), /^status: done$/m);
   assert.equal(await exitCodeOf(['knowledge', '--dir', root, 'status']), 1);
 });

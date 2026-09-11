@@ -47,6 +47,18 @@ export async function loadEvidence(root, featureId) {
 
 export const clearEvidence = async (root, featureId) => rm(evidencePath(root, featureId), { force: true }).catch(() => {});
 
+// Recording a review is itself a commit, so HEAD moves when a reviewer writes their verdict
+// down. Evidence still describes the same code when that commit is the only thing between:
+// a review.md edit changes nothing the suites ran against.
+function onlyReviewChanged(root, from, to, featureId) {
+  try {
+    const changed = git(root, 'diff', '--name-only', `${from}..${to}`).split(/\r?\n/).filter(Boolean);
+    return changed.length > 0 && changed.every((path) => path === `specs/features/${featureId}/review.md`);
+  } catch {
+    return false;
+  }
+}
+
 export async function evidenceProblems(root, project, feature) {
   if (!project.workflow.evidence) return [];
   const state = repoState(root);
@@ -55,7 +67,9 @@ export async function evidenceProblems(root, project, feature) {
   const evidence = await loadEvidence(root, feature.id);
   if (!evidence) return [`evidence: no recorded test, smoke and UI run — ${rerun}`];
   if (evidence.dirty) return [`evidence: last run had uncommitted changes — commit, then ${rerun}`];
-  if (evidence.commit !== state.commit) return [`evidence: code changed since the last run (${evidence.commit.slice(0, 8)} → ${state.commit.slice(0, 8)}) — ${rerun}`];
+  if (evidence.commit !== state.commit && !onlyReviewChanged(root, evidence.commit, state.commit, feature.id)) {
+    return [`evidence: code changed since the last run (${evidence.commit.slice(0, 8)} → ${state.commit.slice(0, 8)}) — ${rerun}`];
+  }
   const recorded = new Map(evidence.suites.map((result) => [result.suite, result]));
   return definedSuites(project).flatMap((suite) => {
     const result = recorded.get(suite);

@@ -294,6 +294,29 @@ Everything memory- and knowledge-related fails open. If the server is down, the 
 
 Hooks are silent in folders without `specs/project.json`, so installing the plugin at user level is safe.
 
+## Code review is a gate, not a suggestion
+
+Every feature is scaffolded with `specs/features/<id>/review.md`, and a feature cannot reach
+`done` until it holds an approving review. Passing tests are not the same as a reviewed change.
+
+The gate refuses when:
+
+- no review is recorded, or the front matter has no `verdict`;
+- the verdict is `changes-requested`;
+- an unticked `BLOCKER` or `MAJOR` finding remains;
+- the `commit` the review names is not the current one — a review of code that has since
+  changed does not count, exactly as stale test evidence does not.
+
+Recording the review is itself a commit, so a commit that touches **only** `review.md` leaves
+both the review and the test evidence valid. Anything else means the code moved on.
+
+In a project with no git repository there is no commit to tie a review to, so the verdict alone
+is the gate — the same way the evidence gate steps aside without git.
+
+`/vibe-check-cli:review-feature` delegates to the read-only **reviewer** subagent and writes the
+file. Teams that review somewhere else (GitHub PRs, for example) can set
+`workflow.review: false` in `specs/project.json`, alongside `traceability` and `evidence`.
+
 ## Do the artefacts agree? `vibecheck analyze`
 
 `vibecheck check` validates the schema and detects drift. `vibecheck verify` traces acceptance

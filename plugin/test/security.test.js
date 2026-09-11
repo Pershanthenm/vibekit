@@ -6,7 +6,7 @@ import { afterEach, beforeEach, test } from 'node:test';
 import { run } from '../src/cli.js';
 import { CONTROLS } from '../src/security/controls.js';
 import { resolveSecurity, securityRounds } from '../src/security/questions.js';
-import { FAILS, PASSES, PASSING_SUITES, TOOL_FREE_PATH, commitAll, exitCodeOf, fillSpec, gitInit, newProject, patchProject, read, restoreEnv, runHook, setDocsEnabled, sh, writeTracedTests } from './helpers.js';
+import { FAILS, PASSES, PASSING_SUITES, TOOL_FREE_PATH, approveReview, commitAll, exitCodeOf, fillSpec, gitInit, newProject, patchProject, read, restoreEnv, runHook, setDocsEnabled, sh, writeTracedTests } from './helpers.js';
 
 const LAPTOP_APP = {
   platform: 'web', appType: 'internal', scale: 'medium', clients: ['mobile'], ecosystem: 'microsoft', licensing: 'oss-only',
@@ -124,6 +124,7 @@ test('verify traces criteria to tests and the done gate enforces it', async () =
   gitInit(root);
   await assert.rejects(run(['status', '--dir', root, '001', 'done']), /evidence: no recorded test, smoke and UI run/);
   assert.equal(await exitCodeOf(['verify', '--dir', root, '001', '--run']), 0);
+  await approveReview(root, '001-assign-laptop');
   await run(['status', '--dir', root, '001', 'done']);
   assert.match(await read(root, 'specs/features/001-assign-laptop/spec.md'), /^status: done$/m);
 });

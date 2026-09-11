@@ -1,4 +1,5 @@
 import { FEATURES_DIR } from '../features.js';
+import { reviewTemplate } from '../review.js';
 import { file, frontMatter, markdown, section } from './shared.js';
 
 function renderSpec({ id, title, targets }) {
@@ -41,5 +42,6 @@ export function featureFiles(feature) {
     file(`${dir}/spec.md`, renderSpec(feature)),
     file(`${dir}/plan.md`, renderPlan(feature)),
     file(`${dir}/tasks.md`, renderTasks(feature)),
+    file(`${dir}/review.md`, reviewTemplate(feature.id)),
   ];
 }

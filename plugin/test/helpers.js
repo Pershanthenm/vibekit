@@ -46,6 +46,17 @@ export function writeFileIn(root, relativePath, content) {
   writeFileSync(target, content);
 }
 
+// Features cannot reach `done` without a recorded review. Tests about the other gates record
+// an approving one so they still exercise what they are actually about.
+export async function approveReview(root, featureId, reviewer = 'Test Reviewer') {
+  const { reviewPath } = await import('../src/review.js');
+  const { repoState } = await import('../src/evidence.js');
+  const { writeFile: write } = await import('node:fs/promises');
+  const state = repoState(root);
+  await write(reviewPath(root, featureId), `---\nverdict: approved\ncommit: ${state ? state.commit : ''}\nreviewer: ${reviewer}\n---\n\n## Findings\n\n`);
+  if (state) commitAll(root, `chore: review ${featureId}`);
+}
+
 export function commitAll(root, message) {
   sh(root, 'git', 'add', '-A');
   sh(root, 'git', 'commit', '-qm', message);

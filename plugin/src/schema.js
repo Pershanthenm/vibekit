@@ -56,6 +56,7 @@ export const DEFAULT_PROJECT = {
     skills: 'plugin',
     traceability: true,
     evidence: true,
+    review: true,
     routes: [],
   },
   memory: {
@@ -135,6 +136,7 @@ function validateWorkflow(workflow) {
     !(Number.isInteger(workflow.maxLanes) && workflow.maxLanes > 0) && 'workflow.maxLanes must be a positive integer',
     typeof workflow.traceability !== 'boolean' && 'workflow.traceability must be true or false',
     typeof workflow.evidence !== 'boolean' && 'workflow.evidence must be true or false',
+    typeof workflow.review !== 'boolean' && 'workflow.review must be true or false',
     ...validateRoutes(workflow.routes),
   ].filter(Boolean);
 }

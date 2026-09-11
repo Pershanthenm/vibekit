@@ -161,8 +161,17 @@ Delegate to the read-only **reviewer** subagent, and write \`specs/features/<id>
 5. **Docs** — do the feature doc, design doc and any touched diagrams match the code? \`vibecheck docs status\` must be clean for this feature.
 6. **Verdict** — blocking issues first, then suggestions.
 
+Record the outcome in \`specs/features/<id>/review.md\`, which is scaffolded with every feature. The
+done gate reads it, so it has to be accurate rather than tidy:
+- Front matter needs \`verdict: approved\` or \`verdict: changes-requested\`, \`commit: <sha of the commit you
+  actually read>\` (\`git rev-parse HEAD\`), and \`reviewer:\`.
+- Write each finding as \`- [ ] BLOCKER: <what>\`, \`MAJOR\` or \`MINOR\`. An unticked BLOCKER or MAJOR
+  blocks \`done\`, so tick one only once it is genuinely resolved.
+- Leave the verdict at \`changes-requested\` until it is honestly approved. Approving to unblock the
+  gate defeats the point of having it.
+
 Present the findings and ask before fixing anything. When nothing blocking remains:
-1. Commit everything (review, docs, ticks) — evidence is tied to a clean commit.
+1. Commit everything (review, docs, ticks) — evidence is tied to a clean commit. A commit that only touches \`review.md\` does not invalidate evidence or the review itself.
 2. Run \`vibecheck verify <id> --run\`: tests, smoke and UI suites run, criteria are traced, and the result is recorded as evidence for that commit.
 3. Run \`vibecheck status <id> done\`. With a Multica board, this moves the feature's issue to In review with the evidence checklist; **the user marks it done on Multica**, and Vibe-check-cli re-checks and records it. Without a board it marks done locally. It refuses while criteria, tasks, docs or evidence fall short. Save any non-obvious lesson from the review with \`vibecheck memory remember\`; if it applies beyond this project, add it to your playbook with /opencontext-iterate. Finishing publishes the feature record to OpenContext automatically.
 `;
