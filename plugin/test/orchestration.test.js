@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { run } from '../src/cli.js';
 import { worktreeBase } from '../src/git.js';
 import { nextAction } from '../src/next.js';
@@ -98,7 +99,7 @@ test('dispatch creates a worktree per lane and merge integrates their commits', 
 });
 
 test('committed plugin skills match the generator (run npm run build)', async () => {
-  const pluginRoot = new URL('..', import.meta.url).pathname;
+  const pluginRoot = fileURLToPath(new URL('..', import.meta.url));
   for (const file of pluginSkillFiles()) {
     assert.equal(await read(join(pluginRoot, 'skills'), file.path), file.content, `${file.path} is stale`);
   }

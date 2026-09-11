@@ -46,7 +46,8 @@ function pluginCurrent() {
   return status(true, `installed ${entry.version} (run /reload-plugins after installing or updating)`);
 }
 
-const usesDocker = (project) => project && (
+// Multica self-hosts its server in Docker, so a machine-wide install needs Docker too.
+const usesDocker = (project) => !project || (
   project.workflow.engine === 'multica' || project.multica.board || project.security.controls.includes('containers')
   || /docker|testcontainers/i.test(`${project.stack.hosting} ${project.standards.testing.framework}`)
 );
@@ -134,11 +135,11 @@ export const TOOLS = [
   },
   {
     id: 'opencontext', name: 'OpenContext CLI', why: 'your cross-project knowledge library', needed: (project) => !project || project.knowledge.provider === 'opencontext',
-    check: () => { const result = probe('oc'); return result.ok ? status(true, result.firstLine) : missing(); },
+    check: () => { const result = probe('oc', ['--help']); return result.ok ? status(true, 'installed') : missing(); },
     install: { ...UNIX(`npm install -g @aicontextlab/cli && cd "${homedir()}" && oc init --tools cursor,claude`), windows: `npm install -g @aicontextlab/cli; cd "${homedir()}"; oc init --tools cursor,claude` },
   },
   {
-    id: 'multica', name: 'Multica CLI + local server', why: 'agent board and Multica lanes, self-hosted on this machine', needed: (project) => Boolean(project && (project.workflow.engine === 'multica' || project.multica.board)),
+    id: 'multica', name: 'Multica CLI + local server', why: 'agent board and Multica lanes, self-hosted on this machine', needed: (project) => !project || project.workflow.engine === 'multica' || project.multica.board,
     check: async () => {
       if (!probe('multica', ['version']).ok) return missing();
       const server = await serverInfo();

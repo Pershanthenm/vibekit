@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { loadProjectIfAny, toolChecks } from '../machine/health.js';
 import { detectPlatform, PLATFORM_NAMES, toolEnv } from '../machine/platform.js';
 import { runShell } from '../machine/probe.js';
-import { toolsFor } from '../machine/tools.js';
+import { TOOLS, toolsFor } from '../machine/tools.js';
 import { createAsker } from '../menu.js';
 import { runHealthCheck } from './health.js';
 
@@ -73,6 +73,10 @@ export async function runSetup({ root, platform = detectPlatform(), tools, only 
   const { project, results, steps } = await planFor(root, { platform, tools, only });
   console.log(`vibecheck setup · ${PLATFORM_NAMES[platform]}${project ? ` · for project ${project.project.name}` : ' · machine-wide'}`);
   results.filter((result) => result.ok).forEach((result) => console.log(`  ✔ ${result.name} — ${result.detail}`));
+  if (only.length && !results.length) {
+    console.log(`Nothing selected: ${only.join(', ')} ${only.length === 1 ? 'is' : 'are'} not needed for this ${project ? 'project' : 'machine'}.`);
+    return { done: [], skipped: [], failed: [], manual: [] };
+  }
   if (!steps.length) {
     console.log('✔ Nothing to install or start.');
     return { done: [], skipped: [], failed: [], manual: [] };
@@ -107,7 +111,9 @@ function printJsonPlan({ platform, project, results, steps }) {
 }
 
 export async function setup({ root, yes, 'dry-run': dryRun, only, json }) {
-  const ids = only ? only.split(',').map((id) => id.trim()) : [];
+  const ids = only ? only.split(/[\s,]+/).filter(Boolean) : [];
+  const unknown = ids.filter((id) => !TOOLS.some((tool) => tool.id === id));
+  if (unknown.length) throw new Error(`--only: no such tool ${unknown.join(', ')}. Known ids: ${TOOLS.map((tool) => tool.id).join(', ')}`);
   if (json) return printJsonPlan(await planFor(root, { only: ids }));
   const asker = yes || dryRun ? null : createAsker();
   try {

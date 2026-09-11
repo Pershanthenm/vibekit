@@ -8,6 +8,11 @@ export const git = (cwd, ...args) =>
 export const worktreeBase = (root) => join(dirname(root), `${basename(root)}.worktrees`);
 
 export function isInstalled(command) {
+  // On Windows most CLIs are .cmd shims, which spawnSync cannot execute directly:
+  // spawning them bare always fails with ENOENT. Resolving on PATH instead avoids
+  // both that false negative and the false positive `shell: true` would introduce,
+  // since cmd.exe reports a missing command as exit 1 rather than an error.
+  if (process.platform === 'win32') return spawnSync('where', [command], { stdio: 'ignore' }).status === 0;
   const probe = spawnSync(command, ['--version'], { stdio: 'ignore' });
   return !probe.error;
 }

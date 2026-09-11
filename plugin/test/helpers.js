@@ -1,6 +1,7 @@
 import { execFile, execFileSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -8,8 +9,8 @@ import { run } from '../src/cli.js';
 
 console.log = () => {};
 
-export const EXAMPLE = new URL('../examples/project.example.json', import.meta.url).pathname;
-export const BIN = new URL('../bin/vibecheck', import.meta.url).pathname;
+export const EXAMPLE = fileURLToPath(new URL('../examples/project.example.json', import.meta.url));
+export const BIN = fileURLToPath(new URL('../bin/vibecheck', import.meta.url));
 export const read = (root, path) => readFile(join(root, path), 'utf8');
 export const sh = (cwd, command, ...args) => execFileSync(command, args, { cwd, encoding: 'utf8' });
 
