@@ -46,12 +46,6 @@ function pluginCurrent() {
   return status(true, `installed ${entry.version} (run /reload-plugins after installing or updating)`);
 }
 
-// Multica self-hosts its server in Docker, so a machine-wide install needs Docker too.
-const usesDocker = (project) => !project || (
-  project.workflow.engine === 'multica' || project.multica.board || project.security.controls.includes('containers')
-  || /docker|testcontainers/i.test(`${project.stack.hosting} ${project.standards.testing.framework}`)
-);
-
 export const TOOLS = [
   {
     id: 'node', name: 'Node.js 20+', why: 'runs vibecheck, hooks and MCP shims', needed: () => true,
@@ -64,7 +58,7 @@ export const TOOLS = [
     install: { macos: 'xcode-select --install', linux: 'sudo apt-get install -y git', wsl: 'sudo apt-get install -y git', windows: 'winget install Git.Git' },
   },
   {
-    id: 'docker', name: 'Docker', why: 'Multica self-hosting, Testcontainers, container scans', needed: usesDocker,
+    id: 'docker', name: 'Docker', why: 'Multica self-hosting, Testcontainers, container scans', needed: () => true,
     check: () => {
       const info = probe('docker', ['info']);
       if (info.ok) return status(true, 'running');
@@ -113,13 +107,13 @@ export const TOOLS = [
     install: { ...UNIX(`node "${join(PLUGIN_DIR, 'bin', 'vibecheck')}" cursor-agents`), windows: `node "${join(PLUGIN_DIR, 'bin', 'vibecheck')}" cursor-agents` },
   },
   {
-    id: 'cursor-agent', name: 'Cursor CLI (agent)', why: 'headless Cursor agents for parallel lanes', needed: (project) => !project || project.workflow.engine === 'cursor',
+    id: 'cursor-agent', name: 'Cursor CLI (agent)', why: 'headless Cursor agents for parallel lanes', needed: () => true,
     check: () => { const found = firstAvailable(['cursor-agent', 'agent']); return found ? status(true, found.firstLine) : missing(); },
     install: { ...UNIX('curl https://cursor.com/install -fsS | bash'), windows: "irm 'https://cursor.com/install?win32=true' | iex" },
     after: 'Sign in: run `agent` once, or set CURSOR_API_KEY.',
   },
   {
-    id: 'agentmemory', name: 'agentmemory server', why: 'shared memory for Claude and Cursor', needed: (project) => !project || project.memory.provider === 'agentmemory',
+    id: 'agentmemory', name: 'agentmemory server', why: 'shared memory for Claude and Cursor', needed: () => true,
     check: async (project) => {
       const url = (process.env.AGENTMEMORY_URL || project?.memory.url || 'http://localhost:3111').replace(/\/$/, '');
       if (await httpOk(`${url}/agentmemory/livez`)) return status(true, `running at ${url}`);
@@ -129,7 +123,7 @@ export const TOOLS = [
     start: 'agentmemory',
   },
   {
-    id: 'agentmemory-plugin', name: 'agentmemory hooks in Claude Code and Cursor', why: 'automatic session capture', needed: (project) => !project || project.memory.provider === 'agentmemory',
+    id: 'agentmemory-plugin', name: 'agentmemory hooks in Claude Code and Cursor', why: 'automatic session capture', needed: () => true,
     check: () => pluginListed('agentmemory'),
     install: { ...UNIX('claude plugin marketplace add rohitg00/agentmemory && claude plugin install agentmemory@agentmemory && agentmemory connect cursor'), windows: 'claude plugin marketplace add rohitg00/agentmemory; claude plugin install agentmemory@agentmemory' },
   },
@@ -139,7 +133,7 @@ export const TOOLS = [
     install: { ...UNIX(`npm install -g @aicontextlab/cli && cd "${homedir()}" && oc init --tools cursor,claude`), windows: `npm install -g @aicontextlab/cli; cd "${homedir()}"; oc init --tools cursor,claude` },
   },
   {
-    id: 'multica', name: 'Multica CLI + local server', why: 'agent board and Multica lanes, self-hosted on this machine', needed: (project) => !project || project.workflow.engine === 'multica' || project.multica.board,
+    id: 'multica', name: 'Multica CLI + local server', why: 'agent board and Multica lanes, self-hosted on this machine', needed: () => true,
     check: async () => {
       if (!probe('multica', ['version']).ok) return missing();
       const server = await serverInfo();
