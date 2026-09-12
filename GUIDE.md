@@ -40,6 +40,13 @@ In an empty folder, in the Claude Code panel:
 
 Prefer the terminal? `vibecheck init` runs the same menus there.
 
+Prefer neither? `vibecheck wizard` opens the same questions as a form in your browser — useful
+when you would rather see all the options at once, or hand the choices to someone who does not
+live in a terminal. It saves a `requirements.json`; put it in the project and run
+`vibecheck advise apply` (or tell Claude Code *"apply my requirements"*) and scaffolding carries
+on exactly as above. It asks about a **boilerplate** too, offering only starters that fit the
+stack you chose — with the licence and any cost shown — or generating the structure from scratch.
+
 ### Already have a codebase?
 
 Run `vibecheck adopt` in the repository instead. It detects the stack from the manifests, writes
@@ -128,6 +135,15 @@ test('003:AC-2 admin cannot assign a retired laptop', async ({ page }) => { … 
 **Smoke and UI suites.** Besides unit and integration tests, every project has a `smoke` suite (a few fast checks of the critical paths, tagged `@smoke` / `Category=Smoke`) and a `ui` suite (Playwright for the Vue app, Appium or MAUI UI tests for mobile, each with an accessibility check). Plans give every visible criterion a UI test and the critical path a smoke test.
 
 Run everything with the `test` command in AGENTS.md (for this stack: `dotnet test && npm --prefix src/<App>.WebApp run test:unit`).
+
+**A suite that passes sometimes is not passing.** `vibecheck verify <id> --run --repeat 3` runs
+each suite three times and records how many passed. Pass on every run and it counts as evidence;
+pass on some and it is recorded as **flaky**, which does not. Set it once for the project with
+`standards.testing.runs` instead of remembering the flag. This matters most on the suites that
+touch time, ordering or the network — exactly the ones a single green run flatters.
+
+`vibecheck dashboard --open` shows all of it in the browser: how many suites are healthy, and per
+feature every suite with its result, its run tally, its duration and the command to reproduce it.
 
 ## 6. Validate the code against the spec
 

@@ -182,6 +182,28 @@ bash ~/tools/vibe-check-cli/plugin/scripts/bootstrap.sh --minimal --yes
 
 Then `/reload-plugins` in the Claude panel. `/vibe-check-cli:health` also tells you when your copy is behind.
 
+### If you develop the plugin itself
+
+The commands above assume the usual team setup: a clone at `~/tools/vibe-check-cli` that you pull
+from. If you are *working on* Vibe-check-cli, your marketplace probably points straight at your
+working copy instead — check with:
+
+```bash
+claude plugin marketplace list
+```
+
+A source of `directory` means the plugin is installed **from that folder on disk**, so there is
+nothing to pull; uninstalling and reinstalling picks up whatever is in the folder at that moment,
+committed or not. Two things still matter:
+
+1. **Run `npm run build` in `plugin/` first.** Skills and subagents under `plugin/skills/` and
+   `plugin/agents/` are generated from `plugin/src/generators/`. A reinstall copies the generated
+   files, not the generators, so an unbuilt change does not reach Claude Code.
+2. **Bump `version` in `.claude-plugin/marketplace.json`** when the capabilities change. Claude
+   Code caches the installed plugin per version, under
+   `~/.claude/plugins/cache/vibe-check-cli/vibe-check-cli/<version>/`. Reusing a version number is
+   how you end up staring at old behaviour and doubting a change that really did land.
+
 ## Starting over
 
 If something gets tangled, this removes every trace of Vibe-check-cli and reinstalls it. It keeps Claude Code, your sign-ins, Cursor, your other plugins, and your projects.

@@ -2,7 +2,7 @@
 
 **Spec-driven, multi-agent development for Claude Code and Cursor.** Claude Code leads; Claude and Cursor subagents build in parallel; nothing ships until it's traced to a spec and passes tests, smoke tests and UI tests.
 
-![version](https://img.shields.io/badge/version-0.1.9--beta-orange)
+![version](https://img.shields.io/badge/version-0.2.0--beta-orange)
 ![platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20macOS%20%7C%20Linux-blue)
 ![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-8A63D2)
 ![Cursor](https://img.shields.io/badge/Cursor-subagents%20%26%20skills-black)
@@ -42,7 +42,10 @@ flowchart LR
 | **Review gate** | A feature cannot be marked done without an approving `review.md` for the current commit; a review of code that has since changed does not count |
 | **Quality gates** | Acceptance-criteria traceability, test, smoke and UI evidence per commit, living docs, a security baseline mapped to OWASP ASVS |
 | **Flake detection** | Each suite can be required to pass *n* times (`standards.testing.runs`, or `--repeat`). A suite that passes sometimes is reported as flaky and does not count as evidence |
-| **Live status page** | `vibecheck dashboard` renders the whole lifecycle to one self-contained HTML page; setup, dispatch and init open it automatically and refresh it as they run |
+| **Live status page** | `vibecheck dashboard` renders the whole lifecycle *and* test status to one self-contained HTML page; setup, dispatch and init open it automatically and refresh it as they run |
+| **Browser wizard** | Not everyone wants twenty questions in a terminal. `vibecheck wizard` opens a form in the browser, then hands back a `requirements.json` that `advise apply` scaffolds from — the same catalogue, the same licence rules |
+| **Boilerplate, if one fits** | Once the stack is chosen, `advise` offers starters that actually fit it — ABP, ASP.NET Zero, JHipster, create-t3-app, Cookiecutter Django and others — each with its licence and whether it costs money, or generates the structure from scratch |
+| **A CLI that guides** | Bare `vibecheck` reads the folder and answers *what do I do next*, rather than printing every command. A mistyped command suggests the right one and exits non-zero, so a typo cannot look like success |
 | **Machine setup** | `setup` installs and configures what each machine needs; `health` checks everything and names the fix |
 | **Any agent editor** | One project, four front ends: Claude Code, Cursor, Google Antigravity and Windsurf each get their own generated config from a single `specs/project.json`; Codex reads `AGENTS.md` directly |
 | **Standards, injected** | `standards/` holds one file per topic with a tiny `index.yml`; `vibecheck standards inject "<task>"` returns only the standards that matter, instead of loading the library |
@@ -84,8 +87,10 @@ Then, in the Claude Code panel:
 | You want to… | Type in the Claude panel |
 |---|---|
 | Start a project | `/vibe-check-cli:new-project <what you're building>` |
+| Fill the spec in a browser instead | `vibecheck wizard` in a terminal, then `vibecheck advise apply` |
 | Start from an existing codebase | `vibecheck adopt` in a terminal, then `/vibe-check-cli:run` |
 | Keep going | `/vibe-check-cli:run` (stops at every decision that's yours) |
+| See where everything stands | `vibecheck dashboard --open` |
 | Check your machine | `/vibe-check-cli:health` |
 | See all your projects | "list my projects" |
 | Check the specs are consistent | `/vibe-check-cli:spec-check` |
@@ -121,15 +126,21 @@ Projects live in `~/projects/<name>` (on Windows, `C:\Users\<you>\projects\<name
 
 When the team kit changes: `git pull` in `~/tools/vibe-check-cli`, rerun the bootstrap for your OS (see [ONBOARDING.md](ONBOARDING.md#keeping-up-to-date)), then `/reload-plugins`. To remove every trace and reinstall, while keeping your projects, use the reset script ([ONBOARDING.md](ONBOARDING.md#starting-over)).
 
+**Developing the plugin itself?** Your marketplace may point at your working copy rather than a
+clone you pull. Before uninstalling and reinstalling to pick up new capabilities, run
+`npm run build` in `plugin/` and bump `version` in `.claude-plugin/marketplace.json` — Claude Code
+caches the installed plugin per version, and skills are generated rather than hand-written. See
+[ONBOARDING.md](ONBOARDING.md#if-you-develop-the-plugin-itself).
+
 ## Status
 
-**Beta.** The plugin passes Claude Code's own validator and 92 integration tests, and each setup path has been rehearsed end to end against real Claude Code, including the Windows scripts under PowerShell. It hasn't yet been run by a wide group of developers on real Windows PCs and Macs, so please report anything that doesn't match the guides.
+**Beta.** The plugin passes Claude Code's own validator and 239 integration tests, and each setup path has been rehearsed end to end against real Claude Code, including the Windows scripts under PowerShell. It hasn't yet been run by a wide group of developers on real Windows PCs and Macs, so please report anything that doesn't match the guides.
 
 ## Development
 
 ```bash
 cd plugin
-npm test          # 92 integration tests
+npm test          # 239 integration tests
 npm run build     # regenerate plugin skills and subagents (including the team kit)
 ```
 

@@ -328,6 +328,54 @@ Generating the options is judgement a model does well and a lookup table cannot 
 is why that half is an instruction rather than data. A label like "items" or "records" is
 treated as a failure: one that fits any app tells you nothing.
 
+## Filling the spec in a browser: `vibecheck wizard`
+
+Some people would rather not answer twenty questions in a terminal. `vibecheck wizard [--out
+<file>]` writes a self-contained HTML form and opens it: the same questions, the same stack
+catalogue, the same starters, as a page you can scroll, revisit and change your mind in.
+
+It is generated **from the same catalogue the CLI asks from** — `questions.js`, `components.js`
+and `starters.js` — so the two can never offer different stacks. Add a component to the catalogue
+and it appears in the form on the next run; nothing is retyped into the page.
+
+The page decides nothing. It produces one thing: the `requirements.json` that `vibecheck advise
+apply --from` and `vibecheck init --from` already accept. The recommendation, the licence
+exclusions and the validation all still happen in the CLI, where they are tested.
+
+- Questions that do not apply are **hidden rather than ignored** — no mobile question for a
+  web-only project, no database question when the backend is a BaaS, no hosting question when
+  nothing is hosted. The rules mirror `neededLayers()` in `questions.js`.
+- Options your licence policy forbids disappear as soon as you choose the policy, so the form
+  never offers something the CLI would refuse.
+- A step in the progress rail turns green only when every question **still showing** inside it is
+  answered, so conditional questions cannot leave a step stranded.
+- You can hand it over half-finished. It says what is unanswered and Claude Code asks about the
+  rest.
+
+It shares its design with `vibecheck dashboard` — one rail, one palette, one set of components —
+so setting a project up and then tracking it look like one product rather than two.
+
+Like the dashboard it is written to `.git/vibecheck/` (or `.vibecheck/` outside a git repo), never
+into `specs/`, so it cannot dirty the working tree.
+
+## Boilerplate, when one actually fits
+
+Once a stack is chosen, `vibecheck advise` offers **starters** — ABP, ASP.NET Zero, the Clean
+Architecture solution template, JHipster, Cookiecutter Django, Full Stack FastAPI, a Laravel
+starter kit, Nest CLI, create-t3-app, Refine, Next.js + Supabase, Very Good CLI — or generating
+the structure from scratch.
+
+Two rules keep this honest:
+
+- **Keyed on the stack, never on the domain.** A starter is offered because it fits the backend,
+  frontend and database you picked, not because someone decided a booking app should use one. A
+  starter whose `needs` are unmet, or that clashes with any layer already chosen, is not shown.
+- **The licence and the price are shown up front.** ABP is LGPL-3.0; ASP.NET Zero is commercial
+  and paid. Under a permissive-only policy the copyleft and commercial ones are filtered out
+  before you see them, the same way components are.
+
+Choosing "from scratch" is a first-class answer, not a fallback.
+
 ## Start from requirements you already have
 
 Not every feature starts from a blank menu. `vibecheck feature "<name>" --from <file>` reads a
@@ -408,6 +456,16 @@ single self-contained HTML page: every feature's stage, its criteria and task pr
 gates pass, block or are switched off (with the reason on hover), any running lanes, and the next
 action. No scripts, no network, no build step.
 
+It is also the **test dashboard**. Across the top: how many suites are healthy, and per feature a
+table of every suite with its result, how many runs passed out of how many were required, how long
+it took and the exact command. A flaky suite is labelled flaky, never shown as a tick — the page
+exists to say what is true, and "passes sometimes" is not passing. It names untested criteria
+rather than only counting them, and marks evidence recorded against an older commit as stale.
+
+Rail navigation is anchors, not click handlers, and there are **no scripts and no web fonts** — a
+blocked font request would leave a page opened from `file://` on a locked-down machine rendering
+in Times. It follows your system light or dark theme, and works down to phone width.
+
 `vibecheck setup`, `vibecheck dispatch` and interactive `vibecheck init` open it automatically and
 refresh it as they go, so there is something to watch while a project scaffolds itself — during
 setup it rewrites after every tool. The page carries a short meta-refresh; `--static` drops it for
@@ -424,7 +482,7 @@ record a dirty commit — a page that reports on the lifecycle must not be able 
 criteria to tests. Neither asks whether the spec, the plan and the tasks **agree with each
 other** — and that is where specs quietly rot.
 
-`vibecheck analyze [feature] [--json]` reports, per feature:
+`vibecheck analyze [feature] [--fix] [--json]` reports, per feature:
 
 | Problem | Why it matters |
 |---|---|
@@ -438,6 +496,22 @@ other** — and that is where specs quietly rot.
 
 It exits 1 when anything is found, so it belongs in CI beside `vibecheck check`. The output
 names contradictions between artefacts: fix the artefacts, not the report.
+
+### Appending the missing work: `--fix`
+
+Two of those rows describe work that is simply *missing*: a criterion with no task, and a criterion
+with no test. `--fix` writes them into `tasks.md` — a `[test]` and an `[impl]` task for a criterion
+nobody planned, a `[test]` task alone for one that is planned but untested. Running it again appends
+nothing, so it is safe in a loop.
+
+The other rows are not appendable, and `--fix` leaves them alone. An orphan task, a lane clash, a
+criterion still saying TODO, a planned feature with an empty plan — each is two artefacts
+disagreeing, and appending a task would paper over a decision somebody has to make.
+
+An appended task names no files, because nothing knows yet which files it touches. `analyze` keeps
+reporting it as "names no files" until someone decides — the same state a freshly scaffolded
+`tasks.md` starts in. That is the point: the gap moves from invisible to written down in the file
+where planning happens.
 
 Two skills cover the judgement half, which a CLI cannot do:
 
@@ -503,7 +577,27 @@ After editing, Claude runs `vibecheck sync`. `AGENTS.md`, `CLAUDE.md`, the subag
 
 ## CLI reference
 
-`init` · `adopt [--force] [--json]` · `analyze [feature] [--json]` · `sync` · `feature "<name>" [--from <requirements file>]` · `status <id> <status>` · `list` · `check` · `next [--json]` · `lanes <id>` · `dispatch <id> [--engine] [--dry-run]` · `merge <id>` · `memory <status|recall|remember>` · `knowledge <status|search|manifest|publish>` · `context <feature|topic>` · `docs <status|new|stamp>` · `advise [next|recommend|apply [preset]|components|presets|prefer]` · `security [questions|apply|status]` · `verify [feature] [--run]` · `multica [status|sync|pull|selftest]` · `setup [--dry-run] [--only]` · `health [--live]` · `version` · `hook <event>`. Run `vibecheck --help` for details.
+`init` · `adopt [--force] [--json]` · `analyze [feature] [--json]` · `sync` · `feature "<name>" [--from <requirements file>]` · `status <id> <status>` · `list` · `check` · `next [--json]` · `lanes <id>` · `dispatch <id> [--engine] [--dry-run]` · `merge <id>` · `memory <status|recall|remember>` · `knowledge <status|search|manifest|publish>` · `context <feature|topic>` · `docs <status|new|stamp>` · `advise [domain "<idea>"|next|recommend|apply [preset]|components|presets|prefer]` · `security [questions|apply|status]` · `verify [feature] [--run] [--repeat <n>]` · `wizard [--out <file>]` · `dashboard [--open] [--out <file>] [--static] [--json]` · `multica [status|sync|pull|selftest]` · `projects [--prune] [--json]` · `team <capture|status|import-ecc>` · `standards <list|index|inject>` · `cursor-kit [--remove]` · `setup [--dry-run] [--only]` · `health [--live]` (alias `doctor`) · `version` · `hook <event>`.
+
+Run `vibecheck` on its own for what to do next in the current folder, or `vibecheck --help` for
+every command.
+
+### `vibecheck` with no command
+
+A bare `vibecheck` used to print the whole manual, and so did a typo — which exited `0`, making a
+mistyped command indistinguishable from a successful one. It now reads the folder and answers a
+single question: *what do I do next here?*
+
+| What is in the folder | What it offers |
+|---|---|
+| Nothing | `vibecheck wizard` or `vibecheck init` |
+| Code, but no vibecheck project | `vibecheck adopt` **first** — suggesting `init` over someone's existing work invites them to scaffold over it |
+| A real project | The stack, how many features and how many are done, the next action with the exact command, and what is waiting on you |
+
+An unknown command prints `vibecheck: no such command "<typed>"`, suggests the nearest real one
+when it is close enough to be worth guessing, and **exits 1**. A guess is only offered within a
+third of the word's length: sending someone to read about the wrong command is worse than
+admitting the command is unknown.
 
 ## Every supported OS, proved by CI
 
@@ -526,6 +620,29 @@ pm` is added to the tool search path alongside the POSIX ones |
 
 agentmemory is the one component with no automatic install on native Windows; it needs WSL2, and
 `vibecheck health` reports it rather than pretending otherwise.
+
+## Tests run when a task is finished
+
+Ticking a task used to be enough to move on. "Run the tests after each task" was an instruction in
+the implement skill, and an instruction is something an agent can quietly not follow — a skipped run
+left no trace.
+
+The Stop hook now runs the project's `commands.test` for itself, and refuses to end the turn if it
+fails:
+
+- It runs only when a task was ticked in an **in-progress** feature since the suite last passed, so
+  an ordinary turn costs nothing.
+- It runs **once** however many tasks were ticked — it is the whole project's suite, not one task's.
+- Only a green run is recorded, in `<git dir>/vibecheck/task-gate.json`. A failure re-gates every
+  turn until it is fixed or the task is unticked.
+- A suite slower than two minutes has stopped being a per-task check: the gate reports that it could
+  not run rather than holding the turn open, and records nothing.
+- It needs a git repository (that is where the record lives) and `workflow.enforce: true`. With
+  enforcement off, nothing runs.
+
+This is narrower than `vibecheck verify --run`, deliberately. Verify traces criteria to tests,
+repeats each suite to catch flakes, and records evidence against a commit — that is the gate for
+*done*. This one is the gate for *the next task*.
 
 ## Limits worth knowing
 

@@ -1,6 +1,6 @@
 {
   "name": "vibe-check-cli",
-  "version": "0.1.9-beta",
+  "version": "0.2.0-beta",
   "description": "Vibe-check-cli: spec-driven, multi-agent development for Claude Code, Cursor and Multica",
   "type": "module",
   "bin": {
