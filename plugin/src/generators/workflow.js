@@ -152,7 +152,7 @@ Feature: ${input}
    - \`[impl]\` tasks → **implementer** agent: the smallest change that makes those tests pass, following AGENTS.md.
    - \`[docs]\` tasks → ${cmd('docs')}: update documents and diagrams from the code as built, then stamp them.
    - When the next open tasks form a block of \`[P]\` tasks, hand them to ${cmd('dispatch')} (parallel agents in git worktrees). For a block of two small tasks, parallel implementer subagents in this session are fine.
-3. After each task run the lint, typecheck and test commands from AGENTS.md and fix failures before moving on. Then tick the task, tick any AC now proven by a passing test (\`vibecheck verify <id>\` shows which are traced), and commit. Code touching auth, data access or configuration must follow \`specs/security.md\`.
+3. After each task run the lint, typecheck and test commands from AGENTS.md and fix failures before moving on. The Stop hook runs the test command itself once a task is ticked, so a failure ends the turn either way. Then tick the task, tick any AC now proven by a passing test (\`vibecheck verify <id>\` shows which are traced), and commit. Code touching auth, data access or configuration must follow \`specs/security.md\`.
 4. If a task shows the spec or plan is wrong, stop and propose the change instead of improvising.
 5. When every task is ticked, run ${cmd('review-feature')}.
 `;
@@ -235,7 +235,7 @@ is written, because an assumption baked into a plan is far more expensive to unp
 4. Write the answers into \`spec.md\` as acceptance criteria or explicit non-goals. Do not leave them in chat.
 5. For anything the user cannot answer yet, write \`TODO(unknown): <question>\` in the spec and say so plainly.
    An open question that is written down is cheap; one that is guessed at is not.
-7. Re-run \`vibecheck analyze [feature]\` and continue with ${cmd('plan-feature')}.
+7. Re-run \`vibecheck analyze [feature]\` — add \`--fix\` to append criteria with no task or no test to \`tasks.md\` as work, then name the files each one touches — and continue with ${cmd('plan-feature')}.
 `;
 const checklistSkill = ({ input, cmd }) => `# Quality checklist for a feature
 

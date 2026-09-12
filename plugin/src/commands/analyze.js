@@ -1,4 +1,6 @@
-import { analyzeFeature } from '../analyze.js';
+import { join } from 'node:path';
+import { analyzeFeature, appendTasks, tasksForGaps } from '../analyze.js';
+import { writeText } from '../fsutil.js';
 import { findFeature, listFeatures } from '../features.js';
 import { loadProject } from '../project.js';
 import { traceFeature } from '../verify.js';
@@ -20,7 +22,25 @@ async function reportFor(root, feature) {
     report.problems.push({ kind: 'untested', feature: feature.id, message: `AC-${criterion} has no test naming it` });
   }
   report.tested = trace.covered.length;
+  report.untested = trace.missing;
   return report;
+}
+
+/**
+ * The gap the report could only describe: acceptance criteria with no task, and criteria with no
+ * test, written into tasks.md as work. Everything else analyze finds is a contradiction between
+ * artefacts, which a person has to settle — see tasksForGaps.
+ */
+async function appendMissingWork(root, features, reports) {
+  const added = [];
+  for (const feature of features) {
+    const report = reports.find((entry) => entry.feature === feature.id);
+    const lines = tasksForGaps(feature, { untasked: report.untasked, untested: report.untested });
+    if (!lines.length) continue;
+    await writeText(join(feature.dir, 'tasks.md'), appendTasks(feature.tasks, lines));
+    added.push({ feature: feature.id, lines });
+  }
+  return added;
 }
 
 function print(report) {
@@ -36,7 +56,7 @@ function print(report) {
   }
 }
 
-export async function analyze({ root, args, json }) {
+export async function analyze({ root, args, json, fix }) {
   await loadProject(root);
   const features = await listFeatures(root);
   if (!features.length) {
@@ -48,10 +68,18 @@ export async function analyze({ root, args, json }) {
   const reports = [];
   for (const feature of chosen) reports.push(await reportFor(root, feature));
   const problems = reports.flatMap((report) => report.problems);
+  const added = fix ? await appendMissingWork(root, chosen, reports) : [];
 
-  if (json) return console.log(JSON.stringify({ features: reports, problems }, null, 2));
+  if (json) return console.log(JSON.stringify({ features: reports, problems, added }, null, 2));
 
   reports.forEach(print);
+  if (added.length) {
+    const total = added.reduce((count, entry) => count + entry.lines.length, 0);
+    console.log(`
+${total} task(s) appended:`);
+    for (const entry of added) for (const line of entry.lines) console.log(`  ${entry.feature}  ${line}`);
+    console.log('Each needs the files it touches (`— path/a, path/b`) before lanes can be dispatched; rerun analyze to see which.');
+  }
   if (!problems.length) {
     console.log('\n✔ Every feature is internally consistent.');
     return;

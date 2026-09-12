@@ -8,6 +8,7 @@ import { contextFor as skillContextFor } from '../generators/workflow.js';
 import { isKnowledgeEnabled } from '../knowledge.js';
 import { isMemoryEnabled } from '../memory.js';
 import { nextAction } from '../next.js';
+import { gateSummary, testGate } from '../task-gate.js';
 import { PROJECT_FILE, loadProject } from '../project.js';
 import { collectProblems } from './check.js';
 import { boardEnabled, mirrorFeature } from '../multica-board.js';
@@ -137,11 +138,30 @@ async function mirrorInProgress(root, project) {
   for (const feature of (await listFeatures(root)).filter((entry) => entry.status === 'in-progress')) await mirrorFeature(project, feature);
 }
 
+// Ticking a task used to be enough to move on; the test run after it was an instruction an agent
+// could simply not follow. This runs the suite for itself and refuses to end the turn on a failure.
+async function testsForFinishedTasks(root, project) {
+  const gate = await testGate(root, project, await listFeatures(root)).catch(() => null);
+  if (!gate || gate.ok) return;
+  if (!gate.ran) {
+    process.stderr.write(`vibecheck: could not run \`${gate.command}\` after ${gateSummary(gate)} — ${gate.reason}. Run it yourself before going further.
+`);
+    return;
+  }
+  throw new BlockError(
+    `\`${gate.command}\` fails, and tasks were ticked as done since it last passed (${gateSummary(gate)}).
+` +
+      `Fix the failures before ending the turn, or untick the tasks.
+${gate.output}`,
+  );
+}
+
 async function stop(root, input) {
   if (input.stop_hook_active) return;
   const project = await loadProject(root);
   await mirrorInProgress(root, project).catch(() => {});
   if (!project.workflow.enforce) return;
+  await testsForFinishedTasks(root, project);
   const problems = await collectProblems(root, project);
   if (!problems.length) return;
   throw new BlockError(`vibecheck check found problems. Fix them, or tell the user why they remain:\n- ${problems.join('\n- ')}`);

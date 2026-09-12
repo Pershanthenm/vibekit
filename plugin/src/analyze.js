@@ -82,7 +82,48 @@ export function analyzeFeature(feature) {
     criteria: criteria.length,
     tasks: tasks.length,
     covered: criteria.filter((criterion) => claimed.has(criterion.number)).length,
+    untasked: criteria.filter((criterion) => !claimed.has(criterion.number)).map((criterion) => criterion.number),
     taskProgress: progress(feature.tasks ?? '', 'T'),
     problems,
   };
+}
+
+const TASK_NUMBER = /^- \[[ x]\] T-(\d+)\b/gim;
+
+const nextTaskNumber = (tasks) => Math.max(0, ...[...tasks.matchAll(TASK_NUMBER)].map(([, number]) => Number(number))) + 1;
+
+/**
+ * Turns the two gaps that describe *missing work* into tasks. The other problem kinds are
+ * disagreements between artefacts — an orphan task, a lane clash, a criterion nobody has decided,
+ * an empty plan — and appending a task to one of those papers over a decision a person has to make.
+ *
+ * The appended lines name no files, because nothing here knows which files they touch. That is the
+ * next real decision, and analyze reports it as `orphan-task` until someone makes it — the same
+ * shape a scaffolded tasks.md starts in.
+ */
+export function tasksForGaps(feature, { untasked = [], untested = [] } = {}) {
+  const criteria = new Map(criteriaIn(feature.spec).map((criterion) => [criterion.number, criterion.text]));
+  const untaskedSet = new Set(untasked);
+  // A [test] task does not make a criterion traced — only a test file naming it does — so an
+  // untested criterion stays untested after the task is written. Appending again every run would
+  // grow tasks.md without end; the task already planned is the work, and it is only planned once.
+  const testTasked = new Set(tasksIn(feature.tasks ?? '').filter((task) => task.kind === 'test').flatMap((task) => task.criteria));
+  const describe = (number) => `AC-${number}: ${criteria.get(number) ?? ''}`.trim();
+  let number = nextTaskNumber(feature.tasks ?? '');
+  const line = (kind, text) => `- [ ] T-${number++} [${kind}] ${text}`;
+  return [
+    ...untasked.flatMap((criterion) => [
+      line('test', `Test ${describe(criterion)} (AC-${criterion})`),
+      line('impl', `Build ${describe(criterion)} (AC-${criterion})`),
+    ]),
+    // A criterion that has a task but no test needs only the test; adding an impl task would
+    // duplicate work that tasks.md already plans.
+    ...untested.filter((criterion) => !untaskedSet.has(criterion) && !testTasked.has(criterion)).map((criterion) => line('test', `Test ${describe(criterion)} (AC-${criterion})`)),
+  ];
+}
+
+export function appendTasks(tasks, lines) {
+  if (!lines.length) return tasks;
+  const body = (tasks ?? '').replace(/\s*$/, '');
+  return `${body}\n${lines.join('\n')}\n`;
 }
