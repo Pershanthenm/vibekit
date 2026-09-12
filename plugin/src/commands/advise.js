@@ -1,5 +1,5 @@
 import { PRESETS, allComponents, findComponent, LAYERS, userComponentsPath } from '../advisor/components.js';
-import { matchDomain, nextDomainRound } from '../advisor/domain.js';
+import { nextDomainRound } from '../advisor/domain.js';
 import { expandPreferred, savePreferred } from '../advisor/preferences.js';
 import { applySelection, nextRoundFor, readRequirements, recommendFor } from '../advisor/selection.js';
 import { formatRecommendation, runWizard } from '../advisor/wizard.js';
@@ -27,12 +27,15 @@ async function domain(root, { json, args }) {
   if (!idea) throw new Error('Usage: vibecheck advise domain "<what you are building>" [--json]');
   const answers = await readRequirements(root, undefined, { optional: true });
   const round = nextDomainRound(idea, answers);
-  const family = matchDomain(idea);
 
-  if (json) return console.log(JSON.stringify(round ?? { complete: true, domain: family?.id ?? 'generic' }, null, 2));
-  if (!round) return console.log(`✔ Subject pinned down${family ? ` (${family.label})` : ''}. Next: vibecheck advise next`);
-  console.log(`${round.title}${family ? ` — ${family.label}` : ''}`);
-  round.questions.forEach((question) => console.log(`  ${question.id}${question.multi ? ' (multi)' : ''}: ${question.options.map((option) => option.id).join(' | ')}`));
+  if (json) return console.log(JSON.stringify(round ?? { complete: true }, null, 2));
+  if (!round) return console.log('✔ Subject pinned down. Next: vibecheck advise next');
+  console.log(`${round.title} — ${round.idea}`);
+  round.questions.forEach((question) => {
+    console.log(`  ${question.id}${question.multi ? ' (multi)' : ''}: ${question.question}`);
+    console.log(`      why: ${question.why}`);
+  });
+  console.log('\nOptions shown are fallbacks. Generate concrete ones from the idea itself — see `guidance` in --json.');
 }
 
 async function recommendCommand(root, { json, from }) {

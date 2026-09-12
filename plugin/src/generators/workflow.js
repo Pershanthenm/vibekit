@@ -14,24 +14,30 @@ export const contextFor = (project) => (project?.workflow.skills === 'project' ?
 const MENU_FLOWS = {
   claude: (cmd) => `## 2. Pin down what you are actually building
 
-Do this **before** any question about platforms or frameworks. An idea like "a stock management
-app" is not a brief: tracking laptops with serial numbers and tracking boxes of pens share
-almost no data model, and a stack chosen before that is known is a guess.
+Do this **before** any question about platforms or frameworks. "A stock management app" is not
+a brief, and neither is "a recipe app": until you know what the thing tracks and how one of
+them behaves, a stack is a guess.
 
-1. Run \`vibecheck advise domain "<their exact words>" --json\`. It returns a round of questions for
-   the domain family it recognises (stock, booking, records) — for stock, what kind of items:
-   IT equipment, stationery and consumables, parts, or goods for sale — or structural questions
-   when the idea matches nothing known.
-2. Ask the round with **AskUserQuestion**. Put the option you would recommend first with
-   \" (Recommended)\" and say in one line why. Anything unlisted goes under Other.
-3. Merge the answers into \`specs/requirements.json\` and run it again until it reports complete.
-   The rounds adapt: once you know it is IT equipment, the next round asks about lifecycle
-   states and what running low should do.
-4. **Say the subject back to them in one sentence** before moving on — "an internal register for
-   serialised IT equipment assigned to staff, with a warranty view" — and let them correct it.
-   Every later menu, and the whole spec, rests on this being right.
+1. Run \`vibecheck advise domain "<their exact words>" --json\`. It returns the dimensions still to
+   settle — subject, identity, lifecycle, actors, proof — each with \`why\` it matters and \`guidance\`
+   on how to ask it. These are the same for every app; only the options differ.
+2. **Generate the options yourself, in their words.** The \`options\` in the response are bland
+   fallbacks. Replace them with the concrete kinds of thing this idea might mean:
+   - "a stock management app" → IT equipment and devices · stationery and consumables · parts
+     and raw materials · goods for sale
+   - "a recipe app" → recipes · ingredients and pantry stock · meal plans · shopping lists
+   - "something for my band" → gigs and bookings · songs and setlists · gear · fans and mailing list
+   Never offer "items" or "records": a label that fits any app tells you nothing.
+3. Ask with **AskUserQuestion**, at most 4 at a time. Put the option you would recommend first
+   with \" (Recommended)\" and one line saying why. Anything unlisted goes under Other.
+4. Merge answers into \`specs/requirements.json\` and run it again until it reports complete. Phrase
+   each later question in terms of what they already said — once the subject is laptops, ask
+   about serials and assignment, not "items".
+5. **Say the subject back in one sentence** and let them correct it: "an internal register for
+   serialised IT equipment assigned to staff, with a warranty view". Every later menu rests on it.
 
-Never proceed on a vague idea. If the user gives one, that is the signal to ask, not to guess.
+A vague idea is the signal to ask, not to guess. If you cannot picture the main screen from
+their answer, keep asking.
 
 ## 3. Requirements and stack by menu
  no typing

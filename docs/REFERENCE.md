@@ -296,33 +296,35 @@ Hooks are silent in folders without `specs/project.json`, so installing the plug
 
 ## Pinning down what you are building
 
-"A stock management app" is not a brief. Tracking laptops with serial numbers and tracking boxes
-of pens share almost no data model — different entities, different lifecycle, different screens —
-so a stack chosen before that is settled is a guess dressed as a decision.
+"A stock management app" is not a brief. Neither is "a recipe app". Until you know what the
+thing tracks and how one of them behaves, a stack is a guess dressed as a decision — so
+`new-project` asks about the **subject** before it asks about platforms or frameworks.
 
-`new-project` therefore asks about the **subject** before it asks about platforms or frameworks.
-`vibecheck advise domain "<idea>" --json` returns the round to ask:
+There is deliberately **no catalogue of app types**. Encoding stock apps, booking apps and CRMs
+would make those good and everything else second-class, and the list would never end. Instead
+five dimensions are asked for every app, because each one changes what gets built:
+
+| Dimension | Why it is asked |
+|---|---|
+| **Subject** | The main entity; the data model, screens and reports all hang off it |
+| **Identity** | Individually identified things need their own history; bulk things need a count and a threshold. Different data models, expensive to change later |
+| **Lifecycle** | The states are the workflow — they decide screens, permissions and most reports |
+| **Actors** | Roles decide authorisation, the most expensive thing to retrofit |
+| **Proof** | What it must show later decides auditing, retention and how much of the security baseline applies |
+
+`vibecheck advise domain "<idea>" --json` returns those dimensions with `why` each matters and
+`guidance` on asking it. The options it ships are bland fallbacks: the agent replaces them with
+concrete choices drawn from the user's own words.
 
 ```
-$ vibecheck advise domain "a stock management app"
-What you are tracking — stock and asset tracking
-  stockKind: it-equipment | stationery | parts | goods
-  identity: individual | bulk | mixed
-  movement (multi): assigned | consumed | moved | sold
+"a stock management app"  → IT equipment · stationery and consumables · parts · goods for sale
+"a recipe app"            → recipes · ingredients and pantry stock · meal plans · shopping lists
+"something for my band"   → gigs · songs and setlists · gear · fans and mailing list
 ```
 
-The rounds adapt. Once the answer is IT equipment, the next round asks which lifecycle states an
-item needs, what should happen when stock runs low, and what the system must be able to prove
-later. Answering stops when the subject is pinned down.
-
-Three families have their own questions — stock and assets, booking and scheduling, people and
-case records. Anything else gets structural questions that matter in any domain: what the system
-tracks, whether each thing is identified individually or counted in bulk, what makes someone
-open it on a normal day, and what it must prove.
-
-Only questions whose answer changes what gets built are asked. `identity` is there because
-individually-identified items and bulk counts are different data models; a question that merely
-colours the description would waste your attention.
+Generating the options is judgement a model does well and a lookup table cannot scale to, which
+is why that half is an instruction rather than data. A label like "items" or "records" is
+treated as a failure: one that fits any app tells you nothing.
 
 ## Start from requirements you already have
 
