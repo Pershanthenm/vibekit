@@ -60,7 +60,7 @@ Usage
   vibecheck health [--live] [--json]                     Check everything (--live proves Claude, Cursor, memory end to end)
   vibecheck init [--yes | --from <file.json>] [--force]  Menu-driven setup: requirements → stack recommendation → project
   vibecheck adopt [--force] [--json]                     Adopt an existing codebase: detect the as-is stack and write as-is docs
-  vibecheck advise [next | recommend | apply [preset] | components [layer] | presets | prefer <ids...>]
+  vibecheck advise [domain "<idea>" | next | recommend | apply [preset] | components [layer] | presets | prefer <ids...>]
                                                          Platform-first menus; per-layer stack and licence advice
   vibecheck sync [--force]                               Regenerate agent files from specs/project.json
   vibecheck feature "<name>"                             Scaffold specs/features/NNN-name/

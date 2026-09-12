@@ -294,6 +294,36 @@ Everything memory- and knowledge-related fails open. If the server is down, the 
 
 Hooks are silent in folders without `specs/project.json`, so installing the plugin at user level is safe.
 
+## Pinning down what you are building
+
+"A stock management app" is not a brief. Tracking laptops with serial numbers and tracking boxes
+of pens share almost no data model — different entities, different lifecycle, different screens —
+so a stack chosen before that is settled is a guess dressed as a decision.
+
+`new-project` therefore asks about the **subject** before it asks about platforms or frameworks.
+`vibecheck advise domain "<idea>" --json` returns the round to ask:
+
+```
+$ vibecheck advise domain "a stock management app"
+What you are tracking — stock and asset tracking
+  stockKind: it-equipment | stationery | parts | goods
+  identity: individual | bulk | mixed
+  movement (multi): assigned | consumed | moved | sold
+```
+
+The rounds adapt. Once the answer is IT equipment, the next round asks which lifecycle states an
+item needs, what should happen when stock runs low, and what the system must be able to prove
+later. Answering stops when the subject is pinned down.
+
+Three families have their own questions — stock and assets, booking and scheduling, people and
+case records. Anything else gets structural questions that matter in any domain: what the system
+tracks, whether each thing is identified individually or counted in bulk, what makes someone
+open it on a normal day, and what it must prove.
+
+Only questions whose answer changes what gets built are asked. `identity` is there because
+individually-identified items and bulk counts are different data models; a question that merely
+colours the description would waste your attention.
+
 ## Start from requirements you already have
 
 Not every feature starts from a blank menu. `vibecheck feature "<name>" --from <file>` reads a

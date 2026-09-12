@@ -36,6 +36,7 @@ flowchart LR
 | **Team skills** | A shared kit in [`team/`](team/), including a curated selection from [Everything Claude Code](https://github.com/affaan-m/ECC) (API design, TDD, security review, Docker, deployment and more) |
 | **Guardrails** | Hooks at session start, before every edit, and at the end of every turn |
 | **Artefacts that agree** | `analyze` reports criteria with no task, tasks pointing at criteria that no longer exist, and `[P]` tasks that would collide; `clarify` asks about what a spec left undecided before it is planned |
+| **No vague briefs** | Say "a stock management app" and it asks what you track — IT equipment, stationery, parts, goods — and whether items are identified individually or counted in bulk, before any question about frameworks |
 | **Your requirements** | `feature --from <file>` seeds a spec from a requirements doc you already have, keeping and marking the lines that are not testable yet instead of dropping them |
 | **Design gate** | `new-project` designs the screens with Claude Design, stops for you to approve an artboard, and refuses to start a UI feature until one is recorded |
 | **Review gate** | A feature cannot be marked done without an approving `review.md` for the current commit; a review of code that has since changed does not count |

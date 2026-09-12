@@ -17,7 +17,29 @@ If the folder isn't a git repository yet, run `git init`. If `specs/project.json
 ## 1. Load your playbook
 If knowledge is on, run `vibecheck knowledge manifest` and read the listed documents: your preferred stacks, standards and known pitfalls from earlier projects. Use them as the recommended defaults below, and say which document each default came from.
 
-## 2. Requirements and stack by menu — no typing
+## 2. Pin down what you are actually building
+
+Do this **before** any question about platforms or frameworks. An idea like "a stock management
+app" is not a brief: tracking laptops with serial numbers and tracking boxes of pens share
+almost no data model, and a stack chosen before that is known is a guess.
+
+1. Run `vibecheck advise domain "<their exact words>" --json`. It returns a round of questions for
+   the domain family it recognises (stock, booking, records) — for stock, what kind of items:
+   IT equipment, stationery and consumables, parts, or goods for sale — or structural questions
+   when the idea matches nothing known.
+2. Ask the round with **AskUserQuestion**. Put the option you would recommend first with
+   " (Recommended)" and say in one line why. Anything unlisted goes under Other.
+3. Merge the answers into `specs/requirements.json` and run it again until it reports complete.
+   The rounds adapt: once you know it is IT equipment, the next round asks about lifecycle
+   states and what running low should do.
+4. **Say the subject back to them in one sentence** before moving on — "an internal register for
+   serialised IT equipment assigned to staff, with a warranty view" — and let them correct it.
+   Every later menu, and the whole spec, rests on this being right.
+
+Never proceed on a vague idea. If the user gives one, that is the signal to ask, not to guess.
+
+## 3. Requirements and stack by menu
+ no typing
 Works for any developer: web, mobile, desktop or backend, any stack, any licensing policy.
 1. Run `vibecheck advise next --json`. It returns the next round (up to 4 questions, each with up to 4 options) based on the answers so far, or `{ "complete": true }`. Rounds adapt: platform first, then constraints, architecture and security, then one question per stack layer the app needs (backend, web, mobile, desktop) with scored options and licences, then data and delivery (database; hosting only when there is a server), then the agent workflow.
 2. Ask the round with **AskUserQuestion** (question, header, options with label and description, `multiSelect` for multi). Stack-layer options already carry "(Recommended)"; for other questions put the option you'd recommend first with " (Recommended)". Any stack not listed can be typed under Other.
@@ -29,13 +51,13 @@ Works for any developer: web, mobile, desktop or backend, any stack, any licensi
 8. Write `specs/security-answers.json` the same way, then run `vibecheck security apply`. It stores the baseline in `specs/project.json`, generates `specs/security.md` and AGENTS.md rules, adds one acceptance criterion per control to the foundation feature, creates `.github/workflows/security.yml`, and saves a summary to memory and your knowledge library.
 9. If it reports accepted risks, ask with **AskUserQuestion** whether to keep each risk or add the control back; re-apply if anything changes.
 
-## 3. What menus can't capture
+## 4. What menus can't capture
 In plain conversation, briefly: the problem in the user's words, primary users, the 3–7 capabilities that make v1, explicit non-goals and success measures. Offer a draft they can correct rather than asking open questions one by one.
 
-## 4. Confirm
+## 5. Confirm
 Show a compact summary (stack, architecture, targets, sign-in, security and compliance, v1 capabilities) and wait for explicit approval before writing docs.
 
-## 5. Write the spec
+## 6. Write the spec
 1. Review `specs/project.json` (written by `vibecheck advise apply`, shaped like [project.example.json](project.example.json)). Adjust only what the menus couldn't express — for example an exact framework the user typed under Other — and keep `commands` runnable.
 2. Run `vibecheck sync` to regenerate AGENTS.md, CLAUDE.md, subagents and Cursor rules.
 3. Fill `specs/00-product.md` (vision, users, capabilities, non-goals, success metrics) and `specs/01-architecture.md` (Mermaid component diagram, modules and responsibilities, data flow, cross-cutting concerns).

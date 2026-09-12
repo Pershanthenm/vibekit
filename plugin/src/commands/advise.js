@@ -1,4 +1,5 @@
 import { PRESETS, allComponents, findComponent, LAYERS, userComponentsPath } from '../advisor/components.js';
+import { matchDomain, nextDomainRound } from '../advisor/domain.js';
 import { expandPreferred, savePreferred } from '../advisor/preferences.js';
 import { applySelection, nextRoundFor, readRequirements, recommendFor } from '../advisor/selection.js';
 import { formatRecommendation, runWizard } from '../advisor/wizard.js';
@@ -13,6 +14,24 @@ async function next(root, { json, from }) {
   if (json) return console.log(JSON.stringify(round, null, 2));
   if (round.complete) return console.log('✔ All questions answered. Next: vibecheck advise apply');
   console.log(round.title);
+  round.questions.forEach((question) => console.log(`  ${question.id}${question.multi ? ' (multi)' : ''}: ${question.options.map((option) => option.id).join(' | ')}`));
+}
+
+/**
+ * Pins down what the app actually is before anything is asked about platforms or stacks.
+ * "A stock management app" could be serialised laptops or boxes of pens, and the two share
+ * almost no data model.
+ */
+async function domain(root, { json, args }) {
+  const idea = args.join(' ').trim();
+  if (!idea) throw new Error('Usage: vibecheck advise domain "<what you are building>" [--json]');
+  const answers = await readRequirements(root, undefined, { optional: true });
+  const round = nextDomainRound(idea, answers);
+  const family = matchDomain(idea);
+
+  if (json) return console.log(JSON.stringify(round ?? { complete: true, domain: family?.id ?? 'generic' }, null, 2));
+  if (!round) return console.log(`✔ Subject pinned down${family ? ` (${family.label})` : ''}. Next: vibecheck advise next`);
+  console.log(`${round.title}${family ? ` — ${family.label}` : ''}`);
   round.questions.forEach((question) => console.log(`  ${question.id}${question.multi ? ' (multi)' : ''}: ${question.options.map((option) => option.id).join(' | ')}`));
 }
 
@@ -69,7 +88,7 @@ async function withAsker(work) {
   }
 }
 
-const ACTIONS = { next, questions: next, recommend: recommendCommand, apply, components, presets, prefer };
+const ACTIONS = { next, questions: next, domain, recommend: recommendCommand, apply, components, presets, prefer };
 
 export async function advise(options) {
   const [action, ...args] = options.args;

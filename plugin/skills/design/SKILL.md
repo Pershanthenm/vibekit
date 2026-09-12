@@ -38,7 +38,7 @@ scaffold, plan or write code while the design is open. This is a human gate like
 summarise, ask which artboard they want, and wait for an explicit answer. They will often edit the
 canvas themselves, and the version you hand over is rarely the version they approve.
 
-## 3. Record what was approved
+## 4. Record what was approved
 
 Once they choose, create the design doc with `vibecheck docs new design <feature>` and fill in the
 front matter so the decision is recorded rather than remembered:
@@ -52,7 +52,7 @@ approved_by: <who approved it>
 In the body, describe the user flow as a Mermaid `flowchart` or `journey`, and the states each
 acceptance criterion requires. Then run `vibecheck docs stamp <path>`.
 
-## 4. Resume
+## 5. Resume
 
 A feature targeting web, mobile or desktop cannot move to `in-progress` until its design doc names
 an approved artboard, so recording it is what unblocks the build. Continue with /vibe-check-cli:run.
