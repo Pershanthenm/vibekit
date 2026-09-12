@@ -23,14 +23,40 @@ export function stateDir(root, ...parts) {
 const evidencePath = (root, featureId) => join(stateDir(root, 'evidence'), `${featureId}.json`);
 export const definedSuites = (project) => SUITES.filter((suite) => project.commands[suite]);
 
-export function runSuites(project, cwd) {
+export const runsFor = (project) => Math.max(1, Number(project.standards?.testing?.runs) || 1);
+
+/**
+ * Run every defined suite, `runs` times each. One green run only proves the suite passed once:
+ * a suite that passes twice in three is not a passing suite, it is a flaky one, and shipping on
+ * it means shipping a failure nobody has seen yet. Every run counts, not just the last.
+ */
+export function runSuites(project, cwd, { runs = 1 } = {}) {
   return definedSuites(project).map((suite) => {
+    const command = project.commands[suite];
     const started = Date.now();
-    console.log(`\n$ ${project.commands[suite]}`);
-    const status = spawnSync(project.commands[suite], { shell: true, stdio: 'inherit', cwd }).status ?? 1;
-    return { suite, command: project.commands[suite], ok: status === 0, seconds: Math.round((Date.now() - started) / 1000) };
+    let passed = 0;
+    for (let attempt = 1; attempt <= runs; attempt += 1) {
+      console.log(`\n$ ${command}${runs > 1 ? `   (run ${attempt}/${runs})` : ''}`);
+      if ((spawnSync(command, { shell: true, stdio: 'inherit', cwd }).status ?? 1) === 0) passed += 1;
+    }
+    return {
+      suite,
+      command,
+      runs,
+      passed,
+      ok: passed === runs,
+      flaky: passed > 0 && passed < runs,
+      seconds: Math.round((Date.now() - started) / 1000),
+    };
   });
 }
+
+// Evidence written before repeat runs existed carries no `runs`; it described exactly one.
+export const runCountOf = (result) => ({
+  runs: result.runs ?? 1,
+  passed: result.passed ?? (result.ok ? 1 : 0),
+  flaky: Boolean(result.flaky),
+});
 
 export async function saveEvidence(root, featureId, record) {
   await writeText(evidencePath(root, featureId), `${JSON.stringify({ feature: featureId, at: new Date().toISOString(), ...record }, null, 2)}\n`);
@@ -71,15 +97,26 @@ export async function evidenceProblems(root, project, feature) {
     return [`evidence: code changed since the last run (${evidence.commit.slice(0, 8)} → ${state.commit.slice(0, 8)}) — ${rerun}`];
   }
   const recorded = new Map(evidence.suites.map((result) => [result.suite, result]));
+  const wanted = runsFor(project);
   return definedSuites(project).flatMap((suite) => {
     const result = recorded.get(suite);
     if (!result) return [`evidence: ${SUITE_NAMES[suite]} suite not run — ${rerun}`];
-    return result.ok ? [] : [`evidence: ${SUITE_NAMES[suite]} suite failed (${result.command})`];
+    const { runs, passed, flaky } = runCountOf(result);
+    // A suite that fails sometimes has already told you it is not clean. Recording it as passing
+    // because the last attempt happened to be green is how a known failure reaches production.
+    if (flaky) return [`evidence: ${SUITE_NAMES[suite]} suite is flaky — passed ${passed} of ${runs} runs. Fix the flake; a suite that passes sometimes is not passing.`];
+    if (!result.ok) return [`evidence: ${SUITE_NAMES[suite]} suite failed (${result.command})`];
+    if (runs < wanted) return [`evidence: ${SUITE_NAMES[suite]} suite passed ${runs} run(s), but this project requires ${wanted} — ${rerun}`];
+    return [];
   });
 }
 
 export function evidenceChecklist(project, feature, evidence, trace) {
-  const suites = evidence.suites.map((result) => `- ${result.ok ? '✅' : '❌'} ${SUITE_NAMES[result.suite]}: \`${result.command}\` (${result.seconds}s)`);
+  const suites = evidence.suites.map((result) => {
+    const { runs, passed, flaky } = runCountOf(result);
+    const tally = runs > 1 ? ` — ${passed}/${runs} runs` : '';
+    return `- ${flaky ? '⚠️' : result.ok ? '✅' : '❌'} ${SUITE_NAMES[result.suite]}: \`${result.command}\`${tally} (${result.seconds}s)`;
+  });
   return [
     `**${feature.id} — ${feature.title} is ready for your sign-off.** Move this issue to Done to mark it done; Vibe-check-cli re-checks everything and records it in the specs.`,
     `Commit ${evidence.commit.slice(0, 8)} · verified ${evidence.at.slice(0, 16).replace('T', ' ')}`,

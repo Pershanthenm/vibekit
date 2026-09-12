@@ -37,7 +37,9 @@ export const DEFAULT_PROJECT = {
   architecture: { style: 'clean', notes: [] },
   standards: {
     naming: 'Idiomatic for each language; names reveal intent; booleans read as questions (isActive, hasAccess).',
-    testing: { framework: 'Vitest', coverage: 80, tdd: true },
+    // `runs` is how many times each suite must pass before evidence counts. Above 1 catches
+    // flaky tests, which otherwise reach done on whichever run happened to come out green.
+    testing: { framework: 'Vitest', coverage: 80, tdd: true, runs: 1 },
     commits: 'Conventional Commits',
     branching: 'Trunk-based with short-lived feature branches',
     rules: [
@@ -122,6 +124,10 @@ export function validate(project) {
   if (!project.targets.length) errors.push(`targets needs at least one of: ${TARGETS.join(', ')}`);
   if (unknownTargets.length) errors.push(`unknown targets: ${unknownTargets.join(', ')} (allowed: ${TARGETS.join(', ')})`);
   if (!project.stack.languages.length) errors.push('stack.languages must not be empty');
+  // Silently falling back to 1 would turn a typo into "flake detection is off" without saying so.
+  if (!(Number.isInteger(project.standards.testing.runs) && project.standards.testing.runs > 0)) {
+    errors.push('standards.testing.runs must be a positive integer (how many times each suite must pass)');
+  }
   if (!ARCHITECTURES[project.architecture.style]) {
     errors.push(`architecture.style must be one of: ${Object.keys(ARCHITECTURES).join(', ')}`);
   }

@@ -4,8 +4,9 @@ import { join, sep } from 'node:path';
 import { test } from 'node:test';
 import { run } from '../src/cli.js';
 import { collectState, dashboardPath, renderDashboard } from '../src/dashboard.js';
+import { saveEvidence } from '../src/evidence.js';
 import { loadProject, saveProject } from '../src/project.js';
-import { gitInit, newProject, sh } from './helpers.js';
+import { gitInit, newProject, patchProject, sh } from './helpers.js';
 
 console.log = () => {};
 process.env.VIBECHECK_NO_OPEN = '1';
@@ -131,6 +132,62 @@ test('writing the page leaves the working tree clean', async () => {
   const dirty = sh(root, 'git', 'status', '--porcelain').trim();
   assert.equal(dirty, '', `the status page dirtied the tree: ${dirty}`);
   assert.ok(!dashboardPath(root).includes(`${root}${sep}specs`), 'the page must not live in specs/');
+});
+
+test('a suite with no recorded run says "not run", never nothing', async () => {
+  const root = await withFeature();
+  const state = await collectState(root, await loadProject(root));
+
+  const suites = state.features[0].tests.suites;
+  assert.ok(suites.length, 'the defined suites must appear even before anything has been run');
+  assert.ok(suites.every((entry) => entry.state === 'missing'));
+  assert.equal(state.tests.missing, suites.length);
+  assert.equal(state.tests.ok, 0);
+});
+
+// The reason this dashboard exists: a flake must look like a problem, not a pass.
+test('a flaky suite is shown as FLAKY with its tally, not as a tick', async () => {
+  const root = await withFeature();
+  await patchProject(root, { commands: { test: 'node -e ""', smoke: '', ui: '' } });
+  gitInit(root);
+  const commit = sh(root, 'git', 'rev-parse', 'HEAD').trim();
+  await saveEvidence(root, '001-device-register', {
+    commit, dirty: false,
+    suites: [{ suite: 'test', command: 'node -e ""', ok: false, runs: 3, passed: 2, flaky: true, seconds: 4 }],
+  });
+
+  const state = await collectState(root, await loadProject(root));
+  assert.equal(state.features[0].tests.suites[0].state, 'flaky');
+  assert.equal(state.tests.flaky, 1);
+
+  const html = renderDashboard(state);
+  assert.match(html, /FLAKY/);
+  assert.match(html, /2\/3 runs/);
+});
+
+test('evidence from an older commit is called stale, not shown as passing', async () => {
+  const root = await withFeature();
+  await patchProject(root, { commands: { test: 'node -e ""', smoke: '', ui: '' } });
+  gitInit(root);
+  await saveEvidence(root, '001-device-register', {
+    commit: '0000000000000000000000000000000000000000', dirty: false,
+    suites: [{ suite: 'test', command: 'node -e ""', ok: true, runs: 3, passed: 3, flaky: false, seconds: 4 }],
+  });
+
+  const state = await collectState(root, await loadProject(root));
+  assert.equal(state.features[0].tests.stale, true);
+  assert.equal(state.tests.stale, 1);
+  assert.match(renderDashboard(state), /no longer describes this code/);
+});
+
+test('the page names untested criteria rather than only counting them', async () => {
+  const root = await withFeature();
+  const state = await collectState(root, await loadProject(root));
+
+  if (state.features[0].tests.trace.missing.length) {
+    assert.match(renderDashboard(state), /Untested criteria: AC-/);
+    assert.ok(state.tests.untraced > 0);
+  }
 });
 
 // The dashboard reports on the work; it must never be able to stop it.

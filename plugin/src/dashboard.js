@@ -6,7 +6,8 @@
 
 import { join } from 'node:path';
 import { designProblems } from './design.js';
-import { evidenceProblems, stateDir } from './evidence.js';
+import { definedSuites, evidenceProblems, loadEvidence, repoState, runCountOf, runsFor, stateDir } from './evidence.js';
+import { traceFeature } from './verify.js';
 import { checkFeature, listFeatures, progress } from './features.js';
 import { parseTasks, planLanes, readyParallelTasks } from './lanes.js';
 import { loadManifest } from './manifest.js';
@@ -68,7 +69,55 @@ async function lanesFor(root, project, feature) {
     .map((lane) => ({ name: lane.name, state: 'ready', tasks: lane.tasks.map((task) => task.id), detail: `${project.workflow.engine} · not dispatched` }));
 }
 
-async function featureState(root, project, feature) {
+/**
+ * What the tests actually say about this feature: the last recorded run of each suite, whether
+ * that run still describes the current commit, and how many acceptance criteria are proven by a
+ * test. A suite with no evidence is reported as such — never as an absence of bad news.
+ */
+async function testsFor(root, project, feature, head) {
+  const evidence = await loadEvidence(root, feature.id).catch(() => null);
+  const trace = await traceFeature(root, feature).catch(() => ({ covered: [], missing: [], orphans: [] }));
+  const recorded = new Map((evidence?.suites ?? []).map((result) => [result.suite, result]));
+  const suites = definedSuites(project).map((suite) => {
+    const result = recorded.get(suite);
+    if (!result) return { suite, state: 'missing', command: project.commands[suite], runs: 0, passed: 0, seconds: 0 };
+    const { runs, passed, flaky } = runCountOf(result);
+    return {
+      suite,
+      state: flaky ? 'flaky' : result.ok ? 'ok' : 'failed',
+      command: result.command,
+      runs,
+      passed,
+      seconds: result.seconds ?? 0,
+    };
+  });
+  return {
+    suites,
+    required: runsFor(project),
+    at: evidence?.at ?? null,
+    commit: evidence?.commit ?? null,
+    dirty: Boolean(evidence?.dirty),
+    // Evidence taken against a different commit describes code that no longer exists.
+    stale: Boolean(evidence?.commit && head && evidence.commit !== head),
+    trace: { covered: trace.covered.length, missing: trace.missing, orphans: trace.orphans ?? [] },
+  };
+}
+
+const TEST_STATES = ['ok', 'flaky', 'failed', 'missing'];
+
+/** One line for the top of the page: how much of the test story is actually good news. */
+function testSummary(features) {
+  const suites = features.flatMap((feature) => feature.tests.suites);
+  const counts = Object.fromEntries(TEST_STATES.map((state) => [state, suites.filter((suite) => suite.state === state).length]));
+  return {
+    ...counts,
+    suites: suites.length,
+    stale: features.filter((feature) => feature.tests.stale).length,
+    untraced: features.reduce((total, feature) => total + feature.tests.trace.missing.length, 0),
+  };
+}
+
+async function featureState(root, project, feature, head) {
   return {
     id: feature.id,
     title: feature.title ?? feature.id,
@@ -77,13 +126,17 @@ async function featureState(root, project, feature) {
     tasks: progress(feature.tasks, 'T'),
     gates: await gatesFor(root, project, feature),
     lanes: await lanesFor(root, project, feature),
+    tests: await testsFor(root, project, feature, head),
   };
 }
 
 /** Everything the page shows, as plain JSON. Safe to serialise, diff or publish. */
 export async function collectState(root, project, { setup = null, problems = [] } = {}) {
   const features = await listFeatures(root);
+  const head = repoState(root)?.commit ?? null;
+  const collected = await Promise.all(features.map((feature) => featureState(root, project, feature, head)));
   return {
+    tests: testSummary(collected),
     project: {
       name: project.project.name,
       generatedAt: new Date().toISOString(),
@@ -93,7 +146,7 @@ export async function collectState(root, project, { setup = null, problems = [] 
     next: await nextAction(root, project).catch(() => null),
     setup,
     problems,
-    features: await Promise.all(features.map((feature) => featureState(root, project, feature))),
+    features: collected,
   };
 }
 
@@ -123,6 +176,60 @@ function track(status) {
   return `<div class="track-steps">${steps.join('')}</div>`;
 }
 
+const SUITE_LABELS = { test: 'tests', smoke: 'smoke', ui: 'UI' };
+const STATE_WORDS = { ok: 'passing', flaky: 'FLAKY', failed: 'failing', missing: 'not run' };
+
+// Deliberately spells out "2/3 runs" rather than a tick: a flake read as a pass is the exact
+// mistake this whole feature exists to prevent.
+function suiteRow(entry) {
+  const tally = entry.runs > 1 ? `${entry.passed}/${entry.runs} runs` : entry.runs === 1 ? '1 run' : '';
+  const timing = entry.seconds ? `${entry.seconds}s` : '';
+  return `<li class="suite ${entry.state}">
+        <span class="suite-name">${escape(SUITE_LABELS[entry.suite] ?? entry.suite)}</span>
+        <span class="suite-state">${escape(STATE_WORDS[entry.state])}</span>
+        <span class="muted">${escape([tally, timing].filter(Boolean).join(' · '))}</span>
+      </li>`;
+}
+
+function testsPanel(tests) {
+  const traced = `${tests.trace.covered}/${tests.trace.covered + tests.trace.missing.length} criteria proven by a test`;
+  const notes = [
+    tests.stale && 'Evidence was recorded against an older commit — it no longer describes this code.',
+    tests.dirty && 'Recorded with uncommitted changes, so it does not count.',
+    tests.trace.missing.length && `Untested criteria: ${tests.trace.missing.map((id) => `AC-${id}`).join(', ')}`,
+    tests.trace.orphans.length && `Tests reference criteria that are not in the spec: ${tests.trace.orphans.join(', ')}`,
+  ].filter(Boolean);
+  return `
+      <div class="tests">
+        <div class="tests-head">
+          <b>Tests</b>
+          <span class="muted">${escape(traced)}${tests.required > 1 ? ` · ${tests.required} runs required` : ''}${tests.at ? ` · last run ${escape(tests.at.slice(0, 16).replace('T', ' '))}` : ''}</span>
+        </div>
+        <ul class="suites">${tests.suites.map(suiteRow).join('') || '<li class="suite missing"><span class="muted">No test commands defined for this project.</span></li>'}</ul>
+        ${notes.length ? `<ul class="blockers">${notes.map((note) => `<li>${escape(note)}</li>`).join('')}</ul>` : ''}
+      </div>`;
+}
+
+function testSummaryPanel(summary) {
+  if (!summary.suites) return '';
+  const cells = [
+    ['ok', summary.ok, 'passing'],
+    ['flaky', summary.flaky, 'flaky'],
+    ['failed', summary.failed, 'failing'],
+    ['missing', summary.missing, 'not run'],
+  ].map(([state, count, label]) => `<span class="tally ${state}${count ? '' : ' zero'}"><b>${count}</b> ${escape(label)}</span>`);
+  const notes = [
+    summary.stale && `${summary.stale} feature(s) have evidence from an older commit`,
+    summary.untraced && `${summary.untraced} acceptance criterion/criteria with no test`,
+  ].filter(Boolean);
+  return `
+    <section class="panel">
+      <h2>Tests <span class="muted">${summary.suites} suite run(s) across all features</span></h2>
+      <div class="tallies">${cells.join('')}</div>
+      ${notes.length ? `<ul class="blockers">${notes.map((note) => `<li>${escape(note)}</li>`).join('')}</ul>` : ''}
+    </section>`;
+}
+
 function featureCard(feature) {
   const blocked = feature.gates.filter((gate) => gate.state === 'blocked');
   return `
@@ -135,6 +242,7 @@ function featureCard(feature) {
       ${bar('Criteria', feature.criteria)}
       ${bar('Tasks', feature.tasks)}
       <div class="chips">${feature.gates.map(gateChip).join('')}</div>
+      ${testsPanel(feature.tests)}
       ${feature.lanes.length ? `<ul class="lanes">${feature.lanes.map(laneRow).join('')}</ul>` : ''}
       ${blocked.length ? `<ul class="blockers">${blocked.flatMap((gate) => gate.problems).map((problem) => `<li>${escape(problem)}</li>`).join('')}</ul>` : ''}
     </article>`;
@@ -196,6 +304,20 @@ const STYLE = `
   .blockers { color:var(--warn); font-size:13px; }
   .lanes { list-style:none; padding:0; font-size:12px; }
   .lane-state { font-size:11px; padding:1px 6px; border-radius:3px; background:var(--off-bg); color:var(--muted); }
+  .tests { margin-top:14px; border-top:1px solid var(--line); padding-top:12px; }
+  .tests-head { display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; font-size:13px; }
+  .suites { list-style:none; padding:0; margin:8px 0 0; font-size:12px; }
+  .suite { display:flex; gap:10px; align-items:baseline; padding:3px 0; flex-wrap:wrap; }
+  .suite-name { width:56px; flex:none; font-weight:600; }
+  .suite-state { font-size:11px; padding:1px 8px; border-radius:20px; background:var(--off-bg); color:var(--muted); }
+  .suite.ok .suite-state { background:var(--ok-bg); color:var(--ok); }
+  .suite.flaky .suite-state { background:var(--warn-bg); color:var(--warn); font-weight:700; letter-spacing:.03em; }
+  .suite.failed .suite-state { background:var(--warn-bg); color:var(--warn); }
+  .tallies { display:flex; gap:8px; flex-wrap:wrap; }
+  .tally { font-size:12px; padding:6px 12px; border-radius:8px; background:var(--off-bg); color:var(--muted); }
+  .tally b { font-size:16px; margin-right:4px; }
+  .tally.ok:not(.zero) { background:var(--ok-bg); color:var(--ok); }
+  .tally.flaky:not(.zero), .tally.failed:not(.zero) { background:var(--warn-bg); color:var(--warn); }
   .tools { list-style:none; padding:0; }
   .tools .ok { color:var(--ok); } .tools .pending { color:var(--muted); }
   .ok-text { color:var(--ok); margin:8px 0 0; }
@@ -236,6 +358,7 @@ ${live ? `<meta http-equiv="refresh" content="${intervalSeconds}">` : ''}
   </header>
   ${nextPanel}
   ${setupSection(state.setup)}
+  ${testSummaryPanel(state.tests ?? { suites: 0 })}
   ${problems}
   ${features}
 </div>

@@ -219,6 +219,8 @@ Every stack gets three suites in `project.json`: `test` (unit and integration), 
 
 Plans must give every visible acceptance criterion a UI test and the critical path a tagged smoke test. `vibecheck verify <id> --run` runs all three suites, traces criteria to tests, and records the result as evidence for the exact commit (kept in `.git/vibecheck/`, never committed). A feature can't be done unless that evidence exists, was taken on a clean commit, matches the current commit, and every defined suite passed. Change code afterwards and the evidence is stale.
 
+**Repeat runs catch flaky tests.** Set `standards.testing.runs` (default `1`) to the number of times each suite must pass, or pass `--repeat <n>` for a single invocation. A suite that passes on some runs and fails on others is recorded as **flaky**, and a flaky suite does not count as evidence — the gate reports `passed 2 of 3 runs` and blocks, rather than accepting whichever run happened to come out green. A suite that fails every time is a plain failure, not a flake, and is reported as such: the two need different fixes. Evidence recorded with fewer runs than the project now requires is rejected too, so raising `runs` invalidates old evidence instead of silently grandfathering it.
+
 ## Traceability: code validated against the spec
 
 Tests name the criterion they prove: `003:AC-2 rejects assigning a retired laptop`. `vibecheck verify [feature] [--run]` maps every criterion to its tests (flagging untested criteria, and tests pointing at criteria that don't exist) and optionally runs the suite. A feature can't be marked done while any criterion is untested; switch that off with `workflow.traceability: false`.
@@ -398,6 +400,23 @@ is the gate — the same way the evidence gate steps aside without git.
 `/vibe-check-cli:review-feature` delegates to the read-only **reviewer** subagent and writes the
 file. Teams that review somewhere else (GitHub PRs, for example) can set
 `workflow.review: false` in `specs/project.json`, alongside `traceability` and `evidence`.
+
+## Watching it happen: `vibecheck dashboard`
+
+`vibecheck dashboard [--open] [--out <file>] [--static] [--json]` renders the whole lifecycle to a
+single self-contained HTML page: every feature's stage, its criteria and task progress, which
+gates pass, block or are switched off (with the reason on hover), any running lanes, and the next
+action. No scripts, no network, no build step.
+
+`vibecheck setup`, `vibecheck dispatch` and interactive `vibecheck init` open it automatically and
+refresh it as they go, so there is something to watch while a project scaffolds itself — during
+setup it rewrites after every tool. The page carries a short meta-refresh; `--static` drops it for
+a copy you intend to share rather than watch.
+
+It is written to `.git/vibecheck/`, never into `specs/`. A generated file inside the working tree
+would leave it dirty, which makes `vibecheck merge` refuse to run and makes the evidence gate
+record a dirty commit — a page that reports on the lifecycle must not be able to block it. Set
+`VIBECHECK_NO_OPEN=1` (or run in CI) to write the page without launching a browser.
 
 ## Do the artefacts agree? `vibecheck analyze`
 

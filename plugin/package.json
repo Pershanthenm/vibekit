@@ -22,7 +22,8 @@
   },
   "scripts": {
     "build": "node scripts/build-plugin.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "test:repeat": "node scripts/repeat-tests.js 3"
   },
   "license": "MIT"
 }

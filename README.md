@@ -41,6 +41,8 @@ flowchart LR
 | **Design gate** | `new-project` designs the screens with Claude Design, stops for you to approve an artboard, and refuses to start a UI feature until one is recorded |
 | **Review gate** | A feature cannot be marked done without an approving `review.md` for the current commit; a review of code that has since changed does not count |
 | **Quality gates** | Acceptance-criteria traceability, test, smoke and UI evidence per commit, living docs, a security baseline mapped to OWASP ASVS |
+| **Flake detection** | Each suite can be required to pass *n* times (`standards.testing.runs`, or `--repeat`). A suite that passes sometimes is reported as flaky and does not count as evidence |
+| **Live status page** | `vibecheck dashboard` renders the whole lifecycle to one self-contained HTML page; setup, dispatch and init open it automatically and refresh it as they run |
 | **Machine setup** | `setup` installs and configures what each machine needs; `health` checks everything and names the fix |
 | **Any agent editor** | One project, four front ends: Claude Code, Cursor, Google Antigravity and Windsurf each get their own generated config from a single `specs/project.json`; Codex reads `AGENTS.md` directly |
 | **Standards, injected** | `standards/` holds one file per topic with a tiny `index.yml`; `vibecheck standards inject "<task>"` returns only the standards that matter, instead of loading the library |

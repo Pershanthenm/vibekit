@@ -43,6 +43,7 @@ const OPTIONS = {
   static: { type: 'boolean' },
   'still-accurate': { type: 'boolean' },
   run: { type: 'boolean' },
+  repeat: { type: 'string' },
   live: { type: 'boolean' },
   only: { type: 'string' },
   timeout: { type: 'string' },
@@ -88,7 +89,7 @@ Usage
                                                          Living docs & diagrams with freshness tracking
   vibecheck security [questions | apply | status]       Security baseline by menu, tailored to your stack
   vibecheck standards <list | index | inject "<task>">   Your coding standards, injected only where relevant
-  vibecheck verify [feature] [--run]                     Trace acceptance criteria to tests (and run them)
+  vibecheck verify [feature] [--run] [--repeat <n>]      Trace acceptance criteria to tests, and run each suite n times (flaky ≠ passing)
   vibecheck multica <status | sync | pull | selftest>    Multica: health, board mirror, done sign-offs, real agent round trip
   vibecheck projects [--prune] [--json]                  Every Vibe-check-cli project on this machine: where it is and what's next
   vibecheck team <capture | status> [--skip a,b]         Put your skills, subagents and plugins into the plugin, so every dev gets them

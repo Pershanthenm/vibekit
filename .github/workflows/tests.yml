@@ -36,6 +36,33 @@ jobs:
         working-directory: plugin
         run: npm test
 
+  flake:
+    # The matrix above proves the suite passes once. This proves it passes repeatedly, which is a
+    # different claim: the races this suite has actually hit only appear when runs compete for
+    # I/O, and they showed up on Windows first. Ubuntu is here as the cheap control.
+    name: repeat runs (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Configure git (the tests create commits)
+        run: |
+          git config --global user.email "ci@example.com"
+          git config --global user.name "CI"
+
+      - name: Run the suite three times
+        working-directory: plugin
+        run: npm run test:repeat
+
   validate:
     name: plugin validator
     runs-on: ubuntu-latest
