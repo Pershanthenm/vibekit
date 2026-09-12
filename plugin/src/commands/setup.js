@@ -8,6 +8,7 @@ import { detectPlatform, PLATFORM_NAMES, toolEnv } from '../machine/platform.js'
 import { runShell } from '../machine/probe.js';
 import { TOOLS, toolsFor } from '../machine/tools.js';
 import { createAsker } from '../menu.js';
+import { openDashboard } from './dashboard.js';
 import { runHealthCheck } from './health.js';
 
 const MANUAL = /^(Use|Install|Start|Create) /;
@@ -69,8 +70,14 @@ export async function planFor(root, { platform = detectPlatform(), tools, only =
   return { project, platform, results, steps: planSteps(results, platform) };
 }
 
-export async function runSetup({ root, platform = detectPlatform(), tools, only = [], yes = false, dryRun = false, asker }) {
+export async function runSetup({ root, platform = detectPlatform(), tools, only = [], yes = false, dryRun = false, asker, onProgress = null }) {
   const { project, results, steps } = await planFor(root, { platform, tools, only });
+  // Setup is the longest wait in a new project, so the status page is opened here and refreshed
+  // after every step. `steps` shrinks as tools are attempted, which is the progress worth watching.
+  const attempted = new Set();
+  const report = () => (project && onProgress
+    ? onProgress(project, { results, steps: steps.filter((step) => !attempted.has(step.tool.id)) })
+    : Promise.resolve());
   console.log(`vibecheck setup · ${PLATFORM_NAMES[platform]}${project ? ` · for project ${project.project.name}` : ' · machine-wide'}`);
   results.filter((result) => result.ok).forEach((result) => console.log(`  ✔ ${result.name} — ${result.detail}`));
   if (only.length && !results.length) {
@@ -84,6 +91,7 @@ export async function runSetup({ root, platform = detectPlatform(), tools, only 
   console.log(`\nPlan (${steps.length} step${steps.length === 1 ? '' : 's'}):`);
   steps.forEach((step) => console.log(`  ${step.manual ? '·' : '→'} ${step.kind} ${step.tool.name}: ${step.command ?? 'manual'}`));
   if (dryRun) return { planned: steps };
+  await report();
   const outcomes = { done: [], skipped: [], failed: [], manual: [] };
   const deferred = new Set();
   for (const next of steps) {
@@ -93,10 +101,14 @@ export async function runSetup({ root, platform = detectPlatform(), tools, only 
       console.log(`\n→ ${next.tool.name} needs you for the next step (browser sign-in or prompts). Run it in Cursor's terminal:\n    ${next.command}`);
       outcomes.manual.push(next.tool.id);
       deferred.add(next.tool.id);
+      attempted.add(next.tool.id);
+      await report();
       continue;
     }
     console.log(`\n${{ install: 'Installing', configure: 'Configuring', start: 'Starting', update: 'Updating', enable: 'Enabling' }[next.kind]} ${next.tool.name}…`);
     outcomes[await runStep(next, platform, yes, asker)].push(next.tool.id);
+    attempted.add(next.tool.id);
+    await report();
   }
   return outcomes;
 }
@@ -117,7 +129,10 @@ export async function setup({ root, yes, 'dry-run': dryRun, only, json }) {
   if (json) return printJsonPlan(await planFor(root, { only: ids }));
   const asker = yes || dryRun ? null : createAsker();
   try {
-    const outcomes = await runSetup({ root, yes, dryRun, asker, only: ids });
+    const outcomes = await runSetup({
+      root, yes, dryRun, asker, only: ids,
+      onProgress: (project, snapshot) => openDashboard(root, project, { setup: snapshot }),
+    });
     if (dryRun) return console.log('\nDry run: nothing was changed. Run "vibecheck setup" to go ahead.');
     if (outcomes.failed.length) console.log(`\n✖ Failed: ${outcomes.failed.join(', ')} — see the output above.`);
     if (outcomes.done.length) console.log('\nOpen a new terminal so PATH changes apply, then run "vibecheck health --live".');

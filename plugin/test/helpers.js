@@ -210,7 +210,18 @@ export async function installFakeMultica() {
   await installFakeBin(dir, 'multica', FAKE_MULTICA);
   const statePath = join(dir, 'state.json');
   const env = { PATH: [dir, dirname(process.execPath), ORIGINAL_PATH].join(delimiter), FAKE_MULTICA_STATE: statePath };
-  const state = async () => JSON.parse(await readRaw(statePath, 'utf8'));
+  // The fake CLI rewrites state.json in place, so a reader can catch it empty or half-written.
+  // Rare on its own, reliable once the suites run in parallel and compete for I/O.
+  const state = async () => {
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        return JSON.parse(await readRaw(statePath, 'utf8'));
+      } catch (error) {
+        if (attempt >= 20) throw error;
+        await new Promise((settle) => { setTimeout(settle, 25); });
+      }
+    }
+  };
   const update = async (change) => {
     const current = await state();
     change(current);

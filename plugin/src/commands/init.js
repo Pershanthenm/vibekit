@@ -1,9 +1,10 @@
 import { basename, join, resolve } from 'node:path';
 import { exists } from '../fsutil.js';
 import { createAsker } from '../menu.js';
-import { PROJECT_FILE, assertValid, readProjectFile, saveProject } from '../project.js';
+import { PROJECT_FILE, assertValid, loadProject, readProjectFile, saveProject } from '../project.js';
 import { normalize } from '../schema.js';
 import { interactiveAdvice } from './advise.js';
+import { openDashboard } from './dashboard.js';
 import { sync } from './sync.js';
 
 async function describeProduct(root, asker) {
@@ -32,5 +33,6 @@ export async function init({ root, force, from, yes }) {
   } finally {
     asker.close();
   }
+  await openDashboard(root, await loadProject(root));
   console.log('\nNext: open this folder in Cursor, start Claude Code and run /vibe-check-cli:new-project (or /vibe-check-cli:run).');
 }

@@ -10,6 +10,7 @@ import { loadProject } from '../project.js';
 import { ENGINES } from '../schema.js';
 import { dispatchToMultica } from '../multica-lanes.js';
 import { describeRoute, routeLanes } from '../routes.js';
+import { openDashboard } from './dashboard.js';
 
 const AGENTS = {
   cursor: { binaries: ['cursor-agent', 'agent'], args: (prompt) => ['-p', '--force', '--output-format', 'text', prompt] },
@@ -105,6 +106,8 @@ export async function dispatch({ root, args, engine, 'dry-run': dryRun }) {
     return;
   }
   await assertDispatchable(root, feature);
+  // Lanes run for minutes with little to show in the terminal; the page is where you watch them.
+  await openDashboard(root, project);
   const save = createManifestWriter(root);
   const context = await contextForFeature(project, feature, 'Context from memory and your knowledge library');
   if (chosen === 'multica') {
@@ -123,5 +126,6 @@ export async function dispatch({ root, args, engine, 'dry-run': dryRun }) {
   if (!headless.length) return;
   headless.forEach((lane) => console.log(`▶ ${lane.name} → ${agents[lane.engine].binary}`));
   await Promise.all(headless.map((lane) => runLane({ project, manifest, lane, agent: agents[lane.engine], save })));
+  await openDashboard(root, project);
   console.log(`\nNext: vibecheck merge ${feature.id}`);
 }
