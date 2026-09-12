@@ -28,6 +28,7 @@ import { standards } from './commands/standards.js';
 import { sync } from './commands/sync.js';
 import { verify } from './commands/verify.js';
 import { security } from './commands/security.js';
+import { startScreen, unknownCommand } from './guide.js';
 
 const COMMANDS = { init, adopt, analyze, sync, feature, status, list, dashboard, wizard, check, next, lanes, dispatch, merge, memory, knowledge, context, docs, advise, security, standards, verify, multica, health, doctor: health, setup, version, 'cursor-agents': cursorAgents, 'cursor-kit': cursorAgents, team, projects, hook };
 
@@ -106,10 +107,16 @@ Options
 export async function run(argv) {
   const { values, positionals } = parseArgs({ args: argv, options: OPTIONS, allowPositionals: true });
   const [name, ...args] = positionals;
-  const command = COMMANDS[name];
-  if (!command || values.help) {
-    console.log(HELP);
+  const root = resolve(values.dir ?? '.');
+
+  if (values.help) return console.log(HELP);
+  // Bare `vibecheck` is a question, not a mistake: answer it with what to do next here.
+  if (!name) return console.log(await startScreen(root));
+  // A typo used to print the help and exit 0, so a script could not tell it from success.
+  if (!COMMANDS[name]) {
+    console.error(unknownCommand(name, Object.keys(COMMANDS)));
+    process.exitCode = 1;
     return;
   }
-  await command({ ...values, args, root: resolve(values.dir ?? '.') });
+  await COMMANDS[name]({ ...values, args, root });
 }
