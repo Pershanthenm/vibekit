@@ -1,6 +1,7 @@
 import { commandPresetFor } from '../languages.js';
 import { findComponent } from './components.js';
 import { BAAS, STATIC_QUESTIONS, hasServer, targetsOf } from './questions.js';
+import { findStarter } from './starters.js';
 
 const SECURITY_RULES = {
   'rbac-audit': 'Authorization is role- and policy-based and enforced on the server; every state change writes an audit entry (who, what, when, before/after).',
@@ -114,6 +115,20 @@ function signInFor(backend, answers) {
 
 const describe = (item) => (item ? (item.custom ? item.label : `${item.label} — ${item.summary}`) : '');
 
+const EMPTY_STARTER = { id: '', label: '', licence: '', scaffold: '', docs: '' };
+
+/** The boilerplate the project starts from, flattened for project.json. "none" stays empty. */
+function starterFor(answer) {
+  if (answer?.other) return { ...EMPTY_STARTER, id: 'other', label: answer.other };
+  const found = findStarter(answer);
+  return found ? { id: found.id, label: found.label, licence: found.licence.name, scaffold: found.scaffold, docs: found.docs } : EMPTY_STARTER;
+}
+
+// Where a boilerplate and this tool disagree about layout or naming, the boilerplate wins — its
+// generators and upgrades depend on its own conventions. Saying so here keeps agents from
+// "correcting" a structure the framework owns.
+const starterNote = (starter) => starter.id && `Generated from ${starter.label}; follow its conventions and directory layout where they differ from the notes above${starter.docs ? ` (${starter.docs})` : ''}.`;
+
 function contextSettings(answers, base) {
   if (!Array.isArray(answers.context)) return {};
   return {
@@ -131,6 +146,7 @@ export function buildProject(base, answers, choices) {
   const picked = Object.values(choices).filter(Boolean);
   const languages = [...new Set(picked.flatMap((item) => item.languages))].filter((name) => !NON_CODE_LANGUAGES.includes(name));
   const layoutNote = Object.keys(layout).length > 1 && `Repository layout: ${Object.entries(layout).map(([layer, dir]) => `${dir === '.' ? 'root' : `${dir}/`} (${choices[layer].label})`).join(', ')}.`;
+  const starter = starterFor(answers.starter);
   const commands = combineCommands(choices, layout, { pascal: pascal(base.project.name), backendFamily: choices.backend?.family });
   return {
     ...base,
@@ -151,7 +167,8 @@ export function buildProject(base, answers, choices) {
         choices.desktop && DISTRIBUTION.desktop,
       ].filter(Boolean),
     },
-    architecture: { style: architecture.style, notes: [...architecture.notes, layoutNote].filter(Boolean) },
+    starter,
+    architecture: { style: architecture.style, notes: [...architecture.notes, layoutNote, starterNote(starter)].filter(Boolean) },
     standards: {
       ...base.standards,
       testing: { ...base.standards.testing, framework: [...new Set(picked.map((item) => item.testing).filter(Boolean))].join(' · ') || base.standards.testing.framework },
@@ -184,6 +201,26 @@ function layerSection(layer, ranking, chosen) {
   return [header, why, [...alternatives, ...excluded].join('\n')].filter(Boolean).join('\n\n');
 }
 
+// A boilerplate is a harder decision to reverse than a framework choice, so the ADR records what
+// was on offer and what was ruled out — including the ones a licensing answer removed silently.
+function starterSection(result) {
+  const starters = result.starters;
+  if (!starters?.ranked.length && !starters?.excluded.length) return '';
+  const chosen = result.answers.starter;
+  const picked = starters.ranked.find((item) => item.id === chosen);
+  const heading = '### Starting point';
+  const decision = picked
+    ? `${picked.label} (${picked.licence.name}) — score ${picked.score}. ${picked.reasons.map((reason) => reason.text).join('; ') || 'No scoring rules applied.'}`
+    : chosen?.other
+      ? `${chosen.other} (entered by you; not in the catalogue).`
+      : 'From scratch: no boilerplate. The layout and conventions are the ones vibecheck generates.';
+  const alternatives = starters.ranked.filter((item) => item.id !== chosen).slice(0, 3)
+    .map((item) => `- ${item.label} (${item.licence.name}) — ${item.summary}`);
+  const excluded = starters.excluded.map((item) => `- ${item.label} — excluded: ${item.reason}`);
+  const caveats = picked?.caveats.length ? `Known trade-offs:\n${picked.caveats.map((line) => `- ${line}`).join('\n')}` : '';
+  return [heading, decision, caveats, [...alternatives, ...excluded].join('\n')].filter(Boolean).join('\n\n');
+}
+
 export function renderSelectionAdr({ number, date, result, choices }) {
   const requirementRows = STATIC_QUESTIONS.filter((question) => result.answers[question.id] !== undefined)
     .map((question) => `| ${question.header} | ${answerLabel(question, result.answers[question.id])} |`);
@@ -194,6 +231,7 @@ export function renderSelectionAdr({ number, date, result, choices }) {
     `## Context\n\nRequirements gathered with \`vibecheck advise\`:\n\n| Topic | Answer |\n|---|---|\n${requirementRows.join('\n')}`,
     `## Decision\n\n${summary}`,
     ...Object.entries(choices).map(([layer, item]) => layerSection(layer, result.layers[layer], item)),
+    starterSection(result),
     result.warnings.length ? `## Warnings\n\n${result.warnings.map((warning) => `- ${warning}`).join('\n')}` : '',
     `## Consequences\n\nLicences: ${Object.values(choices).map((item) => `${item.label} (${item.licence.name})`).join(', ')}. Revisit with \`vibecheck advise recommend\`; changing a layer goes through the re-architect workflow.`,
   ].filter(Boolean).join('\n\n') + '\n';

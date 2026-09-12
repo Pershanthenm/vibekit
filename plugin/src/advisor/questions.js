@@ -202,7 +202,7 @@ export const needsHosting = (answers) => hasServer(answers.backend) && !BAAS.inc
 
 const [BUILDING, CONSTRAINTS, ARCHITECTURE, WORKFLOW] = STATIC_ROUNDS;
 
-export function roundsFor(answers, layerQuestions) {
+export function roundsFor(answers, layerQuestions, extra = {}) {
   const delivery = [
     needsDatabase(answers) && layerQuestions.database,
     needsHosting(answers) && HOSTING,
@@ -213,6 +213,9 @@ export function roundsFor(answers, layerQuestions) {
     CONSTRAINTS,
     ARCHITECTURE,
     { title: 'Stack', questions: neededLayers(answers).map((layer) => layerQuestions[layer]) },
+    // Straight after the stack: a boilerplate decides the layout and half the conventions, so it
+    // has to be settled before hosting, integrations or anything downstream is worth asking.
+    { title: 'Starting point', questions: [extra.starter].filter(Boolean) },
     { title: 'Data and delivery', questions: delivery },
     WORKFLOW,
   ];

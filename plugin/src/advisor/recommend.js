@@ -1,5 +1,6 @@
 import { BAAS, STATIC_QUESTIONS, hasServer, needsDatabase, neededLayers, roundsFor, targetsOf } from './questions.js';
 import { componentsFor, findComponent, LICENCE_CLASSES } from './components.js';
+import { STARTERS, rankStarters } from './starters.js';
 
 const RECOMMENDED_SUFFIX = / \(recommended\)$/i;
 const MAX_LAYER_OPTIONS = 4;
@@ -43,7 +44,18 @@ export function normalizeAnswers(raw = {}) {
   for (const layer of ['backend', 'web', 'mobile', 'desktop', 'database']) {
     if (raw[layer] !== undefined) answers[layer] = normalizeLayer(layer, raw[layer]);
   }
+  if (raw.starter !== undefined) answers.starter = normalizeStarter(raw.starter);
   return answers;
+}
+
+// "none" is a real answer, not a missing one: it records a deliberate decision to build from
+// scratch, so the question is never asked twice.
+function normalizeStarter(raw) {
+  if (isOther(raw)) return { other: String(raw.other) };
+  const wanted = String(raw).replace(RECOMMENDED_SUFFIX, '').trim().toLowerCase();
+  if (!wanted || ['none', 'scratch', 'from scratch'].includes(wanted)) return 'none';
+  const match = STARTERS.find((item) => item.id === wanted || item.label.toLowerCase() === wanted);
+  return match ? match.id : { other: String(raw).replace(RECOMMENDED_SUFFIX, '') };
 }
 
 const has = (answers, id, value) => [answers[id]].flat().includes(value);
@@ -154,7 +166,8 @@ export function recommend(rawAnswers, { preferred = [] } = {}) {
   const withMobile = { ...withBackend, mobile: chosenOrTop(answers, 'mobile', layers.mobile) };
   for (const layer of ['web', 'desktop'].filter((name) => needed.includes(name))) layers[layer] = rankLayer(layer, withMobile, preferred);
   if (needsDatabase({ ...answers, backend: withBackend.backend?.id })) layers.database = rankLayer('database', withMobile, preferred);
-  return { answers, layers, warnings: warningsFor(answers, layers) };
+  const resolved = Object.fromEntries(Object.keys(layers).map((layer) => [layer, chosenOrTop(answers, layer, layers[layer])]));
+  return { answers, layers, starters: rankStarters(resolved, answers), warnings: warningsFor(answers, layers) };
 }
 
 function layerQuestion(layer, ranking) {
@@ -170,11 +183,39 @@ function layerQuestion(layer, ranking) {
   };
 }
 
+// Offered only once a stack exists to match against, and only when something actually fits.
+// "From scratch" is a listed answer so the decision is recorded rather than defaulted into.
+const STRONG_ENOUGH_TO_RECOMMEND = 4;
+
+export function starterQuestion(starters) {
+  if (!starters.ranked.length) return null;
+  const top = starters.ranked.slice(0, 3);
+  const leadWithStarter = top[0].score >= STRONG_ENOUGH_TO_RECOMMEND;
+  return {
+    id: 'starter',
+    header: 'Boilerplate',
+    question: 'Start from a boilerplate, or generate the structure from scratch?',
+    defaults: [leadWithStarter ? top[0].id : 'none'],
+    options: [
+      ...top.map((item, index) => ({
+        id: item.id,
+        label: index === 0 && leadWithStarter ? `${item.label} (Recommended)` : item.label,
+        description: `${item.licence.name} · ${item.summary}`,
+      })),
+      {
+        id: 'none',
+        label: leadWithStarter ? 'From scratch' : 'From scratch (Recommended)',
+        description: 'vibecheck generates the layout and conventions; nothing extra to learn, licence or upgrade',
+      },
+    ],
+  };
+}
+
 export function nextRound(rawAnswers, options = {}) {
   const result = recommend(rawAnswers, options);
   const layerQuestions = Object.fromEntries(Object.entries(result.layers).map(([layer, ranking]) => [layer, layerQuestion(layer, ranking)]));
   const withLayerDefaults = { ...result.answers, backend: result.answers.backend ?? (result.answers.platform ? result.layers.backend.ranked[0]?.id : undefined) };
-  for (const round of roundsFor(withLayerDefaults, layerQuestions)) {
+  for (const round of roundsFor(withLayerDefaults, layerQuestions, { starter: starterQuestion(result.starters) })) {
     const open = round.questions.filter((question) => question && result.answers[question.id] === undefined);
     if (open.length) return { complete: false, title: round.title, questions: open };
   }

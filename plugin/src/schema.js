@@ -32,6 +32,8 @@ export const DEFAULT_PROJECT = {
     hosting: '',
     other: [],
   },
+  // The boilerplate the codebase was generated from, if any. Empty means built from scratch.
+  starter: { id: '', label: '', licence: '', scaffold: '', docs: '' },
   architecture: { style: 'clean', notes: [] },
   standards: {
     naming: 'Idiomatic for each language; names reveal intent; booleans read as questions (isActive, hasAccess).',
