@@ -9,7 +9,7 @@ import { planSteps, runSetup } from '../src/commands/setup.js';
 import { toolChecks } from '../src/machine/health.js';
 import { httpOk } from '../src/machine/probe.js';
 import { TOOLS, toolsFor } from '../src/machine/tools.js';
-import { BIN, TOOL_FREE_PATH, exitCodeOf, gitInit, installFakeBin, newProject, restoreEnv, sh, startFakeAgentmemory } from './helpers.js';
+import { BIN, TOOL_FREE_PATH, exitCodeOf, gitInit, installFakeBin, isolateHome, newProject, posix, restoreEnv, sh, startFakeAgentmemory, startFakeHttp } from './helpers.js';
 
 const ORIGINAL_ENV = { ...process.env };
 const NODE_DIR = dirname(process.execPath);
@@ -30,7 +30,10 @@ const value = key in out ? out[key] : out['*'];
 if (value !== undefined) console.log(value);
 `;
 
-const HEALTHY = (claudeAnswer = 'VIBECHECK_OK') => ({
+// Docker and Multica are required of every project now, so a machine that is meant to be healthy
+// has to answer for them too. `multicaUrl` is the fake self-hosted server the check calls
+// /health on; it is passed in because the port is only known once that server is listening.
+const HEALTHY = (claudeAnswer = 'VIBECHECK_OK', multicaUrl = 'http://127.0.0.1:1') => ({
   claude: replies({
     '--version': '2.1.300 (Claude Code)',
     plugin: 'vibe-check-cli@vibe-check-cli enabled\nagentmemory@agentmemory enabled',
@@ -39,6 +42,13 @@ const HEALTHY = (claudeAnswer = 'VIBECHECK_OK') => ({
   agent: replies({ '--version': 'cursor-agent 2026.09', '-p': 'CURSOR_OK' }),
   oc: replies({ '--version': 'oc 1.4.0', search: '[]' }),
   agentmemory: replies({ '*': 'agentmemory 0.9' }),
+  docker: replies({ info: 'Server Version: 27.0.3', '*': 'Docker version 27.0.3' }),
+  multica: replies({
+    version: 'multica 1.2.0',
+    config: `server_url: ${multicaUrl}`,
+    daemon: '{"status":"running"}',
+    '*': '',
+  }),
   vibecheck: `#!/usr/bin/env node
 require('child_process').spawnSync(process.execPath, [${JSON.stringify(BIN)}, ...process.argv.slice(2)], { stdio: 'inherit' });
 `,
@@ -57,15 +67,16 @@ async function projectOnHealthyMachine(claudeAnswer) {
   process.env.VIBECHECK_CURSOR_DIR = join(await mkdtemp(join(tmpdir(), 'vc-cursor-')), '.cursor');
   await run(['cursor-agents']);
   const memory = await startFakeAgentmemory();
-  process.env.PATH = [await fakeBin(HEALTHY(claudeAnswer)), TOOL_FREE_PATH].join(delimiter);
+  const multica = await startFakeHttp({ status: 'ok' });
+  process.env.PATH = [await fakeBin(HEALTHY(claudeAnswer, multica.url)), TOOL_FREE_PATH].join(delimiter);
   process.env.AGENTMEMORY_URL = memory.url;
   const root = await newProject('--yes');
   gitInit(root);
-  return { root, memory };
+  return { root, memory, multica, close: async () => { await memory.close(); await multica.close(); } };
 }
 
 test('health --live passes when every piece works, end to end', async () => {
-  const { root, memory } = await projectOnHealthyMachine();
+  const { root, close } = await projectOnHealthyMachine();
   try {
     const report = await runHealthCheck(root, { live: true });
     const failing = Object.values(report.groups).flat().filter((result) => !result.ok);
@@ -75,19 +86,19 @@ test('health --live passes when every piece works, end to end', async () => {
     assert.equal(await exitCodeOf(['health', '--dir', root, '--live']), 0);
     assert.equal(await exitCodeOf(['doctor', '--dir', root]), 0, 'the old command name still works');
   } finally {
-    await memory.close();
+    await close();
   }
 });
 
 test('the live check catches a Claude Code without the vibecheck hooks', async () => {
-  const { root, memory } = await projectOnHealthyMachine('MISSING');
+  const { root, close } = await projectOnHealthyMachine('MISSING');
   try {
     const live = (await runHealthCheck(root, { live: true })).groups.Live;
     const claude = live.find((result) => result.name.startsWith('Claude Code'));
     assert.equal(claude.ok, false);
     assert.match(claude.fix, /claude plugin install vibe-check-cli@vibe-check-cli/);
   } finally {
-    await memory.close();
+    await close();
   }
 });
 
@@ -125,6 +136,7 @@ test('the checklist follows the project configuration', async () => {
 
 test('setup --dry-run shows the plan and changes nothing; installs are followed by service starts', async () => {
   process.env.PATH = TOOL_FREE_PATH;
+  isolateHome();
   process.env.AGENTMEMORY_URL = 'http://127.0.0.1:9';
   const root = await mkdtemp(join(tmpdir(), 'sf-machine-'));
   const { planned } = await runSetup({ root, platform: 'linux', dryRun: true });
@@ -140,16 +152,22 @@ test('setup runs installs, re-checks, and starts services in the background', as
   const port = 30000 + Math.floor(Math.random() * 20000);
   const pidFile = join(bin, 'service.pid');
   process.env.PATH = [bin, TOOL_FREE_PATH].join(delimiter);
+  process.env.VC_TEST_PIDFILE = pidFile;
+  const shellBin = posix(bin);
   const widget = {
     id: 'widget', name: 'Widget', why: 'test', needed: () => true,
-    check: async () => ({ ok: sh(bin, 'sh', '-c', `test -x ${bin}/widget && echo yes || echo no`).trim() === 'yes', detail: '' }),
-    install: { linux: `printf '#!/bin/sh\\necho widget 1.0\\n' > ${bin}/widget && chmod +x ${bin}/widget` },
+    check: async () => ({ ok: sh(bin, 'sh', '-c', `test -x ${shellBin}/widget && echo yes || echo no`).trim() === 'yes', detail: '' }),
+    install: { linux: `printf '#!/bin/sh\\necho widget 1.0\\n' > ${shellBin}/widget && chmod +x ${shellBin}/widget` },
   };
   const service = {
     id: 'agentmemory', name: 'Service', why: 'test', needed: () => true,
     check: async () => ({ ok: await httpOk(`http://127.0.0.1:${port}/`), detail: '' }),
     install: { linux: 'true' },
-    start: `"${process.execPath}" -e "require('fs').writeFileSync('${pidFile}', String(process.pid)); require('http').createServer((q, s) => s.end('ok')).listen(${port})"`,
+    // The path goes through the environment rather than into the command text. Embedded, it is a
+    // JS string literal inside a shell string inside a spawn — three layers of quoting, and on
+    // Windows it came out with its separators stripped, which dropped the pid file into the
+    // repository root instead of the temp directory. An env var has no escaping rules to lose.
+    start: `"${process.execPath}" -e "require('fs').writeFileSync(process.env.VC_TEST_PIDFILE, String(process.pid)); require('http').createServer((q, s) => s.end('ok')).listen(${port})"`,
   };
   try {
     const outcomes = await runSetup({ root: bin, platform: 'linux', tools: [widget, service], yes: true });
@@ -168,6 +186,11 @@ test('version works and the bootstrap script is valid shell', async () => {
 
 test('setup --json gives Claude a plan to turn into a menu', async () => {
   process.env.PATH = TOOL_FREE_PATH;
+  isolateHome();
+  // This goes through the CLI, which detects the real platform. Pin it: on native Windows the
+  // agentmemory install is manual (it needs WSL2), so no start step follows it — correct, but
+  // it would make this assertion about step ordering pass or fail depending on who ran it.
+  process.env.VIBECHECK_PLATFORM = 'linux';
   process.env.AGENTMEMORY_URL = 'http://127.0.0.1:9';
   const root = await mkdtemp(join(tmpdir(), 'vc-json-'));
   const lines = [];
@@ -207,7 +230,7 @@ test('non-interactive setup hands sign-in steps to the user and skips what depen
   const tool = {
     id: 'svc', name: 'Service', why: 'test', needed: () => true, interactive: ['configure'],
     check: async () => ({ ok: false, detail: '' }),
-    install: { linux: `echo install >> ${bin}/log` }, configure: `echo configure >> ${bin}/log`, start: `echo start >> ${bin}/log`,
+    install: { linux: `echo install >> ${posix(bin)}/log` }, configure: `echo configure >> ${posix(bin)}/log`, start: `echo start >> ${posix(bin)}/log`,
   };
   const outcomes = await runSetup({ root: bin, platform: 'linux', tools: [tool], yes: true });
   const log = await readFile(join(bin, 'log'), 'utf8');

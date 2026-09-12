@@ -1,15 +1,18 @@
 // The page itself: a pure function from the collected state to one self-contained HTML string.
 // Kept apart from the collector so the two can be read, and changed, independently.
 //
+// The chrome — rail, title bar, cards, palette — comes from page-chrome.js, which the wizard also
+// uses, so project tracking and the setup form are one product rather than two that resemble
+// each other.
+//
 // No scripts and no network requests, on purpose. The page is opened from a file:// path while a
 // build runs, often on a locked-down machine, and it has to render identically there, offline,
-// with nothing loaded. That rules out client-side filtering, so navigation is anchors, a sticky
-// bar and one scannable index table — which is faster to use anyway.
+// with nothing loaded. That rules out client-side filtering, so navigation is anchors in the rail
+// and one scannable index table — which is faster to use anyway.
 
+import { escape, shell } from './page-chrome.js';
 import { FEATURE_STATUSES } from './schema.js';
 
-const ENTITIES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
-const escape = (text) => String(text ?? '').replace(/[&<>"]/g, (char) => ENTITIES[char]);
 const pct = (done, total) => (total ? Math.round((done / total) * 100) : 0);
 const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
@@ -20,48 +23,29 @@ const STAGE_WORDS = { draft: 'Draft', approved: 'Approved', planned: 'Planned', 
 const anchor = (id) => `feature-${String(id).replace(/[^a-zA-Z0-9-]/g, '')}`;
 const meter = (done, total) => `<span class="meter" title="${done} of ${total}"><span class="meter-fill" style="width:${pct(done, total)}%"></span></span>`;
 
-// ── Header ──────────────────────────────────────────────────────────────────────────────────
+// ── Rail ────────────────────────────────────────────────────────────────────────────────────
 
-function appBar(state, live) {
-  const meta = [state.project.engine, state.project.autonomy === 'gated' ? 'gated' : 'auto-plan'].filter(Boolean);
-  const when = new Date(state.project.generatedAt).toLocaleTimeString();
-  return `
-  <header class="appbar">
-    <div class="wrap bar">
-      <div class="brand">
-        <span class="mark" aria-hidden="true">VC</span>
-        <span class="brand-text">
-          <span class="brand-name">${escape(state.project.name)}</span>
-          <span class="brand-sub">Delivery lifecycle${meta.length ? ` · ${escape(meta.join(' · '))}` : ''}</span>
-        </span>
-      </div>
-      <span class="stamp">${live ? '<span class="dot" aria-hidden="true"></span>Live · ' : ''}Updated ${escape(when)}</span>
-    </div>
-  </header>`;
-}
-
-function subNav(state) {
-  const links = [
-    ['#overview', 'Overview'],
-    state.tests?.suites && ['#tests', 'Tests'],
-    state.setup && ['#setup', 'Environment'],
-    state.problems.length && ['#issues', `Issues (${state.problems.length})`],
-    state.features.length && ['#features', 'Features'],
+// The rail is the table of contents. A section that would be empty is left out rather than
+// offered as a dead link.
+function railItems(state) {
+  const unhealthy = (state.tests?.flaky ?? 0) + (state.tests?.failed ?? 0);
+  return [
+    { href: '#overview', label: 'Overview', icon: 'home', current: true },
+    state.features.length && { href: '#features', label: 'Features', icon: 'board' },
+    state.tests?.suites && { href: '#tests', label: 'Tests', icon: 'tests', pip: unhealthy ? 'rd' : '' },
+    state.setup && { href: '#setup', label: 'Environment', icon: 'tools' },
+    state.problems.length && { href: '#issues', label: `Issues (${state.problems.length})`, icon: 'issues', pip: 'am' },
   ].filter(Boolean);
-  return `
-  <nav class="subnav" aria-label="Sections">
-    <div class="wrap navrow">${links.map(([href, label]) => `<a href="${href}">${escape(label)}</a>`).join('')}</div>
-  </nav>`;
 }
 
 // ── Key figures ─────────────────────────────────────────────────────────────────────────────
 
 const kpi = (label, value, note, tone = '') => `
-      <div class="kpi ${tone}">
-        <span class="kpi-label">${escape(label)}</span>
-        <span class="kpi-value">${escape(String(value))}</span>
-        <span class="kpi-note">${escape(note)}</span>
-      </div>`;
+        <div class="st2 ${tone}">
+          <span class="lb2">${escape(label)}</span>
+          <span class="vl2">${escape(String(value))}</span>
+          <span class="ft2">${escape(note)}</span>
+        </div>`;
 
 function kpiRow(state) {
   const features = state.features;
@@ -74,12 +58,12 @@ function kpiRow(state) {
     ? `${plural(unhealthy, 'suite')} flaky or failing`
     : tests.missing ? `${plural(tests.missing, 'suite')} never run` : 'all recorded runs green';
   return `
-    <section class="kpis" aria-label="Key figures">
-      ${kpi('Features complete', `${done}/${features.length}`, features.length ? `${pct(done, features.length)}% of scope` : 'none yet')}
-      ${kpi('Tasks ticked', `${tasks.done}/${tasks.total}`, tasks.total ? `${pct(tasks.done, tasks.total)}% of planned work` : 'no tasks yet')}
-      ${kpi('Suites healthy', `${tests.ok}/${tests.suites}`, testNote, unhealthy ? 'bad' : tests.missing ? 'warn' : 'good')}
-      ${kpi('Gates blocking', blocked, blocked ? 'must clear before done' : 'nothing in the way', blocked ? 'warn' : 'good')}
-    </section>`;
+      <section class="kpis" aria-label="Key figures">
+${kpi('Features complete', `${done}/${features.length}`, features.length ? `${pct(done, features.length)}% of scope` : 'none yet')}
+${kpi('Tasks ticked', `${tasks.done}/${tasks.total}`, tasks.total ? `${pct(tasks.done, tasks.total)}% of planned work` : 'no tasks yet')}
+${kpi('Suites healthy', `${tests.ok}/${tests.suites}`, testNote, unhealthy ? 'bad' : tests.missing ? 'warn' : 'good')}
+${kpi('Gates blocking', blocked, blocked ? 'must clear before done' : 'nothing in the way', blocked ? 'warn' : 'good')}
+      </section>`;
 }
 
 // ── Overview ────────────────────────────────────────────────────────────────────────────────
@@ -87,12 +71,12 @@ function kpiRow(state) {
 function nextPanel(next) {
   if (!next) return '';
   return `
-      <div class="next">
-        <span class="eyebrow">Next action</span>
-        <p class="next-line"><b>${escape(STAGE_WORDS[next.step] ?? next.step)}</b>${next.feature ? ` — ${escape(next.feature)}` : ''}<span class="muted"> · ${escape(next.reason)}</span></p>
-        <p><code>${escape(next.command)}</code></p>
-        ${next.gate ? `<p class="muted small">Waiting on you: ${escape(next.gate)}</p>` : ''}
-      </div>`;
+        <div class="callout">
+          <b>Do this next</b>
+          <p style="margin:0 0 8px"><b style="display:inline;color:var(--tx)">${escape(STAGE_WORDS[next.step] ?? next.step)}</b>${next.feature ? ` — ${escape(next.feature)}` : ''} · ${escape(next.reason)}</p>
+          <p style="margin:0"><code>${escape(next.command)}</code></p>
+          ${next.gate ? `<p class="small" style="margin:8px 0 0">Waiting on you: ${escape(next.gate)}</p>` : ''}
+        </div>`;
 }
 
 // One row per feature, so the whole programme is readable without scrolling through the cards.
@@ -101,29 +85,30 @@ function indexRow(feature) {
   const suites = feature.tests.suites;
   const worst = ['failed', 'flaky', 'missing', 'ok'].find((state) => suites.some((suite) => suite.state === state)) ?? 'missing';
   return `
-          <tr>
-            <td><a href="#${anchor(feature.id)}">${escape(feature.id)}</a><span class="row-title">${escape(feature.title)}</span></td>
-            <td><span class="badge ${escape(feature.status)}">${escape(STAGE_WORDS[feature.status] ?? feature.status)}</span></td>
-            <td class="num">${feature.tasks.done}/${feature.tasks.total} ${meter(feature.tasks.done, feature.tasks.total)}</td>
-            <td>${suites.length ? `<span class="pill ${escape(worst)}">${escape(STATE_WORDS[worst])}</span>` : '<span class="muted">—</span>'}</td>
-            <td class="num">${blocked.length ? `<span class="pill failed">${blocked.length}</span>` : '<span class="muted">—</span>'}</td>
-          </tr>`;
+              <tr>
+                <td><a href="#${anchor(feature.id)}">${escape(feature.id)}</a><span class="row-title">${escape(feature.title)}</span></td>
+                <td><span class="badge ${escape(feature.status)}">${escape(STAGE_WORDS[feature.status] ?? feature.status)}</span></td>
+                <td class="num">${feature.tasks.done}/${feature.tasks.total} ${meter(feature.tasks.done, feature.tasks.total)}</td>
+                <td>${suites.length ? `<span class="pill ${escape(worst)}">${escape(STATE_WORDS[worst])}</span>` : '<span class="faint">—</span>'}</td>
+                <td class="num">${blocked.length ? `<span class="pill failed">${blocked.length}</span>` : '<span class="faint">—</span>'}</td>
+              </tr>`;
 }
 
 function overview(state) {
   const table = state.features.length ? `
-      <div class="tablewrap">
-        <table class="index">
-          <thead><tr><th>Feature</th><th>Stage</th><th>Tasks</th><th>Tests</th><th>Blocked</th></tr></thead>
-          <tbody>${state.features.map(indexRow).join('')}</tbody>
-        </table>
-      </div>` : '<p class="muted">No features yet. Create one with <code>vibecheck feature "&lt;name&gt;"</code>.</p>';
+          <div class="tablewrap">
+            <table>
+              <thead><tr><th>Feature</th><th>Stage</th><th>Tasks</th><th>Tests</th><th>Blocked</th></tr></thead>
+              <tbody>${state.features.map(indexRow).join('')}</tbody>
+            </table>
+          </div>` : '<p class="muted">No features yet. Create one with <code>vibecheck feature "&lt;name&gt;"</code>.</p>';
   return `
-    <section id="overview" class="panel">
-      <h2>Overview</h2>
-      ${nextPanel(state.next)}
-      ${table}
-    </section>`;
+      <section id="overview" class="cd">
+        <h2>Overview</h2>
+        <p class="cs">Every feature, where it sits in the lifecycle, and what is holding it up.</p>
+        ${nextPanel(state.next)}
+        ${table}
+      </section>`;
 }
 
 // ── Tests ───────────────────────────────────────────────────────────────────────────────────
@@ -135,8 +120,12 @@ function testTallies(summary) {
     ['failed', summary.failed, 'Failing'],
     ['missing', summary.missing, 'Not run'],
   ];
-  return `<div class="tallies">${cells.map(([state, count, label]) => `
-        <span class="tally ${state}${count ? '' : ' zero'}"><b>${count}</b><span>${escape(label)}</span></span>`).join('')}</div>`;
+  return `<div class="kpis" style="margin:0">${cells.map(([state, count, label]) => `
+          <div class="st2 ${count ? state : ''}">
+            <span class="lb2">${escape(label)}</span>
+            <span class="vl2">${count}</span>
+            <span class="ft2">${count === 1 ? 'suite' : 'suites'}</span>
+          </div>`).join('')}</div>`;
 }
 
 function testsSection(state) {
@@ -147,24 +136,30 @@ function testsSection(state) {
     summary.untraced && `${summary.untraced} acceptance criteria with no test`,
   ].filter(Boolean);
   return `
-    <section id="tests" class="panel">
-      <h2>Tests <span class="muted small">${plural(summary.suites, 'suite')} across all features</span></h2>
-      ${testTallies(summary)}
-      ${notes.length ? `<ul class="notes warn">${notes.map((note) => `<li>${escape(note)}</li>`).join('')}</ul>` : ''}
-      <p class="muted small">A suite that passes on some runs and not others is <b>flaky</b>, and does not count as evidence.</p>
-    </section>`;
+      <section id="tests" class="cd">
+        <div class="hdr">
+          <div>
+            <h2>Tests</h2>
+            <p class="cs" style="margin:4px 0 0">${plural(summary.suites, 'suite')} across all features</p>
+          </div>
+          <span class="tg ${summary.flaky + summary.failed ? 'g-rd' : summary.missing ? 'g-am' : 'g-lime'}">${summary.ok}/${summary.suites} healthy</span>
+        </div>
+        ${testTallies(summary)}
+        ${notes.length ? `<ul class="notes warn">${notes.map((note) => `<li>${escape(note)}</li>`).join('')}</ul>` : ''}
+        <p class="callout warn"><b>Flaky is not passing</b>A suite that passes on some runs and not others is <b style="display:inline;color:var(--tx)">flaky</b>, and does not count as evidence.</p>
+      </section>`;
 }
 
 function suiteRow(entry) {
   const tally = entry.runs > 1 ? `${entry.passed}/${entry.runs} runs` : entry.runs === 1 ? '1 run' : '—';
   return `
-            <tr class="${escape(entry.state)}">
-              <td>${escape(SUITE_LABELS[entry.suite] ?? entry.suite)}</td>
-              <td><span class="pill ${escape(entry.state)}">${escape(STATE_WORDS[entry.state])}</span></td>
-              <td class="num">${escape(tally)}</td>
-              <td class="num">${entry.seconds ? `${entry.seconds}s` : '<span class="muted">—</span>'}</td>
-              <td><code class="cmd">${escape(entry.command || '—')}</code></td>
-            </tr>`;
+                <tr class="${escape(entry.state)}">
+                  <td>${escape(SUITE_LABELS[entry.suite] ?? entry.suite)}</td>
+                  <td><span class="pill ${escape(entry.state)}">${escape(STATE_WORDS[entry.state])}</span></td>
+                  <td class="num">${escape(tally)}</td>
+                  <td class="num">${entry.seconds ? `${entry.seconds}s` : '<span class="faint">—</span>'}</td>
+                  <td><code class="cmd">${escape(entry.command || '—')}</code></td>
+                </tr>`;
 }
 
 function featureTests(tests) {
@@ -176,21 +171,21 @@ function featureTests(tests) {
     tests.trace.orphans.length && `Tests reference criteria that are not in the spec: ${tests.trace.orphans.join(', ')}`,
   ].filter(Boolean);
   const body = tests.suites.length
-    ? `<div class="tablewrap"><table class="suites">
-          <thead><tr><th>Suite</th><th>Result</th><th>Runs</th><th>Time</th><th>Command</th></tr></thead>
-          <tbody>${tests.suites.map(suiteRow).join('')}</tbody>
-        </table></div>`
-    : '<p class="muted small">No test commands defined for this project.</p>';
+    ? `<div class="tablewrap"><table>
+              <thead><tr><th>Suite</th><th>Result</th><th>Runs</th><th>Time</th><th>Command</th></tr></thead>
+              <tbody>${tests.suites.map(suiteRow).join('')}</tbody>
+            </table></div>`
+    : '<p class="faint small">No test commands defined for this project.</p>';
   const meta = `${tests.trace.covered}/${total} criteria proven by a test${tests.required > 1 ? ` · ${tests.required} runs required` : ''}${tests.at ? ` · last run ${tests.at.slice(0, 16).replace('T', ' ')}` : ''}`;
   return `
-      <div class="section">
-        <div class="section-head">
-          <span class="eyebrow">Tests</span>
-          <span class="muted small">${escape(meta)}</span>
-        </div>
-        ${body}
-        ${notes.length ? `<ul class="notes warn">${notes.map((note) => `<li>${escape(note)}</li>`).join('')}</ul>` : ''}
-      </div>`;
+        <div class="section">
+          <div class="section-head">
+            <span class="eyebrow">Tests</span>
+            <span class="faint small">${escape(meta)}</span>
+          </div>
+          ${body}
+          ${notes.length ? `<ul class="notes warn">${notes.map((note) => `<li>${escape(note)}</li>`).join('')}</ul>` : ''}
+        </div>`;
 }
 
 // ── Features ────────────────────────────────────────────────────────────────────────────────
@@ -209,50 +204,52 @@ const gateChip = (gate) => `<span class="chip ${gate.state}" title="${escape(gat
 function lanesSection(lanes) {
   if (!lanes.length) return '';
   return `
-      <div class="section">
-        <div class="section-head"><span class="eyebrow">Lanes</span><span class="muted small">${plural(lanes.length, 'lane')}</span></div>
-        <ul class="lanes">${lanes.map((lane) => `
-          <li><b>${escape(lane.name)}</b> <span class="pill ${lane.state === 'done' ? 'ok' : 'neutral'}">${escape(lane.state)}</span> <span class="muted small">${escape(lane.tasks.join(', '))} — ${escape(lane.detail)}</span></li>`).join('')}
-        </ul>
-      </div>`;
+        <div class="section">
+          <div class="section-head"><span class="eyebrow">Lanes</span><span class="faint small">${plural(lanes.length, 'lane')}</span></div>
+          ${lanes.map((lane) => `
+          <div class="li">
+            <span class="pill ${lane.state === 'done' ? 'ok' : 'neutral'}">${escape(lane.state)}</span>
+            <span class="bd"><b>${escape(lane.name)}</b><i>${escape(lane.tasks.join(', '))} — ${escape(lane.detail)}</i></span>
+          </div>`).join('')}
+        </div>`;
 }
 
 function progressSection(feature) {
   return `
-      <div class="section grid2">
-        <div class="bar"><span class="bar-label">Criteria</span>${meter(feature.criteria.done, feature.criteria.total)}<span class="bar-count">${feature.criteria.done}/${feature.criteria.total}</span></div>
-        <div class="bar"><span class="bar-label">Tasks</span>${meter(feature.tasks.done, feature.tasks.total)}<span class="bar-count">${feature.tasks.done}/${feature.tasks.total}</span></div>
-      </div>`;
+        <div class="section g g2">
+          <div class="bar"><span class="bar-label">Criteria</span>${meter(feature.criteria.done, feature.criteria.total)}<span class="bar-count">${feature.criteria.done}/${feature.criteria.total}</span></div>
+          <div class="bar"><span class="bar-label">Tasks</span>${meter(feature.tasks.done, feature.tasks.total)}<span class="bar-count">${feature.tasks.done}/${feature.tasks.total}</span></div>
+        </div>`;
 }
 
 function featureCard(feature) {
   const blocked = feature.gates.filter((gate) => gate.state === 'blocked');
   const blockers = blocked.flatMap((gate) => gate.problems);
   return `
-    <article id="${anchor(feature.id)}" class="panel feature${blocked.length ? ' has-blockers' : ''}">
-      <header class="feature-head">
-        <span class="feature-id">
-          <span class="feature-code">${escape(feature.id)}</span>
-          <span class="feature-title">${escape(feature.title)}</span>
-        </span>
-        <span class="head-right">
-          <span class="badge ${escape(feature.status)}">${escape(STAGE_WORDS[feature.status] ?? feature.status)}</span>
-          <a class="totop" href="#overview" title="Back to the overview">↑</a>
-        </span>
-      </header>
-      ${stageTrack(feature.status)}
-      ${progressSection(feature)}
-      <div class="section">
-        <div class="section-head"><span class="eyebrow">Gates</span></div>
-        <div class="chips">${feature.gates.map(gateChip).join('')}</div>
-      </div>
-      ${featureTests(feature.tests)}
-      ${lanesSection(feature.lanes)}
-      ${blockers.length ? `<details class="blockers" open>
-        <summary>${plural(blockers.length, 'blocker')}</summary>
-        <ul class="notes warn">${blockers.map((problem) => `<li>${escape(problem)}</li>`).join('')}</ul>
-      </details>` : ''}
-    </article>`;
+      <article id="${anchor(feature.id)}" class="cd${blocked.length ? ' has-blockers' : ''}">
+        <div class="hdr" style="margin-bottom:0">
+          <div>
+            <span class="eyebrow num">${escape(feature.id)}</span>
+            <h2 style="margin-top:4px">${escape(feature.title)}</h2>
+          </div>
+          <span style="display:flex;align-items:center;gap:10px">
+            <span class="badge ${escape(feature.status)}">${escape(STAGE_WORDS[feature.status] ?? feature.status)}</span>
+            <a class="totop" href="#overview" title="Back to the overview">↑</a>
+          </span>
+        </div>
+        ${stageTrack(feature.status)}
+        ${progressSection(feature)}
+        <div class="section">
+          <div class="section-head"><span class="eyebrow">Gates</span></div>
+          <div class="chips">${feature.gates.map(gateChip).join('')}</div>
+        </div>
+        ${featureTests(feature.tests)}
+        ${lanesSection(feature.lanes)}
+        ${blockers.length ? `<details class="blockers" open>
+          <summary>${plural(blockers.length, 'blocker')}</summary>
+          <ul class="notes warn">${blockers.map((problem) => `<li>${escape(problem)}</li>`).join('')}</ul>
+        </details>` : ''}
+      </article>`;
 }
 
 // ── Environment and issues ──────────────────────────────────────────────────────────────────
@@ -262,218 +259,65 @@ function setupSection(setup) {
   const done = setup.results.filter((result) => result.ok);
   const remaining = setup.steps.map((step) => step.tool?.id ?? step.id).join(', ');
   return `
-    <section id="setup" class="panel">
-      <h2>Environment <span class="muted small">${done.length}/${setup.results.length} tools ready</span></h2>
-      ${meter(done.length, setup.results.length)}
-      <div class="tablewrap"><table class="suites">
-        <thead><tr><th>Tool</th><th>State</th><th>Detail</th></tr></thead>
-        <tbody>${setup.results.map((result) => `
-          <tr><td>${escape(result.name)}</td><td><span class="pill ${result.ok ? 'ok' : 'neutral'}">${result.ok ? 'Ready' : 'Pending'}</span></td><td class="muted">${escape(result.detail ?? '')}</td></tr>`).join('')}
-        </tbody>
-      </table></div>
-      ${setup.steps.length
-        ? `<p class="muted small">${plural(setup.steps.length, 'step')} still to run: ${escape(remaining)}</p>`
-        : '<p class="good small">Everything this project needs is installed.</p>'}
-    </section>`;
+      <section id="setup" class="cd">
+        <div class="hdr">
+          <div><h2>Environment</h2><p class="cs" style="margin:4px 0 0">What this project needs on the machine it runs on.</p></div>
+          <span class="tg ${setup.steps.length ? 'g-am' : 'g-lime'}">${done.length}/${setup.results.length} ready</span>
+        </div>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Tool</th><th>State</th><th>Detail</th></tr></thead>
+          <tbody>${setup.results.map((result) => `
+            <tr><td>${escape(result.name)}</td><td><span class="pill ${result.ok ? 'ok' : 'neutral'}">${result.ok ? 'Ready' : 'Pending'}</span></td><td class="faint">${escape(result.detail ?? '')}</td></tr>`).join('')}
+          </tbody>
+        </table></div>
+        ${setup.steps.length
+          ? `<p class="faint small" style="margin-top:12px">${plural(setup.steps.length, 'step')} still to run: ${escape(remaining)}</p>`
+          : '<p class="small" style="margin-top:12px;color:var(--lime)">Everything this project needs is installed.</p>'}
+      </section>`;
 }
 
 function issuesSection(problems) {
   if (!problems.length) return '';
   return `
-    <section id="issues" class="panel">
-      <h2>Issues <span class="muted small">${plural(problems.length, 'item')}</span></h2>
-      <details${problems.length <= 8 ? ' open' : ''}>
-        <summary>Specs and generated files</summary>
-        <ul class="notes warn">${problems.map((problem) => `<li>${escape(problem)}</li>`).join('')}</ul>
-      </details>
-    </section>`;
+      <section id="issues" class="cd">
+        <div class="hdr">
+          <div><h2>Issues</h2><p class="cs" style="margin:4px 0 0">Specs and generated files that disagree.</p></div>
+          <span class="tg g-am">${plural(problems.length, 'item')}</span>
+        </div>
+        <details${problems.length <= 8 ? ' open' : ''}>
+          <summary>Show them</summary>
+          <ul class="notes warn">${problems.map((problem) => `<li>${escape(problem)}</li>`).join('')}</ul>
+        </details>
+      </section>`;
 }
 
-// ── Styles ──────────────────────────────────────────────────────────────────────────────────
-
-const STYLE = `
-  :root {
-    color-scheme: light dark;
-    --bg:#f4f5f7; --surface:#fff; --raised:#fbfcfd; --ink:#1a1d21; --muted:#5c6773; --faint:#8a94a0;
-    --line:#dfe3e8; --line-strong:#c9d0d8;
-    --accent:#1f4fd8; --accent-soft:#eaf0ff;
-    --good:#0f7a45; --good-bg:#e3f6ea; --warn:#8a4b09; --warn-bg:#fdf0dc; --bad:#a4232b; --bad-bg:#fdeaea;
-    --shadow:0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.04);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg:#0c1016; --surface:#141a22; --raised:#1a212b; --ink:#e6ecf3; --muted:#9aa7b4; --faint:#6f7c8a;
-      --line:#252e3a; --line-strong:#33404f;
-      --accent:#6c9bff; --accent-soft:#16223c;
-      --good:#4ec27a; --good-bg:#0f2a1b; --warn:#e0994a; --warn-bg:#2e2109; --bad:#f2777a; --bad-bg:#2e1214;
-      --shadow:none;
-    }
-  }
-  * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink);
-    font:14px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    -webkit-font-smoothing:antialiased; }
-  .wrap { max-width:1080px; margin:0 auto; padding:0 20px; }
-  a { color:var(--accent); }
-  code { font:12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    background:var(--raised); border:1px solid var(--line); padding:1px 6px; border-radius:4px; }
-  .num { font-variant-numeric:tabular-nums; white-space:nowrap; }
-  .muted { color:var(--muted); } .faint { color:var(--faint); }
-  .small { font-size:12px; } .good { color:var(--good); }
-
-  .appbar { background:var(--surface); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:3; }
-  .bar { display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:60px; flex-wrap:wrap; padding-block:10px; }
-  .brand { display:flex; align-items:center; gap:12px; min-width:0; }
-  .mark { width:32px; height:32px; border-radius:6px; background:var(--accent); color:#fff; flex:none;
-    display:grid; place-items:center; font-size:12px; font-weight:700; letter-spacing:.04em; }
-  .brand-text { display:flex; flex-direction:column; min-width:0; }
-  .brand-name { font-size:16px; font-weight:650; letter-spacing:-.01em; }
-  .brand-sub { font-size:12px; color:var(--muted); }
-  .stamp { font-size:12px; color:var(--muted); white-space:nowrap; }
-  .dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--good); margin-right:6px; }
-
-  .subnav { background:var(--surface); border-bottom:1px solid var(--line); position:sticky; top:60px; z-index:2; }
-  .navrow { display:flex; gap:4px; overflow-x:auto; }
-  .navrow a { padding:10px 12px; font-size:13px; color:var(--muted); text-decoration:none;
-    border-bottom:2px solid transparent; white-space:nowrap; }
-  .navrow a:hover { color:var(--ink); border-bottom-color:var(--line-strong); }
-
-  main { padding:24px 0 64px; }
-
-  .kpis { display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-bottom:20px; }
-  .kpi { background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:14px 16px;
-    display:flex; flex-direction:column; gap:2px; box-shadow:var(--shadow); }
-  .kpi-label { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--faint); font-weight:600; }
-  .kpi-value { font-size:26px; font-weight:650; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
-  .kpi-note { font-size:12px; color:var(--muted); }
-  .kpi.good .kpi-value { color:var(--good); }
-  .kpi.warn .kpi-value { color:var(--warn); }
-  .kpi.bad .kpi-value { color:var(--bad); }
-
-  .panel { background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:18px 20px;
-    margin-bottom:14px; box-shadow:var(--shadow); scroll-margin-top:120px; }
-  h2 { font-size:15px; font-weight:650; margin:0 0 14px; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
-  .eyebrow { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--faint); font-weight:600; }
-  .section { margin-top:16px; padding-top:14px; border-top:1px solid var(--line); }
-  .section-head { display:flex; gap:10px; align-items:baseline; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; }
-
-  .next { background:var(--accent-soft); border:1px solid var(--accent); border-radius:6px; padding:14px 16px; margin-bottom:16px; }
-  .next p { margin:6px 0 0; }
-  .next-line { font-size:14px; }
-
-  .tablewrap { overflow-x:auto; }
-  table { width:100%; border-collapse:collapse; font-size:13px; }
-  th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--faint);
-    font-weight:600; padding:8px 10px; border-bottom:1px solid var(--line-strong); white-space:nowrap; }
-  td { padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:middle; }
-  tbody tr:last-child td { border-bottom:0; }
-  tbody tr:hover { background:var(--raised); }
-  .index td:first-child a { font-weight:600; text-decoration:none; }
-  .row-title { display:block; color:var(--muted); font-size:12px; }
-  .cmd { font-size:11px; white-space:nowrap; }
-
-  .badge { font-size:11px; font-weight:600; padding:3px 9px; border-radius:4px; background:var(--raised);
-    border:1px solid var(--line-strong); color:var(--muted); white-space:nowrap; }
-  .badge.in-progress { background:var(--warn-bg); border-color:transparent; color:var(--warn); }
-  .badge.done { background:var(--good-bg); border-color:transparent; color:var(--good); }
-  .badge.approved, .badge.planned { background:var(--accent-soft); border-color:transparent; color:var(--accent); }
-  .pill { font-size:11px; font-weight:600; padding:2px 8px; border-radius:20px; background:var(--raised);
-    color:var(--muted); border:1px solid var(--line); white-space:nowrap; }
-  .pill.ok { background:var(--good-bg); color:var(--good); border-color:transparent; }
-  .pill.flaky { background:var(--warn-bg); color:var(--warn); border-color:transparent; text-transform:uppercase; letter-spacing:.04em; }
-  .pill.failed { background:var(--bad-bg); color:var(--bad); border-color:transparent; }
-  .pill.missing, .pill.neutral { background:var(--raised); color:var(--muted); }
-
-  .meter { display:inline-block; vertical-align:middle; width:72px; height:5px; background:var(--line);
-    border-radius:3px; overflow:hidden; margin-left:8px; }
-  .meter-fill { display:block; height:100%; background:var(--accent); }
-  .bar { display:flex; align-items:center; gap:8px; font-size:12px; }
-  .bar-label { color:var(--muted); width:62px; flex:none; }
-  .bar .meter { flex:1; width:auto; margin-left:0; }
-  .bar-count { color:var(--muted); font-variant-numeric:tabular-nums; width:46px; text-align:right; flex:none; }
-  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px 24px; }
-
-  .stages { display:flex; gap:6px; list-style:none; padding:0; margin:14px 0 0; flex-wrap:wrap; }
-  .stage { font-size:11px; padding:3px 10px; border-radius:4px; background:var(--raised);
-    border:1px solid var(--line); color:var(--faint); }
-  .stage.past { background:var(--good-bg); border-color:transparent; color:var(--good); }
-  .stage.now { background:var(--accent); border-color:transparent; color:#fff; font-weight:600; }
-
-  .feature-head { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
-  .feature-id { display:flex; flex-direction:column; min-width:0; }
-  .feature-code { font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; }
-  .feature-title { font-size:15px; font-weight:650; letter-spacing:-.01em; }
-  .head-right { display:flex; align-items:center; gap:10px; }
-  .totop { text-decoration:none; color:var(--faint); font-size:14px; padding:2px 6px; border-radius:4px; }
-  .totop:hover { background:var(--raised); color:var(--ink); }
-  .feature.has-blockers { border-left:3px solid var(--warn); }
-
-  .chips { display:flex; gap:6px; flex-wrap:wrap; }
-  .chip { font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px;
-    background:var(--good-bg); color:var(--good); cursor:help; }
-  .chip.blocked { background:var(--bad-bg); color:var(--bad); }
-  .chip.off { background:var(--raised); color:var(--faint); text-decoration:line-through; }
-
-  .tallies { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
-  .tally { background:var(--raised); border:1px solid var(--line); border-radius:6px; padding:12px 14px;
-    display:flex; flex-direction:column; gap:2px; color:var(--muted); }
-  .tally b { font-size:22px; font-weight:650; font-variant-numeric:tabular-nums; }
-  .tally span { font-size:12px; }
-  .tally.ok:not(.zero) { background:var(--good-bg); border-color:transparent; color:var(--good); }
-  .tally.flaky:not(.zero) { background:var(--warn-bg); border-color:transparent; color:var(--warn); }
-  .tally.failed:not(.zero) { background:var(--bad-bg); border-color:transparent; color:var(--bad); }
-  .tally.zero { color:var(--faint); }
-
-  .notes { margin:10px 0 0; padding-left:18px; font-size:13px; }
-  .notes.warn { color:var(--warn); }
-  .notes li { margin:3px 0; }
-  .lanes { list-style:none; padding:0; margin:0; font-size:13px; }
-  .lanes li { padding:4px 0; display:flex; gap:8px; align-items:baseline; flex-wrap:wrap; }
-  details { margin-top:14px; }
-  summary { cursor:pointer; font-size:12px; font-weight:600; color:var(--muted);
-    text-transform:uppercase; letter-spacing:.05em; padding:4px 0; }
-  summary:hover { color:var(--ink); }
-  .blockers summary { color:var(--warn); }
-
-  @media (max-width:860px) {
-    .kpis { grid-template-columns:repeat(2,1fr); }
-    .tallies { grid-template-columns:repeat(2,1fr); }
-  }
-  @media (max-width:560px) {
-    .grid2 { grid-template-columns:1fr; }
-    .subnav, .appbar { position:static; }
-    .panel { padding:16px; }
-  }`;
+// Only what this page adds on top of the shared chrome.
+const PAGE_STYLE = `
+.totop{color:var(--tx3);font-size:15px;padding:3px 8px;border-radius:8px;text-decoration:none}
+.totop:hover{background:var(--surf2);color:var(--tx);text-decoration:none}
+.has-blockers{border-left:3px solid var(--am)}
+#features{display:block}`;
 
 /**
  * The whole page as one self-contained string. `live` adds the meta-refresh that keeps a local
  * file current while a job runs; leave it off for a copy being shared rather than watched.
  */
 export function renderDashboard(state, { live = false, intervalSeconds = 3 } = {}) {
+  const meta = [state.project.engine, state.project.autonomy === 'gated' ? 'gated' : 'auto-plan'].filter(Boolean);
+  const when = new Date(state.project.generatedAt).toLocaleTimeString();
   const features = state.features.length
     ? `<section id="features">${state.features.map(featureCard).join('')}</section>`
     : '';
-  return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-${live ? `<meta http-equiv="refresh" content="${intervalSeconds}">` : ''}
-<title>${escape(state.project.name)} — lifecycle</title>
-<style>${STYLE}</style>
-</head>
-<body>
-${appBar(state, live)}
-${subNav(state)}
-<main class="wrap">
-  ${kpiRow(state)}
-  ${overview(state)}
-  ${testsSection(state)}
-  ${setupSection(state.setup)}
-  ${issuesSection(state.problems)}
-  ${features}
-</main>
-</body>
-</html>
-`;
+
+  return shell({
+    title: `${state.project.name} — lifecycle`,
+    name: state.project.name,
+    sub: `Delivery lifecycle${meta.length ? ` · ${meta.join(' · ')}` : ''}`,
+    nav: railItems(state),
+    right: `<span class="stamp">${live ? '<span class="dot"></span>Live · ' : ''}Updated ${escape(when)}</span>`,
+    head: live ? `<meta http-equiv="refresh" content="${intervalSeconds}">\n` : '',
+    style: PAGE_STYLE,
+    body: [kpiRow(state), overview(state), testsSection(state), setupSection(state.setup), issuesSection(state.problems), features]
+      .filter(Boolean).join('\n'),
+  });
 }

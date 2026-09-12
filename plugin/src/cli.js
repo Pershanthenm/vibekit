@@ -39,10 +39,14 @@ const OPTIONS = {
   force: { type: 'boolean' },
   engine: { type: 'string' },
   'dry-run': { type: 'boolean' },
+  fix: { type: 'boolean' },
   json: { type: 'boolean' },
   open: { type: 'boolean' },
   out: { type: 'string' },
   static: { type: 'boolean' },
+  serve: { type: 'boolean' },
+  port: { type: 'string' },
+  host: { type: 'string' },
   'still-accurate': { type: 'boolean' },
   run: { type: 'boolean' },
   repeat: { type: 'string' },
@@ -55,7 +59,6 @@ const OPTIONS = {
   paths: { type: 'string' },
   prune: { type: 'boolean' },
   version: { type: 'string' },
-  from: { type: 'string' },
   help: { type: 'boolean', short: 'h' },
 };
 
@@ -74,10 +77,11 @@ Usage
   vibecheck status <feature> <status>                    draft | approved | planned | in-progress | done
   vibecheck list                                         Features with status and progress
   vibecheck wizard [--out <file>]                        Fill in the project spec in a browser, then: vibecheck advise apply
-  vibecheck dashboard [--open] [--out <file>] [--static] [--json]
-                                                         Live lifecycle page (specs/status.html); opens itself during long jobs
+  vibecheck dashboard [--serve [--port <n>] [--host 0.0.0.0]] [--open] [--out <file>] [--static] [--json]
+                                                         Lifecycle and test status. --serve renders live on every request
   vibecheck check                                        Validate specs and detect drift (exit 1 on problems)
-  vibecheck analyze [feature] [--json]                   Do the spec, plan, tasks and tests agree? (exit 1 on contradictions)
+  vibecheck analyze [feature] [--fix] [--json]            Do the spec, plan, tasks and tests agree? (exit 1 on contradictions)
+                                                         --fix appends criteria with no task or no test to tasks.md as work
   vibecheck next [--json]                                The next workflow step (what /run executes)
   vibecheck lanes <feature>                              Ready [P] lanes, or the status of dispatched lanes
   vibecheck dispatch <feature> [--engine cursor|claude|manual|multica] [--dry-run]

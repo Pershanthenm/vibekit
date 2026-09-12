@@ -4,6 +4,9 @@
 // and starters.js — so the two can never offer different stacks. Nothing is retyped here; add a
 // component to the catalogue and it appears in the form on the next `vibecheck wizard`.
 //
+// The chrome comes from page-chrome.js, the same module the dashboard uses, so setting a project
+// up and then tracking it look like one product rather than two.
+//
 // It produces exactly one thing: the requirements.json that `vibecheck advise apply --from` and
 // `vibecheck init --from` already accept. The page decides nothing and scaffolds nothing — the
 // recommendation, the licence exclusions and the validation all still happen in the CLI, where
@@ -12,6 +15,7 @@
 import { componentsFor } from './advisor/components.js';
 import { BAAS, STATIC_QUESTIONS } from './advisor/questions.js';
 import { STARTERS } from './advisor/starters.js';
+import { escape, shell } from './page-chrome.js';
 
 const LAYERS = ['backend', 'web', 'mobile', 'desktop', 'database'];
 const LAYER_QUESTION = {
@@ -26,13 +30,13 @@ const LAYER_HEADER = { backend: 'Backend', web: 'Web', mobile: 'Mobile', desktop
 // The page's own layout. Question text and options still come from the catalogue; only the
 // grouping lives here, because the terminal asks in rounds and a form scrolls in sections.
 const SECTIONS = [
-  { title: 'What you are building', ids: ['platform', 'appType', 'scale', 'clients'] },
-  { title: 'Constraints', ids: ['licensing', 'ecosystem', 'team', 'data'] },
-  { title: 'Architecture and security', ids: ['architecture', 'signin', 'security', 'compliance'] },
-  { title: 'Stack', layers: true },
-  { title: 'Starting point', starter: true },
-  { title: 'Delivery', ids: ['hosting', 'integrations'] },
-  { title: 'Agent workflow', ids: ['autonomy', 'engine', 'context'] },
+  { title: 'What you are building', icon: 'home', ids: ['platform', 'appType', 'scale', 'clients'] },
+  { title: 'Constraints', icon: 'issues', ids: ['licensing', 'ecosystem', 'team', 'data'] },
+  { title: 'Architecture and security', icon: 'board', ids: ['architecture', 'signin', 'security', 'compliance'] },
+  { title: 'Stack', icon: 'stack', layers: true },
+  { title: 'Starting point', icon: 'spark', starter: true },
+  { title: 'Delivery', icon: 'tools', ids: ['hosting', 'integrations'] },
+  { title: 'Agent workflow', icon: 'tests', ids: ['autonomy', 'engine', 'context'] },
 ];
 
 const question = (id) => STATIC_QUESTIONS.find((entry) => entry.id === id);
@@ -83,72 +87,57 @@ export function wizardModel() {
   };
 }
 
-const ENTITIES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
-const escape = (text) => String(text ?? '').replace(/[&<>"]/g, (char) => ENTITIES[char]);
 // `</script>` inside embedded JSON would end the block early; escaping < prevents that.
 const embed = (value) => JSON.stringify(value).replace(/</g, '\\u003c');
 
-const STYLE = `
-  :root {
-    color-scheme: light dark;
-    --bg:#f4f5f7; --surface:#fff; --raised:#fbfcfd; --ink:#1a1d21; --muted:#5c6773; --faint:#8a94a0;
-    --line:#dfe3e8; --line-strong:#c9d0d8; --accent:#1f4fd8; --accent-soft:#eaf0ff;
-    --good:#0f7a45; --warn:#8a4b09; --shadow:0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.04);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg:#0c1016; --surface:#141a22; --raised:#1a212b; --ink:#e6ecf3; --muted:#9aa7b4; --faint:#6f7c8a;
-      --line:#252e3a; --line-strong:#33404f; --accent:#6c9bff; --accent-soft:#16223c;
-      --good:#4ec27a; --warn:#e0994a; --shadow:none; }
-  }
-  * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink);
-    font:14px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  .wrap { max-width:960px; margin:0 auto; padding:0 20px; }
-  .appbar { background:var(--surface); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
-  .bar { display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:60px; flex-wrap:wrap; padding-block:10px; }
-  .brand { display:flex; align-items:center; gap:12px; }
-  .mark { width:32px; height:32px; border-radius:6px; background:var(--accent); color:#fff;
-    display:grid; place-items:center; font-size:12px; font-weight:700; }
-  .brand-name { font-size:16px; font-weight:650; }
-  .brand-sub { font-size:12px; color:var(--muted); }
-  .progress { font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; }
-  main { padding:24px 0 96px; }
-  .lead { background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:16px 20px;
-    margin-bottom:16px; box-shadow:var(--shadow); }
-  .lead p { margin:6px 0 0; color:var(--muted); }
-  section.step { background:var(--surface); border:1px solid var(--line); border-radius:8px;
-    padding:18px 20px; margin-bottom:14px; box-shadow:var(--shadow); }
-  section.step > h2 { font-size:15px; font-weight:650; margin:0 0 4px; }
-  .steplabel { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--faint); font-weight:600; }
-  fieldset { border:0; padding:0; margin:20px 0 0; }
-  legend { padding:0; font-size:14px; font-weight:600; }
-  .why { font-size:12px; color:var(--muted); margin:2px 0 10px; }
-  .opts { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:8px; }
-  label.opt { display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border:1px solid var(--line);
-    border-radius:6px; cursor:pointer; background:var(--raised); }
-  label.opt:hover { border-color:var(--line-strong); }
-  label.opt:has(input:checked) { border-color:var(--accent); background:var(--accent-soft); }
-  label.opt input { margin:3px 0 0; flex:none; }
-  .opt-body { min-width:0; display:flex; flex-direction:column; }
-  .opt-label { font-weight:600; font-size:13px; }
-  .opt-desc { font-size:12px; color:var(--muted); }
-  .lic { font-size:11px; color:var(--faint); }
-  .other { margin-top:8px; }
-  .other input { width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:6px;
-    background:var(--raised); color:var(--ink); font:inherit; font-size:13px; }
-  .hidden { display:none !important; }
-  .done { border:1px solid var(--accent); }
-  pre { background:var(--raised); border:1px solid var(--line); border-radius:6px; padding:14px;
-    overflow:auto; font:12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; max-height:320px; }
-  code { font:12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    background:var(--raised); border:1px solid var(--line); padding:1px 6px; border-radius:4px; }
-  .actions { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0; }
-  button { font:inherit; font-size:13px; font-weight:600; padding:9px 16px; border-radius:6px;
-    border:1px solid var(--line-strong); background:var(--surface); color:var(--ink); cursor:pointer; }
-  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
-  ol.next { padding-left:20px; } ol.next li { margin:8px 0; }
-  .missing { color:var(--warn); font-size:13px; margin-top:10px; }
-  @media (max-width:560px) { .opts { grid-template-columns:1fr; } }`;
+// Only what the form adds on top of the shared chrome.
+const PAGE_STYLE = `
+/* the step rail across the top: where you are, and how much is left */
+.steps{background:var(--surf);border:1px solid var(--line);border-radius:var(--r);
+  padding:22px 26px 16px;margin-bottom:16px;position:relative}
+.strack{position:absolute;left:60px;right:60px;top:38px;height:2px;background:var(--line2);border-radius:2px}
+.sfill{height:100%;width:0;background:var(--grad);border-radius:2px;transition:width .45s cubic-bezier(.16,1,.3,1)}
+.snodes{display:grid;position:relative;z-index:1}
+.sn{display:flex;flex-direction:column;align-items:center;gap:9px;text-decoration:none;color:inherit}
+.sn:hover{text-decoration:none}
+.sc{width:30px;height:30px;border-radius:50%;background:var(--surf);border:2px solid var(--line2);
+  color:var(--tx3);display:grid;place-items:center;font-size:12.5px;font-weight:600;
+  transition:background .3s,border-color .3s,color .3s}
+.sn:hover .sc{border-color:var(--tx3);color:var(--tx2)}
+.sn.done .sc{background:var(--grad);border-color:transparent;color:#0d1108}
+.sn.on .sc{background:var(--grad);border-color:transparent;color:#0d1108;
+  box-shadow:0 0 0 5px rgba(182,242,74,.16)}
+.sn i{font-style:normal;font-size:12px;font-weight:500;color:var(--tx3);text-align:center;line-height:1.3}
+.sn.on i{color:var(--tx)}
+.sn.done i{color:var(--tx2)}
+
+.steplabel{font-size:10.5px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--tx3)}
+fieldset{border:0;padding:0;margin:22px 0 0}
+fieldset:first-of-type{margin-top:16px}
+legend{padding:0;font-size:14.5px;font-weight:600;color:var(--tx)}
+.why{font-size:12.5px;color:var(--tx3);margin:3px 0 12px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:9px}
+label.opt{display:flex;gap:11px;align-items:flex-start;padding:13px 15px;border:1px solid var(--line);
+  border-radius:14px;cursor:pointer;background:var(--surf2);transition:border-color .22s,background .22s,transform .22s}
+label.opt:hover{border-color:var(--line2);transform:translateY(-2px)}
+label.opt:has(input:checked){border-color:rgba(182,242,74,.42);background:rgba(182,242,74,.06)}
+label.opt input{margin:3px 0 0;flex:none;accent-color:var(--lime)}
+.opt-body{min-width:0;display:flex;flex-direction:column;gap:2px}
+.opt-label{font-weight:500;font-size:13.5px;color:var(--tx)}
+.opt-desc{font-size:12.5px;color:var(--tx3);line-height:1.5}
+.lic{font-size:11px;color:var(--tx3);opacity:.8;margin-top:3px}
+.other{margin-top:10px}
+.other .inp2{font-size:13px;padding:9px 12px}
+#out{max-height:320px}
+.missing{color:var(--am);font-size:13px;margin-top:12px}
+ol.next{padding-left:20px;color:var(--tx2);font-size:13.5px}
+ol.next li{margin:9px 0}
+@media (max-width:760px){
+  .steps{padding:16px 14px 12px}
+  .strack{left:24px;right:24px;top:34px}
+  .sn i{display:none}
+}
+@media (max-width:560px){ .opts{grid-template-columns:1fr} }`;
 
 /**
  * The whole wizard as one self-contained page: no build step, no network, no dependencies.
@@ -156,61 +145,59 @@ const STYLE = `
  * somewhere, which there is nothing to post to.
  */
 export function renderWizard({ projectName = '' } = {}) {
-  return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escape(projectName || 'New project')} — build your spec</title>
-<style>${STYLE}</style>
-</head>
-<body>
-<header class="appbar">
-  <div class="wrap bar">
-    <div class="brand">
-      <span class="mark" aria-hidden="true">VC</span>
-      <span>
-        <span class="brand-name">${escape(projectName || 'New project')}</span><br>
-        <span class="brand-sub">Build your project spec</span>
-      </span>
-    </div>
-    <span class="progress" id="progress">0 of 0 answered</span>
-  </div>
-</header>
+  const name = projectName || 'New project';
+  const model = wizardModel();
 
-<main class="wrap">
-  <div class="lead">
-    <b>Answer what you know; skip what you don't.</b>
-    <p>Nothing is installed or written from this page. At the end you get a
-    <code>requirements.json</code> to hand back to Claude Code, which does the scaffolding and can
-    still ask about anything you left blank.</p>
-  </div>
+  // Rendered server-side so the rail and the stepper exist before the script runs, and so the
+  // anchors work even if it never does.
+  const nav = [
+    ...SECTIONS.map((section, index) => ({
+      href: `#step-${index}`, label: section.title, icon: section.icon, current: index === 0,
+    })),
+    { href: '#result', label: 'Hand it back', icon: 'doc' },
+  ];
 
-  <form id="form"></form>
+  const stepper = `
+      <div class="steps">
+        <div class="strack"><div class="sfill" id="sfill"></div></div>
+        <div class="snodes" style="grid-template-columns:repeat(${SECTIONS.length}, 1fr)">
+${SECTIONS.map((section, index) => `          <a class="sn${index === 0 ? ' on' : ''}" href="#step-${index}" data-step="${index}"><span class="sc">${index + 1}</span><i>${escape(section.title)}</i></a>`).join('\n')}
+        </div>
+      </div>`;
 
-  <section class="step done" id="result">
-    <span class="steplabel">Last step</span>
-    <h2>Hand this back</h2>
-    <p class="why">Save it into your project as <code>specs/requirements.json</code>, or copy it and
-    paste it to Claude Code.</p>
-    <div class="actions">
-      <button type="button" class="primary" id="download">Download requirements.json</button>
-      <button type="button" id="copy">Copy to clipboard</button>
-    </div>
-    <p class="missing hidden" id="missing"></p>
-    <pre id="out">{}</pre>
-    <ol class="next">
-      <li>Put the file in your project at <code>specs/requirements.json</code>.</li>
-      <li>In that folder run <code>vibecheck advise apply</code> — or tell Claude Code
-        <em>"apply my requirements"</em> and it runs it for you.</li>
-      <li>It writes <code>specs/project.json</code>, a technology-selection ADR recording why each
-        choice won, and scaffolds the project.</li>
-    </ol>
-  </section>
-</main>
+  const body = `${stepper}
 
-<script>
-const MODEL = ${embed(wizardModel())};
+      <section class="cd">
+        <h2>Answer what you know; skip what you don't.</h2>
+        <p class="cs" style="margin-bottom:0">Nothing is installed or written from this page. At the end you get a
+        <code>requirements.json</code> to hand back to Claude Code, which does the scaffolding and can
+        still ask about anything you left blank.</p>
+      </section>
+
+      <form id="form"></form>
+
+      <section class="cd" id="result">
+        <span class="steplabel">Last step</span>
+        <h2 style="margin-top:6px">Hand this back</h2>
+        <p class="cs">Save it into your project as <code>specs/requirements.json</code>, or copy it and
+        paste it to Claude Code.</p>
+        <div class="actions">
+          <button type="button" class="btn primary" id="download">Download requirements.json</button>
+          <button type="button" class="btn" id="copy">Copy to clipboard</button>
+        </div>
+        <p class="missing hidden" id="missing"></p>
+        <pre id="out">{}</pre>
+        <ol class="next">
+          <li>Put the file in your project at <code>specs/requirements.json</code>.</li>
+          <li>In that folder run <code>vibecheck advise apply</code> — or tell Claude Code
+            <em>"apply my requirements"</em> and it runs it for you.</li>
+          <li>It writes <code>specs/project.json</code>, a technology-selection ADR recording why each
+            choice won, and scaffolds the project.</li>
+        </ol>
+      </section>`;
+
+  const script = `
+const MODEL = ${embed(model)};
 const answers = {};
 
 // Which stack layers this project actually has. Mirrors neededLayers() in questions.js: a
@@ -270,7 +257,7 @@ function questionHtml(q) {
     '<legend>' + q.question + '</legend>' +
     (q.multi ? '<p class="why">Choose any that apply, or none.</p>' : '') +
     '<div class="opts">' + q.options.map((o) => optionHtml(q, o)).join('') + '</div>' +
-    '<div class="other"><input type="text" data-other="' + q.id + '" placeholder="Something else? Type it here."></div>' +
+    '<div class="other"><input class="inp2" type="text" data-other="' + q.id + '" placeholder="Something else? Type it here."></div>' +
     '</fieldset>';
 }
 
@@ -280,9 +267,9 @@ function build() {
     let questions = section.questions;
     if (section.layers) questions = Object.values(MODEL.layerQuestions);
     if (section.starter) questions = [MODEL.starter];
-    return '<section class="step" data-section="' + index + '">' +
-      '<span class="steplabel">Step ' + (index + 1) + '</span>' +
-      '<h2>' + section.title + '</h2>' +
+    return '<section class="cd" id="step-' + index + '" data-section="' + index + '">' +
+      '<span class="steplabel">Step ' + (index + 1) + ' of ' + MODEL.sections.length + '</span>' +
+      '<h2 style="margin-top:6px">' + section.title + '</h2>' +
       questions.map(questionHtml).join('') + '</section>';
   }).join('');
   form.addEventListener('change', onChange);
@@ -307,6 +294,28 @@ function onChange(event) {
     if (other) other.value = '';
   }
   refresh();
+}
+
+// The stepper is the only progress signal on a long form: a step is done when every question
+// still showing inside it has an answer, and the first one that isn't is where you are.
+function markSteps() {
+  const sections = [...document.querySelectorAll('section[data-section]')];
+  const states = sections.map((section) => {
+    const visible = [...section.querySelectorAll('fieldset[data-question]')]
+      .filter((f) => !f.classList.contains('hidden'));
+    return visible.length > 0 && visible.every((f) => answers[f.dataset.question] !== undefined);
+  });
+  const current = states.indexOf(false);
+  document.querySelectorAll('.sn').forEach((node, index) => {
+    node.classList.toggle('done', states[index] === true);
+    node.classList.toggle('on', index === current);
+  });
+  const done = states.filter(Boolean).length;
+  const fill = document.getElementById('sfill');
+  if (fill) fill.style.width = Math.round((done / states.length) * 100) + '%';
+  document.querySelectorAll('.nb[href^="#step-"]').forEach((link, index) => {
+    link.classList.toggle('on', index === (current === -1 ? states.length - 1 : current));
+  });
 }
 
 // Hide what does not apply rather than letting someone answer a question that will be ignored.
@@ -347,6 +356,7 @@ function refresh() {
     : '';
 
   document.getElementById('out').textContent = JSON.stringify(answers, null, 2);
+  markSteps();
 }
 
 document.getElementById('copy').addEventListener('click', async () => {
@@ -389,9 +399,16 @@ if (window.self !== window.top) {
   document.getElementById('result').insertBefore(note, document.getElementById('missing'));
 }
 
-build();
-</script>
-</body>
-</html>
-`;
+build();`;
+
+  return shell({
+    title: `${name} — build your spec`,
+    name,
+    sub: 'Build your project spec',
+    nav,
+    right: '<span class="stamp" id="progress">0 of 0 answered</span>',
+    style: PAGE_STYLE,
+    body,
+    script,
+  });
 }

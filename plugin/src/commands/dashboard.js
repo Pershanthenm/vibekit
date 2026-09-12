@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { createServer } from 'node:http';
 import { isAbsolute, resolve } from 'node:path';
 import { collectState, dashboardPath, renderDashboard } from '../dashboard.js';
 import { writeText } from '../fsutil.js';
@@ -63,8 +64,89 @@ export async function openDashboard(root, project, options = {}) {
   }
 }
 
+// The written page refreshes itself, but nothing regenerates it in the background — it is only
+// rewritten while a long command happens to be running. Serving closes that gap by rendering on
+// every request, which is also less machinery than watching the filesystem: no watcher, no
+// debounce, no rewrites, and no stale file to go out of date.
+export const DEFAULT_PORT = 7332;
+
+/** The page shown when the project cannot be read, so one bad edit does not kill the server. */
+const errorPage = (message) => `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta http-equiv="refresh" content="5">
+<title>Dashboard — waiting</title>
+<style>body{margin:0;display:grid;place-items:center;min-height:100vh;background:#0a0b0a;color:#f4f5f2;
+font:14px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+div{max-width:38rem;padding:24px}h1{font-size:17px;margin:0 0 8px}
+p{color:#9ea19a;margin:0 0 6px}code{color:#b6f24a}</style></head>
+<body><div><h1>Waiting for a readable project</h1>
+<p>${message.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])}</p>
+<p>This page retries every 5 seconds. Fix it with <code>vibecheck check</code>.</p></div></body></html>`;
+
+/**
+ * Serve the dashboard, rendering current state on every request. Returns the server so a caller —
+ * or a test — can close it. Binds to loopback unless told otherwise: the page carries feature
+ * titles and blocker text that quote file paths and review comments, and that is not something to
+ * put on a shared network by accident.
+ */
+export async function serveDashboard(root, { port = DEFAULT_PORT, host = '127.0.0.1' } = {}) {
+  const server = createServer(async (request, response) => {
+    let body;
+    let status = 200;
+    try {
+      const project = await loadProject(root);
+      const problems = await collectProblems(root, project).catch(() => []);
+      const state = await collectState(root, project, { problems });
+      body = renderDashboard(state, { live: true });
+    } catch (error) {
+      status = 503;
+      body = errorPage(error?.message ?? 'the project could not be read');
+    }
+    // No caching: the whole point is that a refresh shows what is true now.
+    response.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+    response.end(body);
+  });
+
+  await new Promise((ready, failed) => {
+    server.once('error', failed);
+    server.listen(port, host, () => { server.removeListener('error', failed); ready(); });
+  });
+
+  const actual = server.address();
+  return {
+    url: `http://${host === '0.0.0.0' ? '127.0.0.1' : host}:${actual.port}`,
+    port: actual.port,
+    close: () => new Promise((closed) => server.close(closed)),
+  };
+}
+
 // --static drops the meta-refresh, for a copy that is going somewhere other than a local browser.
-export async function dashboard({ root, out, json, open, static: isStatic }) {
+export async function dashboard({ root, out, json, open, static: isStatic, serve, port, host }) {
+  if (serve) {
+    const requested = port ? Number(port) : DEFAULT_PORT;
+    if (!Number.isInteger(requested) || requested < 0 || requested > 65535) {
+      console.error(`✖ --port must be a number between 0 and 65535, not "${port}".`);
+      process.exitCode = 1;
+      return;
+    }
+    const lan = host === '0.0.0.0';
+    let server;
+    try {
+      server = await serveDashboard(root, { port: requested, host: lan ? '0.0.0.0' : '127.0.0.1' });
+    } catch (error) {
+      const busy = error?.code === 'EADDRINUSE';
+      console.error(busy
+        ? `✖ Port ${requested} is already in use. Choose another with --port, or stop what is on it.`
+        : `✖ Could not start the dashboard server: ${error?.message ?? error}`);
+      process.exitCode = 1;
+      return;
+    }
+    console.log(`Live dashboard on ${server.url}`);
+    console.log('  Renders current state on every request. Ctrl-C to stop.');
+    if (lan) console.log('  Reachable from other devices on this network — it carries your feature titles and blockers.');
+    if (open) openInBrowser(server.url);
+    return;
+  }
+
   const project = await loadProject(root);
   const problems = await collectProblems(root, project).catch(() => []);
   if (json) {
