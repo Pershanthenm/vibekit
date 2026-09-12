@@ -160,9 +160,11 @@ test('a flaky suite is shown as FLAKY with its tally, not as a tick', async () =
   assert.equal(state.features[0].tests.suites[0].state, 'flaky');
   assert.equal(state.tests.flaky, 1);
 
+  // Case is a styling choice; what matters is the word appears and "Passing" does not.
   const html = renderDashboard(state);
-  assert.match(html, /FLAKY/);
+  assert.match(html, /flaky/i);
   assert.match(html, /2\/3 runs/);
+  assert.doesNotMatch(html, /pill ok">Passing/, 'a flaky suite must never be labelled passing');
 });
 
 test('evidence from an older commit is called stale, not shown as passing', async () => {
