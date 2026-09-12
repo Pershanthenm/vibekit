@@ -6,6 +6,7 @@ import { advise } from './commands/advise.js';
 import { check } from './commands/check.js';
 import { context } from './commands/context.js';
 import { dashboard } from './commands/dashboard.js';
+import { wizard } from './commands/wizard.js';
 import { cursorAgents } from './commands/cursor-agents.js';
 import { projects } from './commands/projects.js';
 import { team } from './commands/team.js';
@@ -28,7 +29,7 @@ import { sync } from './commands/sync.js';
 import { verify } from './commands/verify.js';
 import { security } from './commands/security.js';
 
-const COMMANDS = { init, adopt, analyze, sync, feature, status, list, dashboard, check, next, lanes, dispatch, merge, memory, knowledge, context, docs, advise, security, standards, verify, multica, health, doctor: health, setup, version, 'cursor-agents': cursorAgents, 'cursor-kit': cursorAgents, team, projects, hook };
+const COMMANDS = { init, adopt, analyze, sync, feature, status, list, dashboard, wizard, check, next, lanes, dispatch, merge, memory, knowledge, context, docs, advise, security, standards, verify, multica, health, doctor: health, setup, version, 'cursor-agents': cursorAgents, 'cursor-kit': cursorAgents, team, projects, hook };
 
 const OPTIONS = {
   dir: { type: 'string' },
@@ -71,6 +72,7 @@ Usage
   vibecheck feature "<name>"                             Scaffold specs/features/NNN-name/
   vibecheck status <feature> <status>                    draft | approved | planned | in-progress | done
   vibecheck list                                         Features with status and progress
+  vibecheck wizard [--out <file>]                        Fill in the project spec in a browser, then: vibecheck advise apply
   vibecheck dashboard [--open] [--out <file>] [--static] [--json]
                                                          Live lifecycle page (specs/status.html); opens itself during long jobs
   vibecheck check                                        Validate specs and detect drift (exit 1 on problems)
