@@ -18,7 +18,7 @@ import { randomBytes } from 'node:crypto';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { stateDir } from './evidence.js';
-import { readText, writeText } from './fsutil.js';
+import { readText, writeAtomic } from './fsutil.js';
 
 /** queued: waiting. running: an agent is working. done/failed: it finished, one way or the other. */
 export const QUEUE_STATES = ['queued', 'running', 'done', 'failed'];
@@ -56,7 +56,7 @@ export async function readQueue(root) {
   }
 }
 
-const write = (root, queue) => writeText(queuePath(root), `${JSON.stringify(queue, null, 2)}\n`);
+const write = (root, queue) => writeAtomic(queuePath(root), `${JSON.stringify(queue, null, 2)}\n`);
 
 // Read-modify-write, from a server that is also draining the queue. One chain per project keeps
 // two requests arriving in the same tick from each overwriting the other's entry.

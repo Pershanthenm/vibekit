@@ -373,6 +373,35 @@ Scope: ${input} (empty = the whole project)
 6. To pick and run fixes in a browser, or to watch them from a phone: \`vibecheck dashboard --serve --tunnel\`, then the Scan pages.
 `;
 
+// Written as single-quoted lines rather than a template literal: every line here is thick with
+// backticks, and escaping each one is how a command in a skill quietly turns into nonsense.
+const standardsDiscoverSkill = ({ input }) => [
+  '# Write down the conventions this codebase already has',
+  '',
+  `Scope: ${input} (empty = wherever nothing is written down yet)`,
+  '',
+  '1. Run `vibecheck standards discover --json`. It reports each area of the codebase, how many',
+  '   files are in it, a handful of examples, and which standards already speak for it. It',
+  '   deliberately does **not** say what the conventions are: that is the part that needs reading',
+  '   and judgement, and a command that guessed would write confident nonsense into a file people',
+  '   then trust.',
+  '2. Take the uncovered areas, worst first. For each, read the example files it names — and enough',
+  '   neighbours to tell a convention from one file\'s habit. Three files agreeing is a convention;',
+  '   one file is an anecdote.',
+  '3. Write what you find as `standards/<domain>/<topic>.md`, with front matter: `description` (a',
+  '   sentence in the words someone would use asking about it — injection matches on this, so it is',
+  '   the load-bearing field) and optional `globs` for rules that belong to a kind of file. Keep',
+  '   each one short and specific, in the imperative, and **only include rules the code actually',
+  '   follows**. A rule the codebase does not follow is a proposal, not a standard: put those to the',
+  '   user separately.',
+  '4. Quote where you saw each convention, so the user can check you. Say which ones you were unsure',
+  '   about rather than dropping them silently.',
+  '5. Run `vibecheck standards index` to rebuild the index, then show the user what you wrote and ask',
+  '   them to approve, edit or delete each one. These are their rules, not yours.',
+  '6. This pairs with adoption: `vibecheck adopt` describes the stack, this describes the habits.',
+  '',
+].join('\n');
+
 const memorySkill = ({ input }) => `# Manage what the agents remember
 
 Scope: ${input}
@@ -486,6 +515,12 @@ export const SKILLS = [
     description: 'Show what the agents remember about this project, correct or delete what is wrong, and choose what gets recorded automatically. Use when a memory is out of date, when the user asks what it knows, or before relying on recalled context.',
     argumentHint: '[what to look for]',
     body: memorySkill,
+  },
+  {
+    name: 'standards-discover',
+    description: 'Read an existing codebase and write its recurring conventions down as draft standards for review. Use after adopting a repository, or when code review keeps repeating the same comment.',
+    argumentHint: '[area]',
+    body: standardsDiscoverSkill,
   },
   {
     name: 'design',

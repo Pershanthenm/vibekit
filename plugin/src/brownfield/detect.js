@@ -6,6 +6,7 @@ const MANIFEST_NAMES = new Set(['package.json', 'packages.config', 'pom.xml', 'b
 const MANIFEST_EXTS = new Set(['.csproj', '.fsproj']);
 const MAX_DEPTH = 4;
 const MAX_MANIFEST_BYTES = 512_000;
+const MAX_SOURCES = 4000;
 
 const LANGUAGE_BY_EXT = {
   '.cs': 'C#', '.fs': 'F#', '.ts': 'TypeScript', '.tsx': 'TypeScript', '.js': 'JavaScript', '.jsx': 'JavaScript',
@@ -22,6 +23,9 @@ export async function inspect(root, { maxDepth = MAX_DEPTH } = {}) {
   const dirs = new Set();
   const ci = [];
   const migrations = [];
+  // A capped sample of source paths. `standards discover` needs to say which parts of the tree
+  // exist before anything can judge their conventions; capped because it is a sample, not an index.
+  const sources = [];
 
   async function walk(dir, depth) {
     let entries = [];
@@ -41,7 +45,10 @@ export async function inspect(root, { maxDepth = MAX_DEPTH } = {}) {
         continue;
       }
       const language = LANGUAGE_BY_EXT[extname(entry.name)];
-      if (language) languageCounts.set(language, (languageCounts.get(language) ?? 0) + 1);
+      if (language) {
+        languageCounts.set(language, (languageCounts.get(language) ?? 0) + 1);
+        if (sources.length < MAX_SOURCES) sources.push(slashed);
+      }
       if (/^\.github\/workflows\//.test(slashed)) ci.push(slashed);
       if (/migrations?\//i.test(slashed) && /\.(cs|py|rb|sql|js|ts)$/.test(entry.name)) migrations.push(slashed);
       if (!isManifest(entry.name)) continue;
@@ -53,7 +60,7 @@ export async function inspect(root, { maxDepth = MAX_DEPTH } = {}) {
 
   await walk(root, 0);
   await walk(join(root, '.github', 'workflows'), MAX_DEPTH - 1);
-  return { manifests, languageCounts, dirs: [...dirs].sort(), ci, migrations: migrations.sort() };
+  return { manifests, languageCounts, dirs: [...dirs].sort(), ci, migrations: migrations.sort(), sources };
 }
 
 /** Languages ordered by share of the files carrying a known extension. */

@@ -1,6 +1,6 @@
 import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import { readText, writeText } from './fsutil.js';
+import { readText, writeAtomic } from './fsutil.js';
 import { worktreeBase } from './git.js';
 
 const manifestPath = (root, featureId) => join(worktreeBase(root), `${featureId}.json`);
@@ -44,15 +44,34 @@ export function withLiveness(manifest) {
   };
 }
 
+/**
+ * The manifest for a feature, or null when there genuinely is not one.
+ *
+ * "Genuinely" is the careful word. A file of zero bytes is almost always a read that landed while
+ * the file was being replaced, not a manifest that is missing — and the difference matters, because
+ * `dispatch` treats a missing manifest as permission to start another set of lanes over worktrees
+ * that already exist. So an empty read is looked at twice before it is believed.
+ */
+// Long enough to outlast a write on a machine that is busy, short enough that nobody waiting on a
+// manifest that genuinely is not there notices. A file of zero bytes is never a valid manifest, so
+// there is nothing to lose by looking again.
+const EMPTY_RETRIES = 6;
+const EMPTY_PAUSE_MS = 50;
+
 export async function loadManifest(root, featureId) {
-  const text = await readText(manifestPath(root, featureId));
+  const path = manifestPath(root, featureId);
+  let text = await readText(path);
+  for (let attempt = 0; text === '' && attempt < EMPTY_RETRIES; attempt += 1) {
+    await new Promise((settled) => setTimeout(settled, EMPTY_PAUSE_MS));
+    text = await readText(path);
+  }
   return text ? withLiveness(JSON.parse(text)) : null;
 }
 
 export function createManifestWriter(root) {
   let pending = Promise.resolve();
   return (manifest) => {
-    pending = pending.then(() => writeText(manifestPath(root, manifest.feature), `${JSON.stringify(manifest, null, 2)}\n`));
+    pending = pending.then(() => writeAtomic(manifestPath(root, manifest.feature), `${JSON.stringify(manifest, null, 2)}\n`));
     return pending;
   };
 }

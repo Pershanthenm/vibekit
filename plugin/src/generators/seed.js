@@ -1,3 +1,4 @@
+import { standardsSeeds } from './standards-seed.js';
 import { ARCHITECTURES } from '../architectures.js';
 import { EXAMPLE_JSON } from '../example.js';
 import { bullets, file, markdown, section } from './shared.js';
@@ -89,5 +90,7 @@ export function seedFiles(project) {
     file('.claude/settings.json', renderClaudeSettings(project)),
     file('.cursor/worktrees.json', renderCursorWorktrees(project)),
     project.workflow.skills === 'project' && file('.claude/skills/new-project/project.example.json', EXAMPLE_JSON),
+    // The Universal Engineering Rules, as a standards library the project then owns.
+    ...standardsSeeds(),
   ].filter(Boolean);
 }

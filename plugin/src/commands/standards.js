@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { exists, writeText } from '../fsutil.js';
 import { INDEX_FILE, STANDARDS_DIR, parseIndex, renderIndex, scanStandards, selectStandards } from '../standards.js';
+import { discoverAreas, uncovered } from '../standards-discover.js';
 
 const USAGE = `vibecheck standards <command>
 
@@ -9,6 +10,7 @@ const USAGE = `vibecheck standards <command>
   index                    Rebuild ${INDEX_FILE} from the files in ${STANDARDS_DIR}/
   inject "<task>" [--paths a,b]
                            The standards relevant to that task, and nothing else
+  discover                 Which parts of this codebase have no standard written about them
 
 Standards are Markdown files under ${STANDARDS_DIR}/, one per topic, grouped into domain
 folders (api/, database/, …). Each declares a description in its front matter; files in the
@@ -71,15 +73,46 @@ async function runInject(root, query, paths, json) {
   }
 }
 
+/**
+ * Report what is here and what nothing has been written about — and stop there.
+ *
+ * Deliberately does not read the code and announce its conventions. Working out that a team
+ * returns errors one way and names tests another is judgement; a command that guessed would
+ * produce confident nonsense and put it in a file people then trust.
+ */
+async function runDiscover(root, json) {
+  const report = await discoverAreas(root);
+  if (json) return console.log(JSON.stringify(report, null, 2));
+
+  if (!report.areas.length) {
+    console.log('No source files found to look at.');
+    return;
+  }
+  const missing = uncovered(report);
+  console.log(`${report.standards.length} standard(s) written, ${report.areas.length} area(s) of code found.\n`);
+  for (const entry of report.areas) {
+    const mark = entry.covered.length ? '✔' : '·';
+    console.log(`${mark} ${entry.area.padEnd(10)} ${String(entry.files).padStart(5)} file(s)  ${entry.covered.length ? entry.covered.join(', ') : 'nothing written about it'}`);
+    if (!entry.covered.length) {
+      console.log(`             ${entry.why}`);
+      console.log(`             for example: ${entry.samples.join(', ')}`);
+    }
+  }
+  console.log(missing.length
+    ? '\nWhat those areas have in common is a judgement, not a pattern match, so this stops here.\nRun /vibe-check-cli:standards-discover to have an agent read them and draft standards for you to review.'
+    : '\nEvery area of this codebase has a standard written about it.');
+}
+
 export async function standards({ root, args, json, paths: pathList }) {
   const [action = 'list', ...rest] = args;
-  if (!(await exists(join(root, STANDARDS_DIR))) && action !== 'index') {
+  if (!(await exists(join(root, STANDARDS_DIR))) && !['index', 'discover'].includes(action)) {
     console.log(`No ${STANDARDS_DIR}/ folder yet.\n`);
     console.log(USAGE);
     return;
   }
   const paths = (pathList ?? '').split(',').map((path) => path.trim()).filter(Boolean);
 
+  if (action === 'discover') return runDiscover(root, json);
   if (action === 'index') return runIndex(root, json);
   if (action === 'list') return runList(root, json);
   if (action === 'inject') return runInject(root, rest.join(' '), paths, json);

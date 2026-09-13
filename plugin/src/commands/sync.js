@@ -6,6 +6,7 @@ import { projectDocs } from '../docs/catalog.js';
 import { docsEnabled, roadmapFile } from '../docs/index.js';
 import { renderDocTemplate } from '../docs/templates.js';
 import { assertValid, loadProject } from '../project.js';
+import { INDEX_FILE, renderIndex, scanStandards } from '../standards.js';
 import { rememberProject } from '../registry.js';
 
 export async function managedFiles(root, project) {
@@ -59,6 +60,21 @@ async function removeUnusedEditors(root, project) {
   return { removed, kept };
 }
 
+/**
+ * Keep the standards index current.
+ *
+ * The standards themselves are seeded once and then belong to the project — edit them, delete
+ * them, add your own. The index is derived from whatever is there, so it is generated every sync
+ * rather than seeded: a hand-maintained index of a folder someone is editing goes stale silently,
+ * and a stale index means a standard that is never injected.
+ */
+async function indexStandards(root) {
+  const entries = await scanStandards(root).catch(() => []);
+  if (!entries.length) return null;
+  await writeText(join(root, INDEX_FILE), renderIndex(entries));
+  return entries.length;
+}
+
 function printGroup(symbol, heading, paths) {
   if (!paths.length) return;
   console.log(`${symbol} ${heading}`);
@@ -77,8 +93,10 @@ export async function sync({ root, force = false }) {
   await Promise.all(toWrite.map((file) => writeText(join(root, file.path), file.content)));
   const seeded = await writeMissing(root, [...buildSeedFiles(project), ...docSeeds(project)]);
   const { removed, kept } = await removeUnusedEditors(root, project);
+  const indexed = await indexStandards(root);
 
   printGroup('✔', 'Generated', toWrite.map((file) => file.path));
+  if (indexed) printGroup('✔', `Indexed ${indexed} standard${indexed === 1 ? '' : 's'}`, [INDEX_FILE]);
   printGroup('+', 'Created (yours to edit)', seeded);
   printGroup('−', 'Removed — this project does not list that editor', removed);
   printGroup('!', 'Kept — you have edited these, and this project no longer lists that editor', kept);

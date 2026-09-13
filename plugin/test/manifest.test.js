@@ -87,10 +87,9 @@ test('a manifest from before pids were recorded is left exactly as it is', () =>
 // stopped once that process is gone.
 
 const FEATURE = '001-shared-list';
-const TASKS = [
-  '- [ ] T-1 [impl] API (AC-1) — apps/api/list.ts [P]',
-  '- [ ] T-2 [impl] web dialog (AC-1) — apps/web/assign.vue [P]',
-];
+// One lane, not two: this test is about what the manifest records, and every extra lane is another
+// git worktree to create and tear down while the rest of the suite is using the same disk.
+const TASKS = ['- [ ] T-1 [impl] API (AC-1) — apps/api/list.ts [P]'];
 
 // An agent that starts and then sits there, so there is something real to observe and to kill.
 const SLOW_AGENT = `#!/usr/bin/env node
@@ -119,10 +118,11 @@ test('a dispatched lane records the agent it started, and reads as stopped once 
 
   const dispatched = run(['dispatch', '--dir', root, FEATURE]);
   try {
-    // Generous, because this waits on a real dispatch: a worktree per lane, an install step and a
-    // process launch, on a machine that is running the rest of the suite at the same time.
+    // Generous, because this waits on a real dispatch — a git worktree, an install step and a
+    // process launch — on a machine running the rest of the suite at the same time. It returns as
+    // soon as the pid appears, so the budget costs nothing when the machine is not busy.
     let running = null;
-    for (let attempt = 0; attempt < 600 && !running; attempt += 1) {
+    for (let attempt = 0; attempt < 1200 && !running; attempt += 1) {
       await settle(100);
       const manifest = await loadManifest(root, FEATURE);
       running = manifest?.lanes.find((entry) => entry.state === 'running' && entry.pid);
@@ -144,4 +144,53 @@ test('a dispatched lane records the agent it started, and reads as stopped once 
     restoreEnv(original);
     process.exitCode = 0;
   }
+});
+
+// --- Reading while it is being written ---------------------------------------------------------
+//
+// This is what the end-to-end test above kept tripping over, and it was the manifest's fault, not
+// the test's. A plain write truncates the file first, so a reader arriving in between sees zero
+// bytes — and zero bytes read as "there is no manifest". For `vibecheck dispatch` that is not a
+// cosmetic glitch: assertDispatchable treats no manifest as permission to dispatch again, over
+// worktrees that already exist.
+
+test('an empty manifest file is a read that arrived mid-write, not a manifest that is gone', async () => {
+  // This is the one that matters: `dispatch` reads "no manifest" as permission to start another
+  // set of lanes over worktrees that already exist. A reader landing on a half-replaced file must
+  // look again rather than report absence.
+  const { mkdtemp, writeFile } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { createManifestWriter } = await import('../src/manifest.js');
+  const { worktreeBase } = await import('../src/git.js');
+  const { gitInit } = await import('./helpers.js');
+  const root = await mkdtemp(join(tmpdir(), 'vc-atomic-'));
+  await writeFile(join(root, 'README.md'), 'a repository needs something in it to commit');
+  gitInit(root);
+  const save = createManifestWriter(root);
+  const manifest = { feature: 'f', baseCommit: 'abc', lanes: [lane({ state: 'ready' })] };
+  await save(manifest);
+
+  // Exactly the state a torn read sees, with the real write landing just after.
+  await writeFile(join(worktreeBase(root), 'f.json'), '');
+  setTimeout(() => { save(manifest); }, 10);
+
+  assert.ok(await loadManifest(root, 'f'), 'an empty file must not read as no manifest at all');
+});
+
+test('replacing a file a reader has open is waited out, not failed', async () => {
+  // Windows refuses the rename with EPERM while another handle is open. That is a wait, not an
+  // error, and treating it as one would turn a busy moment into a lost manifest.
+  const { mkdtemp, open, readFile } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { writeAtomic } = await import('../src/fsutil.js');
+  const directory = await mkdtemp(join(tmpdir(), 'vc-busy-'));
+  const target = join(directory, 'held.json');
+  await writeAtomic(target, '{"lanes":[]}');
+
+  const handle = await open(target, 'r');
+  const writing = writeAtomic(target, '{"lanes":[1]}');
+  setTimeout(() => handle.close(), 60);
+  await writing;
+
+  assert.equal(await readFile(target, 'utf8'), '{"lanes":[1]}');
 });

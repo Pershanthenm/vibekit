@@ -1,7 +1,7 @@
 # Standards — a library, injected only where relevant
 
 - **Product:** Vibe-check-cli
-- **Status:** `list`, `index` and `inject` implemented. `discover` not built.
+- **Status:** `list`, `index`, `inject` and `discover` implemented.
 - **Date:** 2026-09-11
 
 ## 1. Problem
@@ -108,21 +108,28 @@ The cost is one small file in context instead of an unbounded rule set.
   command explains what to add.
 - **AC-7** ✅ Given a standard with no `description`, when indexed, then it is listed as a warning,
   because injection matches on the description and it will rarely be selected.
-- **AC-8** ⬜ Given an existing codebase, when `vibecheck standards discover` runs, then recurring
-  conventions are extracted into draft standards for review. *(Not built.)*
+- **AC-8** ✅ Given an existing codebase, when `vibecheck standards discover` runs, then the areas
+  with no standard written about them are reported with examples to read, and
+  `/vibe-check-cli:standards-discover` drafts the standards for review.
 
-## 6. Discover — not built
+## 6. Discover
 
 Agent OS's `/discover-standards` reads a codebase and writes its conventions down. That is the
 half of this that genuinely needs a model: extracting "this team returns errors as ProblemDetails
 and names tests after the criterion" is judgement, not pattern matching, and a deterministic
 implementation would produce confident nonsense.
 
-The right shape is a skill that drives the extraction and writes files through
-`vibecheck standards index`, in the same way the existing workflow skills drive the CLI. It pairs
-naturally with `vibecheck adopt`: adopt the repository, then discover its standards.
+So the work is split along exactly that line. `vibecheck standards discover` does the half that is
+evidence: which areas of the tree exist, how large each is, a handful of files to read, and which
+already have a standard speaking for them. It reads no code and names no convention.
 
-Until then, standards are written by hand. `index` and `inject` work exactly the same either way.
+`/vibe-check-cli:standards-discover` does the half that is judgement: it reads those files, writes
+what it finds as draft standards with the quotes it based them on, rebuilds the index, and asks
+you to approve, edit or delete each one. A rule the codebase does not actually follow is reported
+as a proposal rather than written down as a standard.
+
+It pairs with adoption: `vibecheck adopt` describes the stack, `discover` describes the habits.
+Standards can still be written by hand; `index` and `inject` work the same either way.
 
 ## 7. Relationship to the rest
 
