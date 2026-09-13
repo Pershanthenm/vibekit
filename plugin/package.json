@@ -13,6 +13,7 @@
     "scripts",
     "standards",
     "skills",
+    "playbooks",
     "agents",
     "hooks",
     ".claude-plugin"

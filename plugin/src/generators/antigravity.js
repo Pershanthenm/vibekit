@@ -3,6 +3,7 @@ import { slugify } from '../features.js';
 import { TEST_GLOBS } from '../languages.js';
 import { securityRules } from '../security/render.js';
 import { GENERATED_NOTICE, architectureBullets, bullets, file, frontMatter, languageRules, markdown } from './shared.js';
+import { isMenuSkill } from './menu.js';
 import { CURSOR_CONTEXT, SKILLS } from './workflow.js';
 
 // Antigravity reads workspace rules from `.agents/rules` and custom slash commands from
@@ -86,6 +87,6 @@ export function antigravityFiles(project) {
     project.security.controls.length && rule('vibekit-security', SECURITY_SCOPE, `${bullets(securityRules(project))}\n\nFull baseline: \`specs/security.md\`.`),
     project.docs.enabled && rule('vibekit-docs', `files under \`${project.docs.dir}/**\``, DOCS_RULE),
     ...languageRuleFiles(project),
-    ...SKILLS.map(workflowFile),
+    ...SKILLS.filter((skill) => isMenuSkill(skill.name)).map(workflowFile),
   ].filter(Boolean);
 }

@@ -1,6 +1,7 @@
 import { ARCHITECTURES } from '../architectures.js';
 import { GENERATED_NOTICE, architectureBullets, bullets, file, frontMatter, markdown, standardsBullets } from './shared.js';
 import { AGENT_ROLES, genericAgentBody } from './agents.js';
+import { isMenuSkill } from './menu.js';
 import { PROJECT_CONTEXT, SKILLS } from './workflow.js';
 
 export function renderSkill(skill, context, notice = GENERATED_NOTICE) {
@@ -94,7 +95,8 @@ export function renderAgent(agent, notice = GENERATED_NOTICE) {
 export function claudeFiles(project) {
   if (project.workflow.skills !== 'project') return [];
   return [
-    ...SKILLS.map((skill) => file(`.claude/skills/${skill.name}/SKILL.md`, renderSkill(skill, PROJECT_CONTEXT))),
+    ...SKILLS.filter((skill) => isMenuSkill(skill.name))
+      .map((skill) => file(`.claude/skills/${skill.name}/SKILL.md`, renderSkill(skill, PROJECT_CONTEXT))),
     ...subagents(project).map((agent) => file(`.claude/agents/${agent.name}.md`, renderAgent(agent))),
   ];
 }

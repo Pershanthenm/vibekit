@@ -1,6 +1,7 @@
 import { ARCHITECTURES } from '../architectures.js';
 import { renderSecurityBody, securityRules } from '../security/render.js';
 import { agentRolesSection } from './agents.js';
+import { isMenuSkill } from './menu.js';
 import { SKILLS, contextFor } from './workflow.js';
 import {
   GENERATED_NOTICE,
@@ -125,7 +126,7 @@ function renderAgentsMd(project) {
 
 function renderClaudeMd(project) {
   const { cmd } = contextFor(project);
-  const skills = SKILLS.map(({ name }) => `\`${cmd(name)}\``).join(', ');
+  const skills = SKILLS.filter(({ name }) => isMenuSkill(name)).map(({ name }) => `\`${cmd(name)}\``).join(', ');
   return markdown(
     GENERATED_NOTICE,
     '@AGENTS.md',
@@ -134,6 +135,7 @@ function renderClaudeMd(project) {
       bullets([
         `You are the orchestrator. ${cmd('run')} advances the workflow to the next human gate.`,
         `Workflow skills: ${skills}.`,
+        'Everything else — writing docs, clarifying a spec, changing the architecture, the team kit — is a playbook rather than a command, to keep the menu short: `vibekit playbook` lists them, `vibekit playbook <name>` prints the one you want.',
         project.workflow.enforce && 'Hooks enforce the workflow: code edits need a feature in progress, generated files are read-only, and finishing a turn runs `vibekit check`.',
         project.memory.provider === 'agentmemory' && 'Memory: the agentmemory plugin captures sessions; vibekit adds spec approvals, finished features and lane merges, and injects memories relevant to the next feature at session start.',
         hasKnowledge(project) && 'Knowledge: `vibekit context <feature|topic>` merges agentmemory and OpenContext into one brief; session start and every lane brief include it automatically.',

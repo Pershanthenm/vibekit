@@ -10,7 +10,7 @@ argument-hint: "<feature id>"
 
 Feature: $ARGUMENTS
 
-1. Run `vibekit lanes <id>`. It shows each ready lane and who will build it: `workflow.routes` sends lanes to Cursor or Claude by the files they touch, and everything else goes to `workflow.engine`. If no `[P]` tasks are ready, continue sequentially with /vibekit:implement-feature.
+1. Run `vibekit lanes <id>`. It shows each ready lane and who will build it: `workflow.routes` sends lanes to Cursor or Claude by the files they touch, and everything else goes to `workflow.engine`. If no `[P]` tasks are ready, continue sequentially with `vibekit playbook implement-feature`.
 2. Commit everything first — worktrees start from HEAD, so uncommitted specs or code are invisible to the lanes.
 3. Run `vibekit dispatch <id>` **as a background command**. Engine comes from `workflow.engine` (override with `--engine cursor|claude|manual`). It creates a git worktree and branch per lane, installs dependencies and starts one headless agent per lane. With `manual` it only prepares worktrees and prompt files for the user to open as Cursor agents.
 4. While lanes run, do work that doesn't touch their files, or check progress with `vibekit lanes <id>`.

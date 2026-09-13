@@ -45,6 +45,23 @@ function pluginCurrent() {
   return status(true, `installed ${entry.version} (run /reload-plugins after installing or updating)`);
 }
 
+/**
+ * Docker is the project's business, not VibeKit's.
+ *
+ * Nothing here runs a container: a lane is a git worktree and a local process, memory is a local
+ * server, and the security scanners in the generated workflow run on CI runners, not on this
+ * machine. Docker was on the required list because Multica needed it, and Multica is gone.
+ *
+ * So it is asked for when the project says it uses containers, and not otherwise — a required
+ * tool that nobody's work actually depends on is a setup step people learn to skip, which is how a
+ * checklist stops meaning anything. A machine with no project yet is not asked for it at all; it
+ * appears as soon as the stack says it should.
+ */
+const CONTAINERS = /docker|container|kubernetes|k8s|podman|testcontainers|compose/i;
+
+const usesContainers = (project) => Boolean(project)
+  && CONTAINERS.test(JSON.stringify([project.stack, project.commands, project.architecture?.notes]));
+
 export const TOOLS = [
   {
     id: 'node', name: 'Node.js 20+', why: 'runs vibekit, hooks and MCP shims', needed: () => true,
@@ -57,7 +74,7 @@ export const TOOLS = [
     install: { macos: 'xcode-select --install', linux: 'sudo apt-get install -y git', wsl: 'sudo apt-get install -y git', windows: 'winget install Git.Git' },
   },
   {
-    id: 'docker', name: 'Docker', why: 'Testcontainers, container scans, local services', needed: () => true,
+    id: 'docker', name: 'Docker', why: 'the containers this project itself uses — Compose services, Testcontainers', needed: usesContainers,
     check: () => {
       const info = probe('docker', ['info']);
       if (info.ok) return status(true, 'running');

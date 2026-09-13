@@ -68,8 +68,8 @@ Show a compact summary (stack, architecture, targets, sign-in, security and comp
 2. Run `vibekit sync` to regenerate AGENTS.md, CLAUDE.md, subagents and Cursor rules.
 3. Fill `specs/00-product.md` (vision, users, capabilities, non-goals, success metrics) and `specs/01-architecture.md` (Mermaid component diagram, modules and responsibilities, data flow, cross-cutting concerns).
 4. Record each key choice as an ADR in `specs/decisions/` (context, decision, consequences).
-5. Draw the living docs with /vibekit:docs: `docs/architecture.md` (context and container diagrams), plus data model, deployment and design system when they apply. Stamp each one — planning is blocked until the architecture doc is fresh.
-6. **Design the screens, then stop.** If any target is web, mobile or desktop, run /vibekit:design:
+5. Draw the living docs with `vibekit playbook docs`: `docs/architecture.md` (context and container diagrams), plus data model, deployment and design system when they apply. Stamp each one — planning is blocked until the architecture doc is fresh.
+6. **Design the screens, then stop.** If any target is web, mobile or desktop, run `vibekit playbook design`:
    it produces artboards with Claude Design, hands the user the canvas link and **waits**. Do not
    scaffold features while the canvas is open. When the user approves one it is recorded in the
    feature's design doc, and a feature with screens cannot start until that record exists.

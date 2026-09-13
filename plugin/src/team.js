@@ -7,6 +7,7 @@ import { EXAMPLE_JSON } from './example.js';
 import { exists, readText, writeText } from './fsutil.js';
 import { AGENT_ROLES } from './generators/agents.js';
 import { pluginAgents, renderAgent, renderSkill } from './generators/claude.js';
+import { isMenuSkill } from './generators/menu.js';
 import { PLUGIN_CONTEXT, SKILLS } from './generators/workflow.js';
 import { probe } from './machine/probe.js';
 
@@ -61,15 +62,21 @@ async function updateManifests(repo, plugins) {
   await writeText(marketplacePath, `${JSON.stringify(marketplace, null, 2)}\n`);
 }
 
+/**
+ * The skills that become slash commands. The rest are still built, still shipped and still
+ * followed — see `vibekit playbook` — they just do not take up a line in the menu.
+ */
 export function pluginSkillFiles() {
   return [
-    ...SKILLS.map((skill) => ({ path: `${skill.name}/SKILL.md`, content: renderSkill(skill, PLUGIN_CONTEXT, BUILD_NOTICE) })),
+    ...SKILLS.filter((skill) => isMenuSkill(skill.name))
+      .map((skill) => ({ path: `${skill.name}/SKILL.md`, content: renderSkill(skill, PLUGIN_CONTEXT, BUILD_NOTICE) })),
     { path: 'new-project/project.example.json', content: EXAMPLE_JSON },
   ];
 }
 
 export async function buildPlugin(repo = teamRepo()) {
   const skillsDir = join(repo, 'plugin', 'skills');
+  const playbooksDir = join(repo, 'plugin', 'playbooks');
   const agentsDir = join(repo, 'plugin', 'agents');
   const team = await readTeam(repo);
   assertNoClash('skills', team.skills, RESERVED_SKILLS);
@@ -77,7 +84,14 @@ export async function buildPlugin(repo = teamRepo()) {
 
   await rm(skillsDir, { recursive: true, force: true });
   for (const file of pluginSkillFiles()) await writeText(join(skillsDir, file.path), file.content);
-  for (const name of team.skills) await cp(join(teamPaths(repo).skills, name), join(skillsDir, name), { recursive: true, dereference: true });
+
+  // Team skills are shipped as playbooks rather than commands. A kit of twenty imported skills is
+  // worth having and is not worth twenty lines of menu; `vibekit playbook` lists and prints them.
+  await rm(playbooksDir, { recursive: true, force: true });
+  for (const name of team.skills) {
+    const body = await readText(join(teamPaths(repo).skills, name, 'SKILL.md'));
+    if (body) await writeText(join(playbooksDir, `${name}.md`), body);
+  }
 
   await rm(agentsDir, { recursive: true, force: true });
   for (const agent of pluginAgents()) await writeText(join(agentsDir, `${agent.name}.md`), renderAgent(agent, BUILD_NOTICE));
@@ -87,7 +101,8 @@ export async function buildPlugin(repo = teamRepo()) {
   if (notice) await writeText(join(repo, 'plugin', 'THIRD_PARTY_NOTICES.md'), notice);
   else await rm(join(repo, 'plugin', 'THIRD_PARTY_NOTICES.md'), { force: true });
   await updateManifests(repo, team.plugins);
-  return { skills: SKILLS.length + team.skills.length, agents: AGENT_ROLES.length + team.agents.length, team };
+  const commands = SKILLS.filter((skill) => isMenuSkill(skill.name)).length;
+  return { skills: commands, playbooks: SKILLS.length - commands + team.skills.length, agents: AGENT_ROLES.length + team.agents.length, team };
 }
 
 export async function bumpVersion(repo = teamRepo()) {

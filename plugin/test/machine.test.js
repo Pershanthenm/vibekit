@@ -114,16 +114,35 @@ test('the checklist follows the project configuration', async () => {
   const base = JSON.parse(await readFile(path, 'utf8'));
   const ids = (overrides) => toolsFor({ ...base, ...overrides, workflow: { ...base.workflow, ...overrides.workflow } }).map((tool) => tool.id);
 
-  // Docker, the Cursor CLI and agentmemory are required of every project, so they are not
-  // engine-dependent any more. What still follows the configuration is the rest.
+  // The Cursor CLI and agentmemory are required of every project, so they are not engine-dependent
+  // any more. What still follows the configuration is the rest.
   const lean = ids({ workflow: { engine: 'claude' }, memory: { ...base.memory, provider: 'none' }, knowledge: { ...base.knowledge, provider: 'none' } });
   assert.ok(['node', 'git', 'claude', 'vibekit-plugin', 'vibekit-cli'].every((id) => lean.includes(id)), lean.join(', '));
   assert.ok(!lean.includes('opencontext'), 'a project with no knowledge provider does not need OpenContext');
 
   for (const engine of ['claude', 'cursor']) {
     const required = ids({ workflow: { engine } });
-    assert.ok(['docker', 'cursor-agent', 'agentmemory'].every((id) => required.includes(id)), `${engine}: ${required.join(', ')}`);
+    assert.ok(['cursor-agent', 'agentmemory'].every((id) => required.includes(id)), `${engine}: ${required.join(', ')}`);
   }
+});
+
+// Docker used to be required of everyone, because Multica ran in it. Multica is gone, and nothing
+// left in VibeKit runs a container — a lane is a worktree and a process, memory is a local server,
+// and the generated security workflow runs its scanners on CI runners. Asking for it anyway costs
+// an hour of setup and a background service, and teaches people that the checklist can be ignored.
+test('Docker is asked for by projects that use containers, and not by the ones that do not', async () => {
+  const root = await newProject('--yes');
+  const base = JSON.parse(await readFile(join(root, 'specs/project.json'), 'utf8'));
+  const ids = (project) => toolsFor(project).map((tool) => tool.id);
+
+  const plain = { ...base, stack: { ...base.stack, hosting: 'Vercel', database: 'SQLite' } };
+  assert.ok(!ids(plain).includes('docker'), 'a project with no containers in it is not asked to install Docker');
+
+  assert.ok(ids({ ...plain, stack: { ...plain.stack, hosting: 'Fly.io (Docker)' } }).includes('docker'));
+  assert.ok(ids({ ...plain, commands: { ...plain.commands, test: 'pnpm test # testcontainers' } }).includes('docker'));
+  assert.ok(ids({ ...plain, architecture: { ...plain.architecture, notes: ['Deployed to Kubernetes'] } }).includes('docker'));
+
+  assert.ok(!ids(null).includes('docker'), 'and a machine with no project yet is not asked for it at all');
 });
 
 test('setup --dry-run shows the plan and changes nothing; installs are followed by service starts', async () => {

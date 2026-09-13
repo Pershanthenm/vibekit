@@ -4,6 +4,7 @@ import { TEST_GLOBS } from '../languages.js';
 import { securityRules } from '../security/render.js';
 import { GENERATED_NOTICE, architectureBullets, bullets, file, frontMatter, languageRules, markdown } from './shared.js';
 import { cursorAgentFiles } from './agents.js';
+import { isMenuSkill } from './menu.js';
 import { CURSOR_CONTEXT, SKILLS } from './workflow.js';
 
 function rule(name, { description, globs, alwaysApply = false }, body) {
@@ -73,7 +74,8 @@ export function cursorFiles(project) {
     project.security.controls.length && rule('vibekit-security', { description: 'Security baseline for auth, config and data access code', globs: SECURITY_GLOBS }, `${bullets(securityRules(project))}\n\nFull baseline: \`specs/security.md\`.`),
     project.docs.enabled && rule('vibekit-docs', { description: 'Living documentation and diagrams', globs: `${project.docs.dir}/**` }, DOCS_RULE),
     ...languageRuleFiles(project),
-    ...SKILLS.map((skill) => file(`.cursor/commands/${skill.name}.md`, markdown(GENERATED_NOTICE, skill.body(CURSOR_CONTEXT)))),
+    ...SKILLS.filter((skill) => isMenuSkill(skill.name))
+      .map((skill) => file(`.cursor/commands/${skill.name}.md`, markdown(GENERATED_NOTICE, skill.body(CURSOR_CONTEXT)))),
     ...cursorAgentFiles(),
   ].filter(Boolean);
 }

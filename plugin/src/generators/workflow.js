@@ -1,4 +1,6 @@
-const commandIn = (prefix) => (name, arg) => `/${prefix}${name}${arg ? ` ${arg}` : ''}`;
+import { commandIn } from './menu.js';
+
+export { MENU, isMenuSkill } from './menu.js';
 
 export const PLUGIN_CONTEXT = {
   menus: 'claude',
@@ -420,7 +422,7 @@ Scope: ${input}
 
 1. Run \`vibekit health --json\`. Add \`--live\` before a first real run, or when the user asks for a full check (it sends a few one-line prompts to Claude and Cursor).
 2. Summarise briefly: what works, then each problem with its fix. Group by tools, project and live checks.
-3. For problems whose fix is a command, offer to run it through ${cmd('setup')}. Explain the ones only the user can do: signing in and starting Docker Desktop.
+3. For problems whose fix is a command, offer to run it through ${cmd('setup')}. Explain the ones only the user can do: signing in, and starting Docker Desktop if this project uses containers.
 `;
 
 export const SKILLS = [
@@ -494,7 +496,7 @@ export const SKILLS = [
   {
     name: 'setup',
     description: 'Install, configure and start everything this machine and project need, chosen from a menu. Use when setting up a new machine, after changing the project\'s engine or tools, or when the health check reports missing pieces.',
-    argumentHint: '[tool ids, e.g. docker]',
+    argumentHint: '[tool ids, e.g. cursor-agent]',
     userOnly: true,
     body: setupSkill,
   },

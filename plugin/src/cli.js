@@ -24,13 +24,14 @@ import { list } from './commands/list.js';
 import { memory } from './commands/memory.js';
 import { merge } from './commands/merge.js';
 import { next } from './commands/next.js';
+import { playbook } from './commands/playbook.js';
 import { standards } from './commands/standards.js';
 import { sync } from './commands/sync.js';
 import { verify } from './commands/verify.js';
 import { security } from './commands/security.js';
 import { startScreen, unknownCommand } from './guide.js';
 
-const COMMANDS = { init, adopt, analyze, scan, sync, feature, status, list, dashboard, wizard, check, next, lanes, dispatch, merge, memory, knowledge, context, docs, advise, security, standards, verify, health, doctor: health, setup, version, 'cursor-agents': cursorAgents, 'cursor-kit': cursorAgents, team, projects, hook };
+const COMMANDS = { init, adopt, analyze, scan, sync, feature, status, list, dashboard, wizard, check, next, lanes, dispatch, merge, memory, knowledge, context, docs, advise, security, standards, playbook, verify, health, doctor: health, setup, version, 'cursor-agents': cursorAgents, 'cursor-kit': cursorAgents, team, projects, hook };
 
 const OPTIONS = {
   dir: { type: 'string' },
@@ -102,6 +103,8 @@ Usage
   vibekit docs <status | new <kind> [feature] | stamp <path...> [--still-accurate]>
                                                          Living docs & diagrams with freshness tracking
   vibekit security [questions | apply | status]       Security baseline by menu, tailored to your stack
+  vibekit playbook [name]                                The instructions behind the steps that have no slash command
+                                                         of their own, and your imported team skills. No name lists them
   vibekit standards <list | index | inject "<task>" | discover>
                                                          Your coding standards, injected only where relevant.
                                                          discover reports which areas of the code have none
