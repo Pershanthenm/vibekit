@@ -1,5 +1,6 @@
 import { ARCHITECTURES } from './architectures.js';
 import { commandPresetFor } from './languages.js';
+import { CAPTURE_KINDS } from './memory.js';
 import { findControl } from './security/controls.js';
 
 export const TARGETS = ['web', 'ios', 'android', 'desktop', 'api', 'cli'];
@@ -8,6 +9,8 @@ export const ENGINES = ['cursor', 'claude', 'manual', 'multica'];
 export const AUTONOMY_LEVELS = ['gated', 'auto'];
 export const SKILL_MODES = ['plugin', 'project'];
 export const MEMORY_PROVIDERS = ['agentmemory', 'none'];
+// What vibecheck may record without being asked. Re-exported so project.json has one vocabulary.
+export { CAPTURE_KINDS };
 export const KNOWLEDGE_PROVIDERS = ['opencontext', 'none'];
 export const MOBILE_APPROACHES = [
   'React Native (Expo)',
@@ -68,6 +71,7 @@ export const DEFAULT_PROJECT = {
     provider: 'agentmemory',
     url: 'http://localhost:3111',
     recallLimit: 5,
+    capture: [...CAPTURE_KINDS],
   },
   multica: {
     agent: '',
@@ -152,10 +156,14 @@ function validateWorkflow(workflow) {
 }
 
 function validateMemory(memory) {
+  const capture = memory.capture;
+  const unknown = Array.isArray(capture) ? capture.filter((kind) => !CAPTURE_KINDS.includes(kind)) : [];
   return [
     !MEMORY_PROVIDERS.includes(memory.provider) && `memory.provider must be one of: ${MEMORY_PROVIDERS.join(', ')}`,
     !/^https?:\/\//.test(memory.url) && 'memory.url must be an http(s) URL',
     !(Number.isInteger(memory.recallLimit) && memory.recallLimit > 0) && 'memory.recallLimit must be a positive integer',
+    !Array.isArray(capture) && 'memory.capture must be a list of what vibecheck may record by itself',
+    unknown.length && `memory.capture has nothing called ${unknown.join(', ')} (choose from: ${CAPTURE_KINDS.join(', ')})`,
   ].filter(Boolean);
 }
 

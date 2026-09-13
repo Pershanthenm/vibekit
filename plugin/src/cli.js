@@ -49,6 +49,7 @@ const OPTIONS = {
   port: { type: 'string' },
   host: { type: 'string' },
   tunnel: { type: 'boolean' },
+  limit: { type: 'string' },
   'still-accurate': { type: 'boolean' },
   run: { type: 'boolean' },
   repeat: { type: 'string' },
@@ -91,8 +92,11 @@ Usage
   vibecheck dispatch <feature> [--engine cursor|claude|manual|multica] [--dry-run]
                                                          One git worktree + headless agent per lane
   vibecheck merge <feature>                              Merge finished lanes back and clean up worktrees
-  vibecheck memory <status | recall "<q>" | remember "<fact>">
-                                                         Shared long-term memory via agentmemory
+  vibecheck memory <status | list | search "<q>" | recall "<q>" | remember "<fact>">
+  vibecheck memory <correct <id> "<fact>" | forget <id>... | capture [<kind>...]>
+                                                         Shared long-term memory via agentmemory:
+                                                         see what it holds, fix it, and choose what
+                                                         vibecheck records without being asked
   vibecheck knowledge <status | search "<q>" | manifest [folder] | publish>
                                                          Curated cross-project knowledge via OpenContext
   vibecheck context <feature id | topic>                 One brief from memory + knowledge
