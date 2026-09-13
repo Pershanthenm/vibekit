@@ -10,7 +10,7 @@ import { collectProblems } from './check.js';
 import { PING, POLL_MS, PREAMBLE, RETRY, fingerprint, laneLogs, readSince, secret, sse } from '../live.js';
 import { renderWizard } from '../wizard-page.js';
 import { collectScan } from '../scan.js';
-import { MAX_BYTES, render as renderQr } from '../qr.js';
+import { codeFor } from '../qr.js';
 import { openTunnel } from '../tunnel.js';
 
 /**
@@ -95,7 +95,7 @@ p{color:#9ea19a;margin:0 0 6px}code{color:#b6f24a}</style></head>
  * titles and blocker text that quote file paths and review comments, and that is not something to
  * put on a shared network by accident.
  */
-export async function serveDashboard(root, { port = DEFAULT_PORT, host = '127.0.0.1', path = secret(), token = secret(), open: openWith = openTunnel } = {}) {
+export async function serveDashboard(root, { port = DEFAULT_PORT, host = '127.0.0.1', path = secret(), token = secret(), open: openWith = openTunnel, announce = null } = {}) {
   const prefix = `/${path}`;
   const control = `${prefix}/do`;
   const scanFeed = `${prefix}/scan.json`;
@@ -128,6 +128,16 @@ export async function serveDashboard(root, { port = DEFAULT_PORT, host = '127.0.
       // The tunnel reaches the whole server, so the secret path still decides what is reachable:
       // the public hostname on its own lands on the same bare 404 as any other wrong path.
       tunnelState = { open: true, url: opened.url, reach: `${opened.url}${prefix}/`, since: new Date().toISOString(), error: null, busy: false };
+      // Whoever opened it, the console says so — including the button on the Overview page, which
+      // is the route somebody takes when the console was already running before they wanted a
+      // phone. Awaited so the code is drawn before whatever the caller prints next.
+      if (announce) {
+        try {
+          await announce(tunnelStatus());
+        } catch {
+          // A drawing is not worth losing a working tunnel over.
+        }
+      }
     } catch (error) {
       opened = null;
       tunnelState = { open: false, url: null, reach: null, since: null, error: error?.message ?? 'The tunnel could not be opened.', busy: false };
@@ -413,27 +423,86 @@ export async function serveDashboard(root, { port = DEFAULT_PORT, host = '127.0.
   };
 }
 
+/**
+ * What the console prints when a tunnel opens: the addresses, and a code to point a camera at.
+ *
+ * The reason this exists at all is the machine nobody is sitting in front of — Claude Code over
+ * SSH on a server, where there is no browser to open and the address is a random 32-character
+ * path on a random Cloudflare hostname. Reading that off one screen and typing it into a phone is
+ * the kind of thing nobody does twice.
+ *
+ * One code, not one per address. A code is about twenty-five lines of terminal, and a console that
+ * answers "which of these two squares is the status page" with a scroll has saved nobody anything.
+ * So the choice is made here, from the only thing that distinguishes the two cases: with no
+ * readable project the only useful page is the wizard, because filling it in is the whole job;
+ * once there is one, it is the status page.
+ *
+ * Never throws. A tunnel that is open and working is not something to lose over a drawing.
+ */
+export async function announceTunnel(root, state, log = console.log) {
+  if (!state?.reach) return null;
+  const wizard = `${state.reach}wizard`;
+  const specced = await loadProject(root).then(() => true).catch(() => false);
+  const target = specced
+    ? { url: state.reach, what: 'Scan to open the status page:' }
+    : { url: wizard, what: 'Scan to fill in the project spec:' };
+
+  log('');
+  log(`  On your phone: ${state.reach}`);
+  log(`  Spec wizard:   ${wizard}`);
+  // Too long to encode is not worth an error: the addresses above still work.
+  const code = codeFor(target.url);
+  if (code) {
+    log('');
+    log(`  ${target.what}`);
+    log('');
+    log(code);
+  }
+  return target.url;
+}
+
+/**
+ * Start the console, or report why it could not start and set a failing exit code.
+ *
+ * Shared by `dashboard --serve` and `wizard --serve`: they show different pages of the same server,
+ * and a port that is busy or nonsense is the same problem with the same wording either way.
+ * Returns null when it did not start, so a caller can simply return.
+ */
+export async function startConsole(root, { port, host }) {
+  const requested = port ? Number(port) : DEFAULT_PORT;
+  if (!Number.isInteger(requested) || requested < 0 || requested > 65535) {
+    console.error(`✖ --port must be a number between 0 and 65535, not "${port}".`);
+    process.exitCode = 1;
+    return null;
+  }
+  const lan = host === '0.0.0.0';
+  try {
+    const server = await serveDashboard(root, {
+      port: requested,
+      host: lan ? '0.0.0.0' : '127.0.0.1',
+      announce: (state) => announceTunnel(root, state),
+    });
+    // Closed with the console either way, so a tunnel never outlives the thing it points at.
+    const shut = () => { server.tunnel.stop(); process.exit(0); };
+    process.once('SIGINT', shut);
+    process.once('SIGTERM', shut);
+    return { server, lan };
+  } catch (error) {
+    const busy = error?.code === 'EADDRINUSE';
+    console.error(busy
+      ? `✖ Port ${requested} is already in use. Choose another with --port, or stop what is on it.`
+      : `✖ Could not start the dashboard server: ${error?.message ?? error}`);
+    process.exitCode = 1;
+    return null;
+  }
+}
+
 // --static drops the meta-refresh, for a copy that is going somewhere other than a local browser.
 export async function dashboard({ root, out, json, open, static: isStatic, serve, port, host, tunnel }) {
   if (serve) {
-    const requested = port ? Number(port) : DEFAULT_PORT;
-    if (!Number.isInteger(requested) || requested < 0 || requested > 65535) {
-      console.error(`✖ --port must be a number between 0 and 65535, not "${port}".`);
-      process.exitCode = 1;
-      return;
-    }
-    const lan = host === '0.0.0.0';
-    let server;
-    try {
-      server = await serveDashboard(root, { port: requested, host: lan ? '0.0.0.0' : '127.0.0.1' });
-    } catch (error) {
-      const busy = error?.code === 'EADDRINUSE';
-      console.error(busy
-        ? `✖ Port ${requested} is already in use. Choose another with --port, or stop what is on it.`
-        : `✖ Could not start the dashboard server: ${error?.message ?? error}`);
-      process.exitCode = 1;
-      return;
-    }
+    const started = await startConsole(root, { port, host });
+    if (!started) return;
+    const { server, lan } = started;
     console.log(`Live console on ${server.url}`);
     console.log('  Updates as the work happens: task ticks, lane output, test runs. Ctrl-C to stop.');
     console.log('  The path is random and changes every start, so an old link stops working.');
@@ -443,25 +512,14 @@ export async function dashboard({ root, out, json, open, static: isStatic, serve
     console.log('  browser. Reading needs only the link; changing the project needs this as well.');
     if (lan) console.log('\n  Bound to every interface on this network — it carries your feature titles and blockers.');
 
-    // Closed with the console either way, so a tunnel never outlives the thing it points at.
-    const shut = () => { server.tunnel.stop(); process.exit(0); };
-    process.once('SIGINT', shut);
-    process.once('SIGTERM', shut);
-
     if (tunnel) {
       const state = await server.tunnel.start();
       if (state.error) {
         console.error(`\n✖ No tunnel: ${state.error}`);
         console.error('  The console is still running on this machine, at the address above.');
       } else {
-        console.log(`\n  On your phone: ${state.reach}`);
-        console.log(`  Spec wizard:   ${state.reach}wizard`);
-        // Nobody types a random 32-character path into a phone twice. Point a camera at this
-        // instead. Too long to encode is not worth an error: the address above still works.
-        if (state.reach.length <= MAX_BYTES) {
-          console.log('');
-          console.log(renderQr(state.reach));
-        }
+        // The addresses and the code have already been printed by the announcer, which also runs
+        // when the tunnel is opened from the page. All that is left is what the flag alone implies.
         console.log('\n  ! That hostname is public while it is open. The random path is what keeps the page');
         console.log('    private, and the write token is what stops a reader changing anything.');
         console.log('    Done for now? Turn the tunnel off on the Overview page — the console keeps');
@@ -472,7 +530,9 @@ export async function dashboard({ root, out, json, open, static: isStatic, serve
       console.log('  Or turn one on from the Overview page once the console is open.');
     }
     if (open) openInBrowser(server.url);
-    return;
+    // Handed back for the same reason the wizard does it: whatever started the console should be
+    // able to stop it. On the command line the process simply lives until Ctrl-C.
+    return server;
   }
 
   const project = await loadProject(root);

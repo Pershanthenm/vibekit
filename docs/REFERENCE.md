@@ -335,6 +335,19 @@ so setting a project up and then tracking it look like one product rather than t
 Like the dashboard it is written to `.git/vibekit/` (or `.vibekit/` outside a git repo), never
 into `specs/`, so it cannot dirty the working tree.
 
+**On a machine with no browser.** A written file is the right answer on a laptop and the wrong one
+over SSH: there is nothing to open it with, and a form is no use as a path. So it can be served
+instead, on the console's own server and secret path:
+
+```
+vibekit wizard --serve --tunnel
+```
+
+That hosts the form rather than writing it, gives it a public address, and prints a **QR code** to
+scan — which is how the phone in your hand becomes the way into a project on a server you only
+ever reach through a terminal. `--serve` without `--tunnel` stays on loopback. Asking for a tunnel
+implies serving, because there would otherwise be nothing for it to point at.
+
 ## Boilerplate, when one actually fits
 
 Once a stack is chosen, `vibekit advise` offers **starters** — ABP, ASP.NET Zero, the Clean
@@ -422,9 +435,52 @@ both the review and the test evidence valid. Anything else means the code moved 
 In a project with no git repository there is no commit to tie a review to, so the verdict alone
 is the gate — the same way the evidence gate steps aside without git.
 
-`/vibekit:review-feature` delegates to the read-only **reviewer** subagent and writes the
-file. Teams that review somewhere else (GitHub PRs, for example) can set
+The review step of `/vibekit:run` delegates to the read-only **reviewer** subagent and writes
+the file. Teams that review somewhere else (GitHub PRs, for example) can set
 `workflow.review: false` in `specs/project.json`, alongside `traceability` and `evidence`.
+
+## Five commands, and playbooks for the rest
+
+A menu of forty entries is not a menu, it is a search problem, and the cost falls on whoever is
+looking for the one thing they came for. So the plugin ships five slash commands:
+
+| Command | When you reach for it |
+|---|---|
+| `/vibekit:setup` | make this machine ready |
+| `/vibekit:new-project` | start something |
+| `/vibekit:spec-feature` | say what you want built |
+| `/vibekit:run` | build it — spec, plan, implement, dispatch, merge, review, until a gate |
+| `/vibekit:scan` | ask how it is actually going |
+
+The rule for which five: would a person type it themselves, on a normal day, without another
+skill telling them to? `plan-feature`, `implement-feature`, `dispatch`, `merge-lanes` and
+`review-feature` fail that test because `run` is what invokes them — it walks the whole loop and
+calls each by name, so putting them on the menu as well only offers somebody the chance to run
+step four before step three. `health` fails it because the thing you want when something is
+broken is the fix, which is `setup`.
+
+**Nothing was removed.** Every other skill is a **playbook**: the same instructions, from the same
+generator, printed on demand.
+
+```
+vibekit playbook                      # list them
+vibekit playbook review-feature       # print one
+```
+
+That is what makes this a trim rather than a deletion, and it is enforced by tests rather than
+by intention:
+
+- A demoted skill prints **in full**, front matter and all — not a summary.
+- Skills name each other **by whatever reaches them now**. A skill with a command is named
+  `/vibekit:run`; one without is named `` `vibekit playbook review-feature` ``, which an agent can
+  run and which returns the instructions themselves. So `run` still drives the whole loop, and a
+  demoted step is followed exactly as it was when it had a command of its own.
+- The rendering is done **for the project asking**, so a project that keeps its own skills sees
+  `/run`, not `/vibekit:run`.
+
+Your imported team kit goes the same way: twenty skills from a colleague are worth having and are
+not worth twenty lines of menu, so `vibekit team capture` and `vibekit team import-ecc` ship them
+as playbooks, folders and supporting files intact.
 
 ## Watching it happen: `vibekit dashboard`
 
@@ -664,9 +720,24 @@ and the scan. Ctrl-C closes the tunnel with the console, so a tunnel never outli
 at.
 
 It also prints the address as a **QR code**, because nobody types a random 32-character path into
-a phone twice. The encoder is part of vibekit rather than a dependency; while it was written its
-output was decoded by an independent implementation across every version it supports, which is how
-three real faults in it were found.
+a phone twice. This matters most on the machine nobody is sitting in front of — Claude Code over
+SSH on a server — where there is no browser to open and the address is the only way in.
+
+One code, not one per page: a code is about twenty-five lines of terminal, and a console that
+answers "which of these two squares is the status page" with a scroll has saved nobody anything.
+So it draws the one worth scanning, decided by the only thing that separates the two cases —
+**no readable project yet means the wizard**, because filling it in is the whole job, and
+**a project that exists means the status page**. Both addresses are printed either way.
+
+It is printed however the tunnel was opened, including from the switch on the Overview page —
+which is the route you take when the console was already running before you wanted a phone.
+
+An address too long to encode is not an error: the addresses are printed regardless, and a tunnel
+that is open and working is not something to lose over a drawing.
+
+The encoder is part of vibekit rather than a dependency; while it was written its output was
+decoded by an independent implementation across every version it supports, which is how three real
+faults in it were found.
 
 **Turning it off without stopping the console.** The server owns the tunnel, not the command that
 started it, so the Overview page has a switch. Closing it leaves everything on this machine
@@ -856,7 +927,7 @@ repeats each suite to catch flakes, and records evidence against a commit — th
 
 ## What the plugin gives Claude Code
 
-The workflow skills (`/vibekit:new-project`, `run`, `spec-feature`, `plan-feature`, `implement-feature`, `dispatch`, `merge-lanes`, `review-feature`, `docs`, `rearchitect`, `security`, `scan`, `memory`, `setup`, `health`, `spec-check`), 4 subagents (**architect**, **test-engineer**, **implementer**, **reviewer**, each reading the project's `AGENTS.md` first) and 3 hooks (session start, before edits, end of turn).
+Five slash commands (`/vibekit:setup`, `new-project`, `spec-feature`, `run`, `scan`) and the rest of the workflow as playbooks (see "Five commands, and playbooks for the rest" below), 4 subagents (**architect**, **test-engineer**, **implementer**, **reviewer**, each reading the project's `AGENTS.md` first) and 3 hooks (session start, before edits, end of turn).
 
 **Cursor gets the same four subagents** in its own format (`model: inherit`; the reviewer is `readonly`): in every project's `.cursor/agents/` (kept current by `vibekit sync`) and in `~/.cursor/agents/` for use anywhere (`vibekit cursor-agents`; installed by the bootstrap and checked by the health check). They work in Cursor's editor, its CLI lanes and Cloud Agents. Files of your own with the same names are never overwritten. Check with `claude plugin details vibekit@vibekit`. To start over completely, see "Starting over" in the setup guides (`plugin/scripts/reset.ps1` or `reset.sh`).
 

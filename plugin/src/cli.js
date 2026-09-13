@@ -79,7 +79,11 @@ Usage
   vibekit feature "<name>"                             Scaffold specs/features/NNN-name/
   vibekit status <feature> <status>                    draft | approved | planned | in-progress | done
   vibekit list                                         Features with status and progress
-  vibekit wizard [--out <file>]                        Fill in the project spec in a browser, then: vibekit advise apply
+  vibekit wizard [--out <file>] [--serve [--port <n>] [--tunnel]]
+                                                         Fill in the project spec in a browser, then: vibekit advise apply
+                                                         --serve hosts the form instead of writing it, for a machine with
+                                                         no browser; --tunnel gives it a public address and prints a QR
+                                                         code to scan with your phone
   vibekit dashboard [--serve [--port <n>] [--host 0.0.0.0] [--tunnel]] [--open] [--out <file>] [--static] [--json]
   vibekit scan [--json] [--open] [--out <file>]
                                                          Lifecycle and test status. --serve streams changes and lane output

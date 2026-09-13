@@ -8,4 +8,4 @@ Everything runs inside **Cursor**, with the **Claude Code extension** as your le
 - **Windows:** [SETUP-WINDOWS.md](SETUP-WINDOWS.md). Cursor connected to WSL2 (Ubuntu). About an hour and a half, with one restart. A Windows-only option is at the end.
 - **Linux:** follow the Windows guide from Part 2 (skip WSL), with Docker Engine (`curl -fsSL https://get.docker.com | sh`) instead of Docker Desktop.
 
-Both end in the same place: `/vibekit:health live` all green.
+Both end in the same place: `vibekit health --live` all green.

@@ -87,10 +87,14 @@ export async function buildPlugin(repo = teamRepo()) {
 
   // Team skills are shipped as playbooks rather than commands. A kit of twenty imported skills is
   // worth having and is not worth twenty lines of menu; `vibekit playbook` lists and prints them.
+  //
+  // Copied as whole folders, not as one file each. A skill that says "see references/errors.md"
+  // has to still have a references/errors.md to see, and keeping the folder shape means those
+  // paths resolve exactly as they did when the same text was a skill.
   await rm(playbooksDir, { recursive: true, force: true });
   for (const name of team.skills) {
-    const body = await readText(join(teamPaths(repo).skills, name, 'SKILL.md'));
-    if (body) await writeText(join(playbooksDir, `${name}.md`), body);
+    if (!(await exists(join(teamPaths(repo).skills, name, 'SKILL.md')))) continue;
+    await cp(join(teamPaths(repo).skills, name), join(playbooksDir, name), { recursive: true, dereference: true });
   }
 
   await rm(agentsDir, { recursive: true, force: true });

@@ -1,9 +1,9 @@
 // A menu of forty entries is not a menu.
 //
-// Ten skills get a slash command; the other twenty-one, plus whatever the team kit has imported,
-// are playbooks. The thing that makes that a trim rather than a removal is that every demoted
-// skill is still reachable, still complete, and still named correctly by the skills that invoke
-// it — so these check the reachability, not just the count.
+// Five skills get a slash command; the rest, plus whatever the team kit has imported, are
+// playbooks. The thing that makes that a trim rather than a removal is that every demoted skill
+// is still reachable, still complete, and still named correctly by the skills that invoke it —
+// so these check the reachability, not just the count.
 
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -87,4 +87,25 @@ test('the listing names every demoted skill, so the menu is short and nothing is
   for (const skill of SKILLS.filter((entry) => !isMenuSkill(entry.name))) {
     assert.ok(text.includes(skill.name), `${skill.name} has no command and is not listed either`);
   }
+});
+
+// Taking the middle of the workflow off the menu is only safe because `run` is what invokes it.
+// If `run` ever stops naming a step, that step became unreachable the moment it lost its command —
+// so this pins the thing the trim depends on, not the trim itself.
+test('the loop still names every step it invokes, by command or by playbook', () => {
+  const body = SKILLS.find((skill) => skill.name === 'run').body(PLUGIN_CONTEXT);
+
+  for (const name of ['spec-feature', 'plan-feature', 'implement-feature', 'review-feature']) {
+    const named = isMenuSkill(name) ? `/vibekit:${name}` : `vibekit playbook ${name}`;
+    assert.ok(body.includes(named), `run is meant to invoke ${name} but does not name it as ${named}`);
+  }
+});
+
+test('a demoted step still hands on to the next one, so the chain is unbroken', () => {
+  const named = (name) => (isMenuSkill(name) ? `/vibekit:${name}` : `vibekit playbook ${name}`);
+  const body = (name) => SKILLS.find((skill) => skill.name === name).body(PLUGIN_CONTEXT);
+
+  assert.ok(body('dispatch').includes(named('merge-lanes')), 'dispatch must say what finishes the lanes');
+  assert.ok(body('merge-lanes').includes(named('run')), 'merge-lanes must hand back to the loop');
+  assert.ok(body('implement-feature').includes(named('review-feature')), 'implementing must end in a review');
 });

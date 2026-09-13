@@ -420,3 +420,20 @@ export function render(text, { colour = true } = {}) {
   }
   return lines.join('\n');
 }
+
+/**
+ * A code for `text`, or null when it will not fit.
+ *
+ * Every caller wants the same thing — a code if one is possible, and no fuss if not — and every
+ * caller was making the same length check to get it. An address too long to encode is not an
+ * error worth raising at a person who is being shown the address anyway: the link above the code
+ * still works, and a thrown error here would take the whole console down with it.
+ */
+export function codeFor(text, options) {
+  if (typeof text !== 'string' || !text || [...new TextEncoder().encode(text)].length > MAX_BYTES) return null;
+  try {
+    return render(text, options);
+  } catch {
+    return null;
+  }
+}

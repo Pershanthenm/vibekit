@@ -5,22 +5,24 @@
  * about the menu, because a menu of forty entries is not a menu, it is a search problem, and the
  * cost of it falls on somebody trying to find the one thing they came for.
  *
- * So the ten steps of the everyday workflow are commands, and everything else is a playbook: the
- * same instructions, written by the same generator, printed on demand by `vibekit playbook <name>`.
- * The rule for which is which is whether a person reaches for it themselves. `docs`,
- * `implement-feature` and `clarify` are steps that another skill invokes; `rearchitect` and
- * `standards-discover` are reached once a project, not once a day.
+ * Five commands, and the rule for which five is: would a person type this themselves, on a normal
+ * day, without another skill telling them to? That gives two ways in (`setup` for the machine,
+ * `new-project` for the work), one way to say what you want (`spec-feature`), one way to get it
+ * built (`run`), and one way to ask how it is going (`scan`).
+ *
+ * Everything else is a playbook: the same instructions, written by the same generator, printed on
+ * demand by `vibekit playbook <name>`. `plan-feature`, `dispatch`, `merge-lanes` and
+ * `review-feature` come off the menu because `run` is what invokes them — it walks the whole loop
+ * and calls each one by name, so having them on the menu as well only offers a person the chance
+ * to run step four before step three. `health` comes off because the thing you actually want when
+ * something is broken is the fix, which is `setup`; the check itself is one command, `vibekit
+ * health`, and `setup` ends by running it either way.
  */
 export const MENU = [
   'setup',
-  'health',
   'new-project',
   'spec-feature',
-  'plan-feature',
   'run',
-  'dispatch',
-  'merge-lanes',
-  'review-feature',
   'scan',
 ];
 

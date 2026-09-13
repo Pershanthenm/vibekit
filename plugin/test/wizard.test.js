@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict';
-import { readFile, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { componentsFor } from '../src/advisor/components.js';
 import { STATIC_QUESTIONS } from '../src/advisor/questions.js';
 import { STARTERS } from '../src/advisor/starters.js';
 import { run } from '../src/cli.js';
+import { wizard } from '../src/commands/wizard.js';
 import { loadProject } from '../src/project.js';
 import { renderWizard, wizardModel } from '../src/wizard-page.js';
 import { gitInit, newProject, sh } from './helpers.js';
@@ -133,4 +136,70 @@ test('answers from the form scaffold a project through the existing apply path',
   assert.equal(project.stack.database, 'PostgreSQL 16');
   assert.equal(project.workflow.engine, 'cursor');
   assert.equal(project.architecture.style, 'modular-monolith');
+});
+
+// --- Filling it in from somewhere other than this machine ------------------------------------
+//
+// A written file is the right answer on a laptop and the wrong one over SSH: there is no browser
+// to open it with, and a form is no use as a path. Served, the form has an address; tunnelled, the
+// address has a code; and on a machine with no project yet the code is the one worth drawing.
+
+const said = [];
+const speaking = async (work) => {
+  const original = console.log;
+  const wasError = console.error;
+  said.length = 0;
+  console.log = (...args) => said.push(args.join(' '));
+  console.error = (...args) => said.push(args.join(' '));
+  try {
+    return await work();
+  } finally {
+    console.log = original;
+    console.error = wasError;
+  }
+};
+
+// Port 0 so nothing collides with a console the developer has open.
+const bare = () => mkdtemp(join(tmpdir(), 'vibekit-bare-'));
+
+test('--serve hosts the form instead of writing a file nobody can open', async () => {
+  const root = await bare();
+
+  const server = await speaking(() => wizard({ root, serve: true, port: '0' }));
+
+  try {
+    const url = `${server.url}wizard`;
+    const page = await fetch(url);
+    assert.equal(page.status, 200);
+    assert.match(await page.text(), /New project/, 'it is the form, served with no project present');
+    assert.match(said.join('\n'), /Spec wizard on http:\/\//, 'and the console says where');
+    assert.ok(!existsSync(join(root, '.vibekit', 'wizard.html')), 'serving it is instead of writing it, not as well as');
+  } finally {
+    await server.close();
+  }
+});
+
+test('asking for a tunnel is asking to be served, so --tunnel alone is enough', async () => {
+  const root = await bare();
+
+  // A tunnel that cannot open is the useful case to pin: the form must still be up, and the
+  // failure must be a message rather than a command that looks like it did nothing.
+  const server = await speaking(() => wizard({ root, tunnel: true, port: '0' }));
+
+  try {
+    assert.match(said.join('\n'), /Spec wizard on http:\/\//, 'the form is up regardless');
+    assert.equal((await fetch(`${server.url}wizard`)).status, 200);
+  } finally {
+    await server.close();
+  }
+});
+
+test('a bad port is refused before anything is served', async () => {
+  const root = await bare();
+
+  const server = await speaking(() => wizard({ root, serve: true, port: 'wednesday' }));
+
+  assert.equal(server, undefined, 'nothing was started');
+  assert.match(said.join('\n'), /--port must be a number/);
+  process.exitCode = 0;
 });

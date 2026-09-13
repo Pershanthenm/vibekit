@@ -79,7 +79,7 @@ Then, in the Claude Code panel:
 ```text
 /reload-plugins
 /vibekit:setup
-/vibekit:health live
+vibekit health --live
 ```
 
 ## Everyday use
@@ -88,12 +88,14 @@ Then, in the Claude Code panel:
 |---|---|
 | Start a project | `/vibekit:new-project <what you're building>` |
 | Fill the spec in a browser instead | `vibekit wizard` in a terminal, then `vibekit advise apply` |
+| Fill it in from your phone (no browser on the machine) | `vibekit wizard --serve --tunnel` — scan the QR code it prints |
+| Watch a build from your phone | `vibekit dashboard --serve --tunnel` — scan the QR code it prints |
 | Start from an existing codebase | `vibekit adopt` in a terminal, then `/vibekit:run` |
 | Keep going | `/vibekit:run` (stops at every decision that's yours) |
 | See where everything stands | `vibekit dashboard --open` |
-| Check your machine | `/vibekit:health` |
+| Check your machine | `vibekit health` |
 | See all your projects | "list my projects" |
-| Check the specs are consistent | `/vibekit:spec-check` |
+| Check the specs are consistent | `vibekit check` |
 
 Projects live in `~/projects/<name>` (on Windows, `C:\Users\<you>\projects\<name>`).
 
