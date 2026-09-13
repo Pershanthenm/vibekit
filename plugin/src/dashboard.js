@@ -9,7 +9,7 @@ import { designProblems } from './design.js';
 import { definedSuites, evidenceProblems, loadEvidence, repoState, runCountOf, runsFor, stateDir } from './evidence.js';
 import { traceFeature } from './verify.js';
 import { checkFeature, listFeatures, progress } from './features.js';
-import { parseTasks, planLanes, readyParallelTasks } from './lanes.js';
+import { filesOfTask, parseTasks, planLanes, readyParallelTasks } from './lanes.js';
 import { loadManifest } from './manifest.js';
 import { nextAction } from './next.js';
 import { reviewProblems } from './review.js';
@@ -46,10 +46,13 @@ const GATES = [
 // the difference between an honest board and a misleading one.
 const gateEnabled = (id, project) => (id === 'design' ? project.workflow.design && project.docs.enabled : project.workflow[id]);
 
-async function gatesFor(root, project, feature) {
+// `repo` is read once per collection and handed to every gate that wants it. Each git call is a
+// process launch, and doing it per gate per feature is what a page refreshing every second turns
+// into a machine that cannot answer.
+async function gatesFor(root, project, feature, repo) {
   return Promise.all(GATES.map(async (gate) => {
     if (!gateEnabled(gate.id, project)) return { id: gate.id, label: gate.label, state: 'off', problems: [] };
-    const problems = await gate.problems(root, project, feature).catch((error) => [`${gate.id}: ${error.message}`]);
+    const problems = await gate.problems(root, project, feature, repo).catch((error) => [`${gate.id}: ${error.message}`]);
     return { id: gate.id, label: gate.label, state: problems.length ? 'blocked' : 'ok', problems };
   }));
 }
@@ -117,24 +120,56 @@ function testSummary(features) {
   };
 }
 
-async function featureState(root, project, feature, head) {
+// `- [ ] T-4 [impl] Build the revoke endpoint (AC-2) — src/routes/devices.js` is a line a person
+// wrote for another person, and it reads perfectly well once the notation is lifted off it. This
+// takes it apart so the page can show the sentence, and put the id, the kind, the criteria and the
+// files where they belong — rather than printing the raw line and calling it a task list.
+const KIND = /\[(test|impl|docs)\]/i;
+const CRITERIA = /\(AC-([\d,\s-]+)\)/i;
+
+function describeTasks(text) {
+  return parseTasks(text ?? '').map((task) => {
+    const files = filesOfTask(task);
+    const criteria = (task.text.match(CRITERIA)?.[1] ?? '').split(/[,\s]+/).filter(Boolean);
+    const what = task.text
+      .replace(/^T-\d+\s*/, '')
+      .replace(KIND, '')
+      .replace(/\[P\]/g, '')
+      .replace(CRITERIA, '')
+      .replace(/—.*$/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return {
+      id: task.id,
+      done: task.done,
+      parallel: task.parallel,
+      kind: (task.text.match(KIND)?.[1] ?? 'impl').toLowerCase(),
+      what: what || task.text,
+      criteria,
+      files,
+    };
+  });
+}
+
+async function featureState(root, project, feature, repo) {
   return {
     id: feature.id,
     title: feature.title ?? feature.id,
     status: feature.status,
     criteria: progress(feature.spec, 'AC'),
     tasks: progress(feature.tasks, 'T'),
-    gates: await gatesFor(root, project, feature),
+    taskList: describeTasks(feature.tasks),
+    gates: await gatesFor(root, project, feature, repo),
     lanes: await lanesFor(root, project, feature),
-    tests: await testsFor(root, project, feature, head),
+    tests: await testsFor(root, project, feature, repo?.commit ?? null),
   };
 }
 
 /** Everything the page shows, as plain JSON. Safe to serialise, diff or publish. */
 export async function collectState(root, project, { setup = null, problems = [] } = {}) {
   const features = await listFeatures(root);
-  const head = repoState(root)?.commit ?? null;
-  const collected = await Promise.all(features.map((feature) => featureState(root, project, feature, head)));
+  const repo = repoState(root);
+  const collected = await Promise.all(features.map((feature) => featureState(root, project, feature, repo)));
   return {
     tests: testSummary(collected),
     project: {

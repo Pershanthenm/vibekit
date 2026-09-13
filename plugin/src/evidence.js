@@ -15,8 +15,15 @@ export function repoState(root) {
   }
 }
 
+// Where a repository keeps its common git directory cannot change while this process runs, and
+// asking git costs a process launch — which on some machines is most of a second. The console asks
+// for this many times a second (every evidence file, every manifest, every log), so the answer is
+// kept. Keyed by root, because one process can serve several worktrees.
+const commonDirs = new Map();
+
 export function stateDir(root, ...parts) {
-  const common = git(root, 'rev-parse', '--git-common-dir');
+  if (!commonDirs.has(root)) commonDirs.set(root, git(root, 'rev-parse', '--git-common-dir'));
+  const common = commonDirs.get(root);
   return join(isAbsolute(common) ? common : join(root, common), 'vibecheck', ...parts);
 }
 
@@ -85,9 +92,14 @@ function onlyReviewChanged(root, from, to, featureId) {
   }
 }
 
-export async function evidenceProblems(root, project, feature) {
+/**
+ * `state` is the repository's commit and cleanliness. A caller checking several features already
+ * knows it, and asking git again for each one is two more process launches every time — which is
+ * what made the served console unusable on a project with four features. Left out, it is read
+ * here exactly as before.
+ */
+export async function evidenceProblems(root, project, feature, state = repoState(root)) {
   if (!project.workflow.evidence) return [];
-  const state = repoState(root);
   const rerun = `run "vibecheck verify ${feature.id.slice(0, 3)} --run" on a clean commit`;
   if (!state) return [`evidence: the project needs a git repository so results can be tied to a commit (git init), then ${rerun}`];
   const evidence = await loadEvidence(root, feature.id);
