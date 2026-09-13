@@ -1,7 +1,6 @@
 import { findFeature, listFeatures } from '../features.js';
 import { assertCleanTree, git } from '../git.js';
 import { recordMerge } from '../journal.js';
-import { branchExists, fetchLaneBranch, markLaneMerged, refreshMulticaLanes } from '../multica-lanes.js';
 import { createManifestWriter, deleteManifest, loadManifest } from '../manifest.js';
 import { loadProject } from '../project.js';
 
@@ -16,11 +15,6 @@ function removeLane(root, lane, { force = false } = {}) {
 
 function mergeLane(root, manifest, lane) {
   if (lane.state === 'running') return 'running';
-  if (lane.engine === 'multica' && !fetchLaneBranch(root, manifest, lane)) {
-    if (!DONE_STATES.includes(lane.state)) return 'waiting';
-    if (branchExists(root, lane.branch)) git(root, 'branch', '-D', lane.branch);
-    return 'empty';
-  }
   if (lane.path && git(lane.path, 'status', '--porcelain')) return 'uncommitted';
   if (count(root, `${manifest.baseCommit}..${lane.branch}`) === 0) {
     if (!DONE_STATES.includes(lane.state)) return 'waiting';
@@ -39,9 +33,9 @@ function mergeLane(root, manifest, lane) {
 }
 
 const MESSAGES = {
-  merged: (lane) => `✔ ${lane.name} merged — verify, then tick ${lane.tasks.join(', ')}${lane.engine === 'multica' ? ` (Multica ${lane.issue} stays in review until verify passes)` : ''}`,
+  merged: (lane) => `✔ ${lane.name} merged — verify, then tick ${lane.tasks.join(', ')}`,
   empty: (lane) => `· ${lane.name} produced no commits — ${lane.tasks.join(', ')} stay open (log: ${lane.logPath})`,
-  running: (lane) => `… ${lane.name} is still running${lane.issue ? ` (Multica ${lane.issue}: ${lane.boardStatus})` : ''}`,
+  running: (lane) => `… ${lane.name} is still running`,
   waiting: (lane) => `… ${lane.name} has no commits yet (${lane.path})`,
   uncommitted: (lane) => `✖ ${lane.name} has uncommitted changes — commit them in ${lane.path} and re-run`,
   conflict: (lane) => `✖ ${lane.name} conflicts — resolve, commit, then re-run "vibecheck merge"`,
@@ -50,11 +44,9 @@ const FINAL = ['merged', 'empty'];
 
 export async function merge({ root, args }) {
   const feature = findFeature(await listFeatures(root), args[0] ?? '');
-  const loaded = await loadManifest(root, feature.id);
-  if (!loaded) throw new Error(`No dispatched lanes for ${feature.id}.`);
+  const manifest = await loadManifest(root, feature.id);
+  if (!manifest) throw new Error(`No dispatched lanes for ${feature.id}.`);
   assertCleanTree(root, 'merging needs a clean working tree');
-  const manifest = loaded.engine === 'multica' ? await refreshMulticaLanes(loaded) : loaded;
-  const target = git(root, 'rev-parse', '--abbrev-ref', 'HEAD');
 
   const remaining = [];
   const outcomes = [];
@@ -63,7 +55,6 @@ export async function merge({ root, args }) {
     const outcome = blocked ? 'waiting' : mergeLane(root, manifest, lane);
     blocked ||= outcome === 'conflict';
     console.log(MESSAGES[outcome](lane));
-    if (outcome === 'merged' && lane.engine === 'multica') await markLaneMerged(root, feature.id, lane, target).catch(() => console.log(`  ! could not comment on Multica ${lane.issue}`));
     outcomes.push({ lane, outcome });
     if (!FINAL.includes(outcome)) remaining.push(lane);
   }

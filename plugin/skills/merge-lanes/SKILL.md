@@ -11,7 +11,7 @@ argument-hint: "<feature id>"
 Feature: $ARGUMENTS
 
 1. Make sure the working tree is clean (commit or stash).
-2. Run `vibecheck merge <id>`. It merges each finished lane branch with `--no-ff`, removes its worktree and prints the tasks each lane covered. Multica lane issues stay In review until `vibecheck verify <id> --run` passes on the merged code; then they move to Done.
+2. Run `vibecheck merge <id>`. It merges each finished lane branch with `--no-ff`, removes its worktree and prints the tasks each lane covered.
 3. On a conflict: resolve it preserving both lanes' intent, commit, and run `vibecheck merge <id>` again.
 4. Run lint, typecheck and test on the merged result; fix failures with the implementer agent. Run `vibecheck docs status` — lane changes often make diagrams stale.
 5. Tick the merged tasks in `tasks.md` and any acceptance criteria now proven by passing tests, then commit.

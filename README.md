@@ -23,9 +23,9 @@ flowchart LR
 
 1. **Describe it by menu.** `/vibe-check-cli:new-project` asks about platform, constraints, architecture, stack and security, with up to four options per question. It recommends a stack layer by layer, with the licences shown, and writes the decision down.
 2. **Specs before code.** Every feature gets testable acceptance criteria and a plan. Hooks block code edits until a spec is approved.
-3. **Parallel builders.** Independent tasks go to Claude and Cursor agents at the same time, each in its own git worktree or as an issue on a local Multica board. Routing rules decide who builds what.
+3. **Parallel builders.** Independent tasks go to Claude and Cursor agents at the same time, each in its own git worktree. Routing rules decide who builds what.
 4. **Proof, not promises.** Each acceptance criterion must be traced to a named test. Tests, smoke tests and UI tests must pass on the exact commit, and docs and diagrams must be fresh.
-5. **You decide.** You approve specs and plans, and sign off finished features (on Multica, if you use it).
+5. **You decide.** You approve specs and plans, and sign off finished features.
 
 ## What's in the box
 
@@ -102,7 +102,7 @@ Projects live in `~/projects/<name>` (on Windows, `C:\Users\<you>\projects\<name
 - **Cursor** with the **Claude Code** extension, Claude Code on its own, or **Google Antigravity** — every project is scaffolded for all three
 - A Claude plan that includes Claude Code, and a Cursor account
 - **Git**, and **Node.js 20+** (the setup installs Node.js if it's missing)
-- **Docker**, the **Cursor CLI**, **agentmemory** and **Multica** — `vibecheck setup` installs
+- **Docker**, the **Cursor CLI** and **agentmemory** — `vibecheck setup` installs
   these on every machine. They are requirements, not per-project extras, so switching engine
   or memory provider later never leaves you missing a tool.
   On native Windows agentmemory has no automatic install and is reported as a manual WSL2
@@ -115,7 +115,7 @@ Projects live in `~/projects/<name>` (on Windows, `C:\Users\<you>\projects\<name
 |---|---|
 | [ONBOARDING.md](ONBOARDING.md) | New developers: setup on Windows, Mac and Linux |
 | [TEAM.md](TEAM.md) | Leads: sharing skills, subagents and plugins with everyone; importing ECC pieces |
-| [SETUP-WINDOWS.md](SETUP-WINDOWS.md) · [SETUP-MAC.md](SETUP-MAC.md) | A detailed personal setup, including WSL2 and Multica |
+| [SETUP-WINDOWS.md](SETUP-WINDOWS.md) · [SETUP-MAC.md](SETUP-MAC.md) | A detailed personal setup, including WSL2 |
 | [GUIDE.md](GUIDE.md) | Working day to day: parallel agents, testing, reviews, troubleshooting |
 | [docs/BROWNFIELD.md](docs/BROWNFIELD.md) | Existing codebases: adopt, and the assess/modernize/migrate plan |
 | [docs/MULTI-EDITOR.md](docs/MULTI-EDITOR.md) | Using Claude Code, Cursor, Antigravity, Windsurf or Codex on the same project |
@@ -134,13 +134,13 @@ caches the installed plugin per version, and skills are generated rather than ha
 
 ## Status
 
-**Beta.** The plugin passes Claude Code's own validator and 313 integration tests, and each setup path has been rehearsed end to end against real Claude Code, including the Windows scripts under PowerShell. It hasn't yet been run by a wide group of developers on real Windows PCs and Macs, so please report anything that doesn't match the guides.
+**Beta.** The plugin passes Claude Code's own validator and 299 integration tests, and each setup path has been rehearsed end to end against real Claude Code, including the Windows scripts under PowerShell. It hasn't yet been run by a wide group of developers on real Windows PCs and Macs, so please report anything that doesn't match the guides.
 
 ## Development
 
 ```bash
 cd plugin
-npm test          # 313 integration tests
+npm test          # 299 integration tests
 npm run build     # regenerate plugin skills and subagents (including the team kit)
 ```
 

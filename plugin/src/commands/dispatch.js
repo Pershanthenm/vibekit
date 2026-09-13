@@ -8,7 +8,6 @@ import { parseTasks, planLanes, readyParallelTasks } from '../lanes.js';
 import { createManifestWriter, loadManifest } from '../manifest.js';
 import { loadProject } from '../project.js';
 import { ENGINES } from '../schema.js';
-import { dispatchToMultica } from '../multica-lanes.js';
 import { describeRoute, routeLanes } from '../routes.js';
 import { openDashboard } from './dashboard.js';
 
@@ -102,7 +101,7 @@ export async function dispatch({ root, args, engine, 'dry-run': dryRun }) {
   if (!planned.length) throw new Error(`${feature.id} has no ready [P] tasks — the next open task is sequential.`);
   const lanes = routeLanes(planned, { ...project, workflow: { ...project.workflow, engine: chosen } });
   if (dryRun) {
-    lanes.forEach((lane) => console.log(`${lane.name} → ${describeRoute(lane, chosen)}: ${lane.tasks.map((task) => task.id).join(', ')}`));
+    lanes.forEach((lane) => console.log(`${lane.name} → ${describeRoute(lane)}: ${lane.tasks.map((task) => task.id).join(', ')}`));
     return;
   }
   await assertDispatchable(root, feature);
@@ -110,13 +109,6 @@ export async function dispatch({ root, args, engine, 'dry-run': dryRun }) {
   await openDashboard(root, project);
   const save = createManifestWriter(root);
   const context = await contextForFeature(project, feature, 'Context from memory and your knowledge library');
-  if (chosen === 'multica') {
-    const manifest = await dispatchToMultica({ root, project, feature, lanes, briefFor: (lane) => lanePrompt(project, feature, lane, context) });
-    await save(manifest);
-    manifest.lanes.forEach((lane) => console.log(`✔ ${lane.name} → Multica ${lane.issue} (assigned to ${lane.agent}, branch ${lane.branch})`));
-    console.log(`\nWatch the board, or: vibecheck lanes ${feature.id}. When lanes are in review: vibecheck merge ${feature.id}`);
-    return;
-  }
   const agents = Object.fromEntries([...new Set(lanes.map((lane) => lane.engine))].filter((name) => name !== 'manual').map((name) => [name, resolveAgent(name)]));
   const manifest = await prepareLanes(root, project, feature, lanes, context);
   await save(manifest);

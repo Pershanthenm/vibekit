@@ -65,7 +65,7 @@ async function lanesFor(root, project, feature) {
       name: lane.name,
       state: lane.state,
       tasks: lane.tasks,
-      detail: lane.engine === 'multica' ? `Multica ${lane.issue} · ${lane.agent}` : `${lane.engine ?? 'agent'} · ${lane.commits ?? 0} commits`,
+      detail: `${lane.engine ?? 'agent'} · ${lane.commits ?? 0} commits`,
     }));
   }
   // Nothing dispatched yet: show what would run, so the parallelism is visible before it starts.

@@ -140,7 +140,6 @@ const STATIC_ROUNDS = [
           option('cursor', 'Cursor agents', 'Headless Cursor CLI agents in git worktrees'),
           option('claude', 'Claude Code agents', 'Headless Claude Code in git worktrees'),
           option('manual', 'I open them in Cursor', 'Worktrees and briefs prepared for you'),
-          option('multica', 'Multica board', 'Lanes become issues assigned to your Multica agents'),
         ],
       },
       {

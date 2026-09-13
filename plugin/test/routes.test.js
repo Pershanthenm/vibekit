@@ -6,7 +6,7 @@ import { afterEach, beforeEach, test } from 'node:test';
 import { run } from '../src/cli.js';
 import { worktreeBase } from '../src/git.js';
 import { validate, normalize } from '../src/schema.js';
-import { EXAMPLE, TOOL_FREE_PATH, fillSpec, gitInit, installFakeBin, installFakeMultica, newProject, patchProject, restoreEnv, setDocsEnabled, sh } from './helpers.js';
+import { EXAMPLE, TOOL_FREE_PATH, fillSpec, gitInit, installFakeBin, newProject, patchProject, restoreEnv, setDocsEnabled, sh } from './helpers.js';
 
 const FEATURE = '001-shared-list';
 const TASKS = [
@@ -62,20 +62,8 @@ test('one batch runs Cursor and Claude side by side, routed by the files each la
   assert.equal(builtBy('lane-2'), 'lane by claude', 'web lane is routed to Claude');
 });
 
-test('Multica lanes can be assigned to different agents, such as a Cursor agent and a Claude agent', async () => {
-  const fake = await installFakeMultica();
-  Object.assign(process.env, fake.env);
-  const root = await inProgress([{ match: 'apps/web/**', agent: 'Nova (Cursor)' }], {
-    workflow: { engine: 'multica' },
-    patch: { multica: { agent: 'Lambda (Claude Code)', board: true } },
-  });
-  await run(['dispatch', '--dir', root, FEATURE]);
-  const lanes = (await fake.state()).issues.filter((issue) => issue.metadata.vibecheck_lane);
-  assert.deepEqual(lanes.map((issue) => [issue.metadata.vibecheck_lane, issue.assignee]), [['lane-1', 'Lambda (Claude Code)'], ['lane-2', 'Nova (Cursor)']]);
-});
-
 test('routes are validated', () => {
-  assert.deepEqual(validate(normalize({ workflow: { routes: [{ match: 'web/**', engine: 'cursor' }, { match: 'mobile/**', agent: 'Nova' }] } })), []);
+  assert.deepEqual(validate(normalize({ workflow: { routes: [{ match: 'web/**', engine: 'cursor' }, { match: 'mobile/**', engine: 'claude' }] } })), []);
   const errors = validate(normalize({ workflow: { routes: [{ match: 'web/**', engine: 'copilot' }, { engine: 'claude' }, { match: 'x/**' }] } }));
   assert.equal(errors.length, 3);
   assert.match(errors.join('\n'), /engine must be one of: cursor, claude, manual[\s\S]*match must be a glob[\s\S]*needs an "engine"/);

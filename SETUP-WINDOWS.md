@@ -1,8 +1,8 @@
 # Setting up Vibe-check-cli on Windows, all inside Cursor
 
-Everything runs from **Cursor**: the Claude Code panel is your lead, Cursor's built-in terminal handles the few commands, and Multica's board opens as a Cursor tab. Two things sit outside Cursor: **Docker Desktop**, which runs quietly in the background, and a one-time Windows feature install with a restart. Plan on about an hour and a half.
+Everything runs from **Cursor**: the Claude Code panel is your lead, and Cursor's built-in terminal handles the few commands. Two things sit outside Cursor: **Docker Desktop**, which runs quietly in the background, and a one-time Windows feature install with a restart. Plan on about an hour and a half.
 
-**How it fits together.** Cursor runs on Windows but connects into **WSL2**, a Linux environment built into Windows. Claude Code, the Vibe-check-cli plugin, Cursor's command-line agent, agentmemory, Multica and your projects all live in there. Once connected, Cursor's terminal *is* Linux, and it feels like one machine. This is the setup the tools work best in (agentmemory needs it). A Windows-only option is at the end.
+**How it fits together.** Cursor runs on Windows but connects into **WSL2**, a Linux environment built into Windows. Claude Code, the Vibe-check-cli plugin, Cursor's command-line agent, agentmemory and your projects all live in there. Once connected, Cursor's terminal *is* Linux, and it feels like one machine. This is the setup the tools work best in (agentmemory needs it). A Windows-only option is at the end.
 
 **You'll need**
 - Windows 11, or Windows 10 22H2, with virtualization enabled (usually already on)
@@ -16,7 +16,6 @@ Everything runs from **Cursor**: the Claude Code panel is your lead, Cursor's bu
 |---|---|
 | Claude Code panel (Spark icon in the sidebar) | Talking to the lead: every `/vibe-check-cli:` command |
 | Terminal (View → Terminal, or Ctrl+`) | The one-time bootstrap and the odd command that needs your password |
-| A Simple Browser tab | Your Multica board at `localhost:3000` |
 | Bottom-left corner | Shows **WSL: Ubuntu** when you're connected; always check it's there |
 
 ---
@@ -117,14 +116,13 @@ Claude checks what's missing and shows a menu of what it will install. Tick what
 
 | Item | What it is | Required? |
 |---|---|---|
-| Docker | Runs Multica's self-hosted server | Yes |
+| Docker | Container scans and Testcontainers | Yes |
 | Cursor CLI | Lets Claude start background Cursor agents | Yes |
 | agentmemory | Memory shared by Claude and Cursor, started in the background | Yes |
 | agentmemory hooks | Captures sessions automatically in Claude Code and Cursor | Yes |
-| Multica | The agent board and Multica lanes, self-hosted here | Yes |
 | OpenContext | Your cross-project knowledge library | If enabled |
 
-Docker, the Cursor CLI, agentmemory and Multica are **installation requirements**, not
+Docker, the Cursor CLI and agentmemory are **installation requirements**, not
 per-project extras. They used to be installed only when a project selected the matching engine or
 memory provider, which meant picking one engine silently left you without the others until the
 day you switched.
@@ -170,7 +168,7 @@ For your playbook, ask Claude to create a `playbook` folder in OpenContext with 
 /vibe-check-cli:new-project laptop asset management for our IT team
 ```
 
-Claude sets up git, then asks its questions as menus in the panel: platform, constraints, architecture and security, the stack layer by layer, then security controls. When asked **"Who runs parallel tasks?"**, choose **Multica board**. At the end it commits the specs for you.
+Claude sets up git, then asks its questions as menus in the panel: platform, constraints, architecture and security, the stack layer by layer, then security controls. At the end it commits the specs for you.
 
 **Already have a codebase?** Skip the menus and run this in the terminal instead, inside the
 repository:
@@ -187,55 +185,7 @@ a test command, which is deliberate.
 
 ---
 
-## Part 7 — Multica, with a Claude agent and a Cursor agent
-
-**1. Install it.** Make sure Docker Desktop is running, then in the panel:
-
-```text
-/vibe-check-cli:setup multica
-```
-
-Claude installs Multica and its server, then hands you the one step that signs you in through your browser. **Run it in Cursor's terminal**:
-
-```bash
-multica setup self-host
-```
-
-It starts Multica's server in Docker, signs you in and starts the daemon, the background process that runs agents in your Linux environment. If a sign-in link appears, open it in your Windows browser.
-
-**2. Open the board in Cursor.** Ctrl+Shift+P → **Simple Browser: Show** → `http://localhost:3000`. WSL2 shares `localhost` with Windows, so the same address also works in your normal browser if a page misbehaves in the Simple Browser.
-
-**3. Create two agents.** In the Multica tab, under **Agents → New agent**. Your Linux environment appears as a runtime, with Claude Code and the Cursor CLI detected.
-
-| Agent | Tool | Suggested role |
-|---|---|---|
-| `Lambda` | Claude Code | Default: API, domain, security tests |
-| `Nova` | Cursor Agent | The Vue front end |
-
-**4. Tell Claude who does what.** In the panel:
-
-```text
-Use Multica agent Lambda by default and route src/*.WebApp/** to Nova. Keep the board on and sign-off on the board.
-```
-
-Claude updates `specs/project.json` to this, runs `vibecheck sync` and commits:
-
-```json
-"workflow": { "engine": "multica", "routes": [ { "match": "src/*.WebApp/**", "agent": "Nova" } ] },
-"multica": { "agent": "Lambda", "remote": "local", "board": true, "doneOnBoard": true }
-```
-
-**5. Prove it works.** The self-test can take a few minutes, so run it in Cursor's terminal:
-
-```bash
-vibecheck multica selftest
-```
-
-A real agent picks up a throwaway issue on your board, pushes a branch back into your project, and moves it to review. Watch it happen in the Multica tab.
-
----
-
-## Part 8 — What your stack needs to build and test
+## Part 7 — What your stack needs to build and test
 
 In Cursor's terminal (asks for your Linux password):
 
@@ -251,7 +201,7 @@ The `foundation` feature wires the rest into the `test`, `smoke` and `ui` comman
 
 ---
 
-## Part 9 — Go
+## Part 8 — Go
 
 In the panel:
 
@@ -261,9 +211,9 @@ In the panel:
 
 Approve the foundation spec and plan when Claude asks. From then on it's always the same loop, inside Cursor:
 1. Claude builds the shared groundwork.
-2. Lambda and Nova take the parallel work. Watch them in the Multica tab.
+2. Cursor and Claude agents take the parallel work, one lane each. Watch them on the live console.
 3. Claude merges it, runs tests, smoke and UI, and moves the feature to In review.
-4. You try it, then move it to Done in the Multica tab.
+4. You try it, then `vibecheck status <id> done`.
 
 ---
 
@@ -271,8 +221,7 @@ Approve the foundation spec and plan when Claude asks. From then on it's always 
 
 1. Check Docker Desktop is running (system tray).
 2. Open Cursor → **File → Open Recent** → your project (it reconnects to **WSL: Ubuntu**).
-3. If the health check or Claude says Multica's daemon is down, run `multica daemon start` in Cursor's terminal.
-4. `/vibe-check-cli:run` in the panel; the Multica board in its tab.
+3. `/vibe-check-cli:run` in the panel.
 
 ---
 
@@ -315,8 +264,6 @@ Ask in the panel first:
 | `docker: command not found` in Cursor's terminal | Docker Desktop → Settings → Resources → WSL integration → Ubuntu on → Apply & restart |
 | An install stops asking for a password | Run that one command in Cursor's terminal |
 | Git shows every file as changed | The project is under `/mnt/c`; move it into `~/projects` |
-| Multica tab is blank | Check Docker Desktop is running; otherwise run `wsl --shutdown` in Windows PowerShell, then reconnect Cursor to WSL |
-| Self-test times out | Open the issue in the Multica tab; the run log shows why (usually the agent is on the wrong runtime) |
 | A feature bounced back from Done | Read the comment on the issue: it lists what's missing |
 
 ---

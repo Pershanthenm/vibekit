@@ -5,7 +5,7 @@ import { findControl } from './security/controls.js';
 
 export const TARGETS = ['web', 'ios', 'android', 'desktop', 'api', 'cli'];
 export const FEATURE_STATUSES = ['draft', 'approved', 'planned', 'in-progress', 'done'];
-export const ENGINES = ['cursor', 'claude', 'manual', 'multica'];
+export const ENGINES = ['cursor', 'claude', 'manual'];
 export const AUTONOMY_LEVELS = ['gated', 'auto'];
 export const SKILL_MODES = ['plugin', 'project'];
 export const MEMORY_PROVIDERS = ['agentmemory', 'none'];
@@ -72,13 +72,6 @@ export const DEFAULT_PROJECT = {
     url: 'http://localhost:3111',
     recallLimit: 5,
     capture: [...CAPTURE_KINDS],
-  },
-  multica: {
-    agent: '',
-    project: '',
-    remote: 'local',
-    board: false,
-    doneOnBoard: true,
   },
   security: {
     stack: '',
@@ -189,13 +182,11 @@ function validateSecurity(security) {
   return unknown.length ? [`security: unknown controls ${unknown.join(', ')}`] : [];
 }
 
-const LOCAL_ENGINES = ['cursor', 'claude', 'manual'];
-
 function validateRoutes(routes) {
-  if (!Array.isArray(routes)) return ['workflow.routes must be a list of { "match": "<glob>", "engine" or "agent": … }'];
+  if (!Array.isArray(routes)) return ['workflow.routes must be a list of { "match": "<glob>", "engine": "cursor" | "claude" | "manual" }'];
   return routes.flatMap((route, index) => [
     typeof route.match !== 'string' && `workflow.routes[${index}].match must be a glob such as "web/**" (use | for several)`,
-    !route.engine && !route.agent && `workflow.routes[${index}] needs an "engine" (${LOCAL_ENGINES.join(', ')}) or a Multica "agent"`,
-    route.engine && !LOCAL_ENGINES.includes(route.engine) && `workflow.routes[${index}].engine must be one of: ${LOCAL_ENGINES.join(', ')}`,
+    !route.engine && `workflow.routes[${index}] needs an "engine" (${ENGINES.join(', ')})`,
+    route.engine && !ENGINES.includes(route.engine) && `workflow.routes[${index}].engine must be one of: ${ENGINES.join(', ')}`,
   ].filter(Boolean));
 }

@@ -1,7 +1,7 @@
 ---
 name: setup
 description: "Install, configure and start everything this machine and project need, chosen from a menu. Use when setting up a new machine, after changing the project's engine or tools, or when the health check reports missing pieces."
-argument-hint: "[tool ids, e.g. multica]"
+argument-hint: "[tool ids, e.g. docker]"
 disable-model-invocation: true
 ---
 
@@ -15,6 +15,6 @@ Scope: $ARGUMENTS (empty = everything this machine and project need)
 2. If `steps` is empty, say everything is installed and continue with /vibe-check-cli:health.
 3. Ask which steps to run with **AskUserQuestion**: multi-select questions of up to 4 options each (split into several questions if needed). Label = the tool's name plus " (Recommended)", description = what it's for and the command it runs. Don't offer steps marked `manual`; list them afterwards with their instructions. Steps marked `interactive` need a browser sign-in or prompts: mention that the user will run those in Cursor's terminal (View → Terminal).
 4. Run the chosen steps with `vibecheck setup --yes --only "<id>,<id>"` (quote the id list: PowerShell mangles an unquoted one). In this mode it never runs `interactive` steps: it prints them instead, for the user to run in Cursor's terminal. Installers print a lot; summarise what happened rather than repeating it. If a step waits for a password (`sudo`) or another prompt you can't answer, stop and ask the user to run that one command in Cursor's terminal (View → Terminal).
-5. Tell the user about sign-ins you can't do for them: Cursor's CLI (`agent login` in Cursor's terminal), and for Multica, creating agents in the Multica app (Command Palette → **Simple Browser: Show** → http://localhost:3000).
+5. Tell the user about sign-ins you can't do for them: Cursor's CLI (`agent login` in Cursor's terminal).
 7. Finish with /vibe-check-cli:health.
 

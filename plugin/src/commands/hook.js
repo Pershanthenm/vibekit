@@ -11,8 +11,6 @@ import { nextAction } from '../next.js';
 import { gateSummary, testGate } from '../task-gate.js';
 import { PROJECT_FILE, loadProject } from '../project.js';
 import { collectProblems } from './check.js';
-import { boardEnabled, mirrorFeature } from '../multica-board.js';
-import { pullDone } from '../multica-done.js';
 
 class BlockError extends Error {}
 
@@ -55,9 +53,7 @@ function protocol(project) {
     `New or changed behaviour, including bug fixes, starts as a spec: ${cmd('spec-feature')}.`,
     `Advance work with ${cmd('run')}; it executes the next step until a human gate.`,
     `Human gates: ${gates}. Summarise, ask, and wait for an explicit yes.`,
-    engine === 'multica'
-      ? `Ready blocks of [P] tasks become Multica issues assigned to ${project.multica.agent || 'your Multica agent'}; ${project.multica.remote === 'local' ? 'they run on this machine\'s Multica daemon, clone the project folder and push lane branches back into it (commit first; no git host needed)' : `they work from the "${project.multica.remote}" remote and push lane branches (push first)`}: ${cmd('dispatch')}, then ${cmd('merge-lanes')}.${project.multica.board ? ' Feature status is mirrored to the Multica board.' : ''}`
-      : `Ready blocks of [P] tasks run in parallel on ${engine} agents in git worktrees: ${cmd('dispatch')}, then ${cmd('merge-lanes')}.`,
+    `Ready blocks of [P] tasks run in parallel on ${engine} agents in git worktrees: ${cmd('dispatch')}, then ${cmd('merge-lanes')}.`,
     enforce && 'Hooks enforce this: code edits need a feature in progress, generated files are read-only, and each turn ends with `vibecheck check`.',
     project.docs.enabled && `Living docs: diagrams and documents in \`${project.docs.dir}/\` must match the code. Re-architecting (specs, ADRs, project.json) means updating the affected docs in the same turn — ${cmd('rearchitect')} handles it; features can't be marked done until their docs are fresh (${cmd('docs')}).`,
     isKnowledgeEnabled(project) && `Knowledge (OpenContext): your cross-project library. When starting a project, read the \`${project.knowledge.playbook}\` folder first (\`vibecheck knowledge manifest\`). Search it before designing (\`vibecheck knowledge search "<topic>"\`). Lessons that apply beyond this project go into the playbook via /opencontext-iterate. Finished features are published automatically.`,
@@ -85,15 +81,8 @@ async function featureContext(project, features, featureId) {
   return feature ? contextForFeature(project, feature) : '';
 }
 
-async function boardSync(root, project) {
-  if (!boardEnabled(project)) return [];
-  const pulled = await pullDone(root, project).catch(() => []);
-  return pulled.map((result) => (result.done ? `${result.feature} was marked done on Multica (${result.issue}) and is now recorded as done.` : `${result.feature} was moved to Done on Multica but isn't ready: ${result.problems[0]}. It's back in review.`));
-}
-
 async function sessionStart(root) {
   const project = await loadProject(root);
-  const boardNotes = await boardSync(root, project);
   const features = await listFeatures(root);
   const action = await nextAction(root, project);
   const gate = action.gate ? ` (waits for the user: ${action.gate})` : '';
@@ -101,7 +90,6 @@ async function sessionStart(root) {
     protocol(project),
     '## Current state',
     featureTable(features),
-    boardNotes.length && `## From the Multica board\n${boardNotes.map((note) => `- ${note}`).join('\n')}`,
     `Next: ${action.command} — ${action.reason}${gate}`,
     await featureContext(project, features, action.feature),
     await docsNotice(root, project),
@@ -133,11 +121,6 @@ async function preEdit(root, input) {
   );
 }
 
-async function mirrorInProgress(root, project) {
-  if (!boardEnabled(project)) return;
-  for (const feature of (await listFeatures(root)).filter((entry) => entry.status === 'in-progress')) await mirrorFeature(project, feature);
-}
-
 // Ticking a task used to be enough to move on; the test run after it was an instruction an agent
 // could simply not follow. This runs the suite for itself and refuses to end the turn on a failure.
 async function testsForFinishedTasks(root, project) {
@@ -159,7 +142,6 @@ ${gate.output}`,
 async function stop(root, input) {
   if (input.stop_hook_active) return;
   const project = await loadProject(root);
-  await mirrorInProgress(root, project).catch(() => {});
   if (!project.workflow.enforce) return;
   await testsForFinishedTasks(root, project);
   const problems = await collectProblems(root, project);

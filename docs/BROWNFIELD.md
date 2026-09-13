@@ -66,7 +66,7 @@ flowchart LR
 
 Brownfield work reuses what Vibe-check-cli already has: the **advisor** for target stack and
 licences, the **security baseline** for controls to assess against, **verification, evidence and
-living docs** for proof, the **subagents** for analysis, **lanes and Multica** for parallel
+living docs** for proof, the **subagents** for analysis, **lanes** for parallel
 migration, and **memory and OpenContext** to keep what was learned.
 
 ---
@@ -208,7 +208,7 @@ Migration steps are ordinary features run with `/vibe-check-cli:run`. What's new
    framework codemods), plans use it first; the implementer handles what's left.
 3. **Parity checks** recorded as evidence: API contract diff (OpenAPI before/after), database
    schema diff, performance comparison against a recorded baseline.
-4. **Parallel migration.** Independent slices run per lane on Cursor, Claude or Multica.
+4. **Parallel migration.** Independent slices run per lane on Cursor or Claude.
 5. **The CI gate.** `vibecheck assess --diff --gate high` exits non-zero when a change *adds* a
    high or critical finding. The legacy baseline doesn't fail the build; new problems do.
 

@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url';
 import { collectProblems } from '../commands/check.js';
 import { exists } from '../fsutil.js';
 import { memoryHealth, recall, remember } from '../memory.js';
-import { multicaHealth } from '../multica.js';
 import { PROJECT_FILE, loadProject } from '../project.js';
 import { toolEnv } from './platform.js';
 import { firstAvailable, probe } from './probe.js';
@@ -47,12 +46,10 @@ export async function projectChecks(root, project) {
   if (!project) return [item('Project', 'vibecheck project', true, 'not in a project (machine checks only)')];
   const problems = await collectProblems(root, project);
   const git = gitState(root);
-  const needsRemote = project.workflow.engine === 'multica';
   return [
     item('Project', 'specs consistent', !problems.length, problems.length ? `${problems.length} problem(s): ${problems[0]}` : 'vibecheck check passes', problems.length ? 'vibecheck check' : undefined),
     item('Project', 'hooks run on this machine', hookSelfTest(root), 'session-start hook executed with this Node and PATH', 'reinstall the plugin: vibecheck setup'),
     item('Project', 'git repository', git.inRepo, git.inRepo ? `remotes: ${git.remotes.join(', ') || 'none'}` : 'not a git repository', git.inRepo ? undefined : 'git init && git add -A && git commit -m "chore: initial specification"'),
-    needsRemote && item('Project', 'git remote for Multica', git.remotes.includes(project.multica.remote), `Multica agents need "${project.multica.remote}"`, `git remote add ${project.multica.remote} <url> && git push -u ${project.multica.remote} HEAD`),
   ].filter(Boolean);
 }
 
@@ -83,9 +80,6 @@ export async function liveChecks(root, project) {
   if (project?.knowledge.provider === 'opencontext') {
     const search = probe('oc', ['search', 'vibecheck', '--mode', 'keyword', '--format', 'json']);
     results.push(item('Live', 'OpenContext search works', search.ok, search.firstLine || 'no output', `cd ~ && oc init --tools cursor,claude`));
-  }
-  if (project && (project.workflow.engine === 'multica' || project.multica.board)) {
-    for (const check of await multicaHealth(project)) results.push({ ...item('Live', 'Multica', check.ok, check.detail, 'multica setup self-host && multica daemon start'), warn: check.warn });
   }
   return results;
 }

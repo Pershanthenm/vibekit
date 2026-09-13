@@ -29,7 +29,7 @@ export async function health({ root, live, json }) {
   } else {
     console.log(`vibecheck health · ${PLATFORM_NAMES[report.platform]}${report.project ? ` · project ${report.project.project.name}` : ''}`);
     Object.entries(report.groups).forEach(([title, results]) => printGroup(title, results));
-    if (report.platform === 'windows') console.log('\n! Native Windows works for Claude Code, Cursor and Multica, but agentmemory needs WSL2. Running everything inside WSL2 is the smoothest path.');
+    if (report.platform === 'windows') console.log('\n! Native Windows works for Claude Code and Cursor, but agentmemory needs WSL2. Running everything inside WSL2 is the smoothest path.');
     if (!live) console.log('\nRun "vibecheck health --live" to prove the chain end to end (sends a few tiny prompts to Claude and Cursor).');
   }
   const failed = all.filter((result) => !result.ok && !result.unknown);

@@ -93,11 +93,10 @@ T-1 and T-2 run first. `/vibe-check-cli:run` then reaches the `[P]` block and di
 | `cursor` | Claude runs `vibecheck dispatch` in the background; each lane gets a worktree, `npm/dotnet` install and a headless `cursor-agent` with a focused brief | You want speed and don't need to watch |
 | `manual` | Worktrees and briefs are prepared; you open each worktree in Cursor's Agents window and paste its brief | You want to watch and steer each agent |
 | `claude` | Same as `cursor`, with headless Claude Code | You'd rather keep everything on Claude |
-| `multica` | Each lane becomes an issue on your local Multica board, assigned to your agent; the agent (on this machine's daemon) clones the project folder and pushes the lane branch back | You want a board to watch, comment on and steer agent work, still fully on your machine |
 
 For a block of just two small tasks, Claude uses parallel subagents inside the session instead.
 
-**Cursor and Claude in the same batch.** Add `workflow.routes` to send each lane to the agent that suits it, by the files it touches, e.g. the Vue lane to Cursor and the API and security-test lanes to Claude. With Multica, route to named agents instead (a Cursor agent and a Claude Code agent on your runtime). `vibecheck lanes <id>` shows the routing before you dispatch.
+**Cursor and Claude in the same batch.** Add `workflow.routes` to send each lane to the agent that suits it, by the files it touches, e.g. the Vue lane to Cursor and the API and security-test lanes to Claude. `vibecheck lanes <id>` shows the routing before you dispatch.
 
 **Tips:**
 - Three to four lanes is the sweet spot. More lanes means more merge work and more install time.
@@ -156,7 +155,7 @@ Six layers, from automatic to human:
 | Reviewer | Spec coverage, architecture boundaries, standards, security controls touched, NFRs → `review.md` | `/vibe-check-cli:review-feature 003` |
 | Living docs | Feature doc, design doc and touched diagrams match the code | `vibecheck docs status`; required before `done` |
 | Security CI | Secrets, SAST, dependencies, containers, optional DAST | `.github/workflows/security.yml` on every push |
-| You | Walk each acceptance criterion in the running app | Move the feature's issue to Done on Multica |
+| You | Walk each acceptance criterion in the running app | `vibecheck status <id> done` once it holds up |
 
 If the code and the spec disagree, decide which one is wrong. If the spec was wrong, fix it first. It's the contract, and fixing it keeps every later check honest.
 
@@ -216,8 +215,8 @@ you a confident answer with no source, ask for the evidence — the rules say it
 1. Open the project in Cursor and start Claude Code. The session opens with the state, the next step, relevant memories and documents, and any stale docs.
 2. `/vibe-check-cli:run`. Answer the gates it stops at (spec approval, plan approval).
 3. When it dispatches lanes, keep working or watch them in the Agents window.
-4. It merges, runs tests, smoke and UI, updates docs, reviews, and moves the feature to In review on Multica with the evidence.
-5. Do the acceptance demo, then drag the feature to Done on the Multica board. Vibe-check-cli records it when you next start a session.
+4. It merges, runs tests, smoke and UI, updates docs and reviews, and records the evidence.
+5. Do the acceptance demo, then `vibecheck status <id> done`.
 
 | You want to… | Use |
 |---|---|
@@ -238,9 +237,6 @@ you a confident answer with no source, ask for the evidence — the rules say it
 | Something doesn't work and you don't know what | `vibecheck health --live`: every failing item comes with the fix command for your OS |
 | Hooks don't fire | `claude --debug`, then the `/plugin` Errors tab; check the plugin is enabled for the project |
 | `oc init` rewrote AGENTS.md | `vibecheck sync --force` |
-| "daemon is not running" when dispatching to Multica | `multica daemon start` (and check Docker is running for the local server) |
-| Multica self-test times out | Make sure the agent is assigned to this machine's runtime and can run git; check the issue's run log in the Multica app |
-| Multica lanes stay "running" | Check the issue on the board (the agent may be asking a question), then `vibecheck lanes <id>` |
 | Lane merge conflict | Resolve, commit, run `vibecheck merge <id>` again; next time, move the shared file into a sequential task |
 | `vibecheck verify` shows a criterion as missing | Name a test `NNN:AC-n …`, or fix the spec if the criterion is wrong |
 | Memory or knowledge shows nothing | `vibecheck memory status` / `vibecheck knowledge status`; the workflow runs without them |

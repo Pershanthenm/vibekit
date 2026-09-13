@@ -97,11 +97,10 @@ const run = ({ input, cmd }) => `# Run the workflow
 Scope: ${input} (empty = whole project)
 
 Loop until you reach a human gate or nothing is left:
-1. If a Multica board is on, run \`vibecheck multica pull\` first (it records features the user marked done on the board). Then run \`vibecheck next --json\`. It returns \`step\`, \`feature\`, \`command\`, \`gate\` and \`reason\`.
+1. Run \`vibecheck next --json\`. It returns \`step\`, \`feature\`, \`command\`, \`gate\` and \`reason\`.
 2. If \`gate\` is \`spec-approval\`: complete the spec with ${cmd('spec-feature')} if it still has TODOs, summarise it (stories, acceptance criteria, open questions) and ask the user to approve. Stop.
 3. If \`gate\` is \`plan-approval\`: summarise the plan and task lanes and ask to proceed. Stop — unless the user already approved this plan in this conversation.
-4. If \`gate\` is \`board-done\`: the feature is waiting for the user's sign-off on Multica. Say which issue to mark done and stop; run \`vibecheck multica pull\` when they say it's done.
-5. Otherwise execute the step by invoking its skill (${cmd('plan-feature')}, ${cmd('implement-feature')}, ${cmd('review-feature')}) and let it finish.
+4. Otherwise execute the step by invoking its skill (${cmd('plan-feature')}, ${cmd('implement-feature')}, ${cmd('review-feature')}) and let it finish.
 7. After each step run \`vibecheck check\`, fix what it reports, commit with a Conventional Commit message, and post one progress line: feature · step · result.
 
 Restrict the loop to the scope above when one is given. If verification keeps failing after two focused attempts, stop and report the blocker instead of guessing.
@@ -161,10 +160,10 @@ const dispatch = ({ input, cmd }) => `# Dispatch parallel lanes
 
 Feature: ${input}
 
-1. Run \`vibecheck lanes <id>\`. It shows each ready lane and who will build it: \`workflow.routes\` sends lanes to Cursor or Claude (or a specific Multica agent) by the files they touch, and everything else goes to \`workflow.engine\`. If no \`[P]\` tasks are ready, continue sequentially with ${cmd('implement-feature')}.
+1. Run \`vibecheck lanes <id>\`. It shows each ready lane and who will build it: \`workflow.routes\` sends lanes to Cursor or Claude by the files they touch, and everything else goes to \`workflow.engine\`. If no \`[P]\` tasks are ready, continue sequentially with ${cmd('implement-feature')}.
 2. Commit everything first — worktrees start from HEAD, so uncommitted specs or code are invisible to the lanes.
-3. Run \`vibecheck dispatch <id>\` **as a background command**. Engine comes from \`workflow.engine\` (override with \`--engine cursor|claude|manual\`). It creates a git worktree and branch per lane, installs dependencies and starts one headless agent per lane. With \`manual\` it only prepares worktrees and prompt files for the user to open as Cursor agents. With \`multica\` each lane becomes an issue on the Multica board assigned to \`multica.agent\`; the agent works on a Multica runtime from your git remote and pushes the lane branch (push HEAD first).
-4. While lanes run, do work that doesn't touch their files, or check progress with \`vibecheck lanes <id>\` (for Multica it reads each issue's status; answer agent questions on the board).
+3. Run \`vibecheck dispatch <id>\` **as a background command**. Engine comes from \`workflow.engine\` (override with \`--engine cursor|claude|manual\`). It creates a git worktree and branch per lane, installs dependencies and starts one headless agent per lane. With \`manual\` it only prepares worktrees and prompt files for the user to open as Cursor agents.
+4. While lanes run, do work that doesn't touch their files, or check progress with \`vibecheck lanes <id>\`.
 5. When every lane has finished, run ${cmd('merge-lanes')}.
 `;
 
@@ -173,7 +172,7 @@ const mergeLanes = ({ input, cmd }) => `# Merge parallel lanes
 Feature: ${input}
 
 1. Make sure the working tree is clean (commit or stash).
-2. Run \`vibecheck merge <id>\`. It merges each finished lane branch with \`--no-ff\`, removes its worktree and prints the tasks each lane covered. Multica lane issues stay In review until \`vibecheck verify <id> --run\` passes on the merged code; then they move to Done.
+2. Run \`vibecheck merge <id>\`. It merges each finished lane branch with \`--no-ff\`, removes its worktree and prints the tasks each lane covered.
 3. On a conflict: resolve it preserving both lanes' intent, commit, and run \`vibecheck merge <id>\` again.
 4. Run lint, typecheck and test on the merged result; fix failures with the implementer agent. Run \`vibecheck docs status\` — lane changes often make diagrams stale.
 5. Tick the merged tasks in \`tasks.md\` and any acceptance criteria now proven by passing tests, then commit.
@@ -205,7 +204,7 @@ done gate reads it, so it has to be accurate rather than tidy:
 Present the findings and ask before fixing anything. When nothing blocking remains:
 1. Commit everything (review, docs, ticks) — evidence is tied to a clean commit. A commit that only touches \`review.md\` does not invalidate evidence or the review itself.
 2. Run \`vibecheck verify <id> --run\`: tests, smoke and UI suites run, criteria are traced, and the result is recorded as evidence for that commit. Each suite runs \`standards.testing.runs\` times (\`--repeat <n>\` to override). A suite that passes on some runs and not others is reported as **flaky** and does not count as evidence — fix the flake rather than re-running until it comes out green.
-3. Run \`vibecheck status <id> done\`. With a Multica board, this moves the feature's issue to In review with the evidence checklist; **the user marks it done on Multica**, and Vibe-check-cli re-checks and records it. Without a board it marks done locally. It refuses while criteria, tasks, docs or evidence fall short. Save any non-obvious lesson from the review with \`vibecheck memory remember\`; if it applies beyond this project, add it to your playbook with /opencontext-iterate. Finishing publishes the feature record to OpenContext automatically.
+3. Run \`vibecheck status <id> done\`. It refuses while criteria, tasks, docs or evidence fall short. Save any non-obvious lesson from the review with \`vibecheck memory remember\`; if it applies beyond this project, add it to your playbook with /opencontext-iterate. Finishing publishes the feature record to OpenContext automatically.
 `;
 
 const specCheck = () => `# Spec check
@@ -358,7 +357,7 @@ Scope: ${input} (empty = everything this machine and project need)
 2. If \`steps\` is empty, say everything is installed and continue with ${cmd('health')}.
 3. Ask which steps to run with **AskUserQuestion**: multi-select questions of up to 4 options each (split into several questions if needed). Label = the tool's name plus " (Recommended)", description = what it's for and the command it runs. Don't offer steps marked \`manual\`; list them afterwards with their instructions. Steps marked \`interactive\` need a browser sign-in or prompts: mention that the user will run those in Cursor's terminal (View → Terminal).
 4. Run the chosen steps with \`vibecheck setup --yes --only "<id>,<id>"\` (quote the id list: PowerShell mangles an unquoted one). In this mode it never runs \`interactive\` steps: it prints them instead, for the user to run in Cursor's terminal. Installers print a lot; summarise what happened rather than repeating it. If a step waits for a password (\`sudo\`) or another prompt you can't answer, stop and ask the user to run that one command in Cursor's terminal (View → Terminal).
-5. Tell the user about sign-ins you can't do for them: Cursor's CLI (\`agent login\` in Cursor's terminal), and for Multica, creating agents in the Multica app (Command Palette → **Simple Browser: Show** → http://localhost:3000).
+5. Tell the user about sign-ins you can't do for them: Cursor's CLI (\`agent login\` in Cursor's terminal).
 7. Finish with ${cmd('health')}.
 `;
 
@@ -368,8 +367,7 @@ Scope: ${input}
 
 1. Run \`vibecheck health --json\`. Add \`--live\` before a first real run, or when the user asks for a full check (it sends a few one-line prompts to Claude and Cursor).
 2. Summarise briefly: what works, then each problem with its fix. Group by tools, project and live checks.
-3. For problems whose fix is a command, offer to run it through ${cmd('setup')}. Explain the ones only the user can do: signing in, starting Docker Desktop, creating agents in Multica.
-4. If the project uses Multica and everything else is green, suggest \`vibecheck multica selftest\` as the final proof.
+3. For problems whose fix is a command, offer to run it through ${cmd('setup')}. Explain the ones only the user can do: signing in and starting Docker Desktop.
 `;
 
 export const SKILLS = [
@@ -443,13 +441,13 @@ export const SKILLS = [
   {
     name: 'setup',
     description: 'Install, configure and start everything this machine and project need, chosen from a menu. Use when setting up a new machine, after changing the project\'s engine or tools, or when the health check reports missing pieces.',
-    argumentHint: '[tool ids, e.g. multica]',
+    argumentHint: '[tool ids, e.g. docker]',
     userOnly: true,
     body: setupSkill,
   },
   {
     name: 'health',
-    description: 'Check that every tool this project needs is installed and working (Claude Code, Cursor CLI, memory, knowledge, Multica, hooks), and explain fixes. Use when something seems broken or before a first run.',
+    description: 'Check that every tool this project needs is installed and working (Claude Code, Cursor CLI, memory, knowledge, hooks), and explain fixes. Use when something seems broken or before a first run.',
     argumentHint: '[live]',
     body: healthSkill,
   },

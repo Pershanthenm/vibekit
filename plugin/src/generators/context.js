@@ -25,7 +25,7 @@ export const WORKFLOW = [
   '6. Tasks tagged `[P]` share no files with other open tasks. A ready block of them runs in parallel via `vibecheck dispatch` (one git worktree + agent per lane). Lanes only touch their own files, never edit `specs/`, and commit with the task id; the orchestrator merges and ticks.',
   '7. If the spec or plan is wrong, stop and propose a change. Never silently diverge.',
   '8. Changing stack, architecture or a cross-cutting pattern requires an ADR in `specs/decisions/`.',
-  '9. Done = every acceptance criterion checked and traced to a test, the test, smoke and UI suites pass on a clean commit (`vibecheck verify <id> --run` records this as evidence), docs fresh, `vibecheck check` passes. With a Multica board, the user marks features done on Multica; Vibe-check-cli verifies and records it.',
+  '9. Done = every acceptance criterion checked and traced to a test, the test, smoke and UI suites pass on a clean commit (`vibecheck verify <id> --run` records this as evidence), docs fresh, `vibecheck check` passes.',
 ].join('\n');
 
 export const EVIDENCE = [

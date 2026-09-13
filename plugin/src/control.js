@@ -38,7 +38,7 @@ async function featureStatus(root, project, { id, status }) {
   }
   try {
     // The CLI's own path, checks included: it refuses a move the gates do not allow, and it keeps
-    // the roadmap, the journal and any Multica board in step afterwards. Note there is no --force
+    // the roadmap and the journal in step afterwards. Note there is no --force
     // here and there will not be one: forcing is a decision made at a terminal, by a person who
     // can see what they are overriding.
     await setStatus({ root, args: [id, status] });

@@ -177,7 +177,6 @@ export function buildProject(base, answers, choices) {
     commands: Object.values(commands).some(Boolean) ? commands : commandPresetFor(languages),
     workflow: { ...base.workflow, autonomy: answers.autonomy ?? base.workflow.autonomy, engine: answers.engine ?? base.workflow.engine },
     security: { ...base.security, stack: choices.backend?.id ?? '' },
-    multica: { ...base.multica, board: base.multica.board || answers.engine === 'multica' },
     nfr: { ...base.nfr, security: compliance.security, privacy: compliance.privacy ?? base.nfr.privacy },
     ...contextSettings(answers, base),
   };

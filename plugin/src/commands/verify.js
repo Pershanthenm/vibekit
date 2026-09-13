@@ -1,7 +1,5 @@
 import { findFeature, listFeatures } from '../features.js';
 import { repoState, runCountOf, runSuites, runsFor, saveEvidence, SUITE_NAMES } from '../evidence.js';
-import { mirrorFeature } from '../multica-board.js';
-import { closeVerifiedLanes } from '../multica-lanes.js';
 import { loadProject } from '../project.js';
 import { testReference, traceFeature } from '../verify.js';
 
@@ -19,7 +17,7 @@ function printTrace(feature, trace) {
   trace.orphans.forEach((criterion) => console.log(`  ! ${testReference(feature, criterion)} is referenced by a test but not in the spec`));
 }
 
-async function recordRun(root, project, traces, results) {
+async function recordRun(root, traces, results) {
   const state = repoState(root);
   const passed = results.every((result) => result.ok) && traces.every(({ trace }) => !trace.missing.length);
   console.log(`\n${results.map((result) => {
@@ -32,10 +30,6 @@ async function recordRun(root, project, traces, results) {
   if (!state) return console.log('! Not a git repository: results are not recorded as evidence (git init to enable).');
   for (const { feature } of traces) {
     await saveEvidence(root, feature.id, { commit: state.commit, dirty: state.dirty, suites: results });
-    if (passed && !state.dirty) {
-      await closeVerifiedLanes(root, project, feature, state.commit, results).catch(() => {});
-      await mirrorFeature(project, feature);
-    }
   }
   console.log(state.dirty ? '! Uncommitted changes: evidence recorded but will not count. Commit, then run again.' : `✔ Evidence recorded for commit ${state.commit.slice(0, 8)}`);
 }
@@ -50,6 +44,6 @@ export async function verify({ root, args, run: shouldRun, json, repeat }) {
   else traces.forEach(({ feature, trace }) => printTrace(feature, trace));
   const untraced = traces.some(({ trace }) => trace.missing.length);
   const results = shouldRun ? runSuites(project, root, { runs }) : [];
-  if (shouldRun) await recordRun(root, project, traces, results);
+  if (shouldRun) await recordRun(root, traces, results);
   if (untraced || results.some((result) => !result.ok)) process.exitCode = 1;
 }

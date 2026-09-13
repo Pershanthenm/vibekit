@@ -18,10 +18,9 @@ export function routeLanes(lanes, project) {
     return {
       ...lane,
       engine: route?.engine ?? project.workflow.engine,
-      agent: route?.agent ?? project.multica.agent,
       routedBy: route?.match ?? null,
     };
   });
 }
 
-export const describeRoute = (lane, engine) => (engine === 'multica' ? `Multica agent ${lane.agent || '(multica.agent not set)'}` : lane.engine);
+export const describeRoute = (lane) => lane.engine;

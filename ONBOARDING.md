@@ -28,7 +28,7 @@ Now follow the section for your operating system, then **Finish in Cursor**.
 
 Download it from **cursor.com**, install, open it and sign in. (Or in PowerShell: `winget install Anysphere.Cursor`.)
 
-Install **Docker Desktop** from docker.com. Docker is now a requirement, not a Multica-only extra: `vibecheck setup` proposes it on every machine, because Multica self-hosts its server in a container.
+Install **Docker Desktop** from docker.com. Docker is proposed on every machine by `vibecheck setup`: container scans and Testcontainers need it.
 
 ### 2. Add Claude Code to Cursor
 
@@ -65,7 +65,7 @@ The first line downloads the kit. If Git asks you to sign in, a browser window o
 
 Download it from **cursor.com**, drag it to Applications, open it and sign in.
 
-Install **Docker Desktop** from docker.com (macOS 14 or newer). Docker is now a requirement, not a Multica-only extra: `vibecheck setup` proposes it on every machine, because Multica self-hosts its server in a container.
+Install **Docker Desktop** from docker.com (macOS 14 or newer). Docker is proposed on every machine by `vibecheck setup`: container scans and Testcontainers need it.
 
 ### 2. Add Claude Code to Cursor
 
@@ -94,7 +94,7 @@ These steps are for Ubuntu and Debian; other distributions work the same with th
 sudo apt update && sudo apt install -y git curl unzip build-essential
 ```
 
-Download **Cursor** for Linux from **cursor.com**, install it, open it and sign in. Install Docker Engine (`curl -fsSL https://get.docker.com | sh`). Docker is a requirement, not a Multica-only extra: Multica self-hosts its server in a container.
+Download **Cursor** for Linux from **cursor.com**, install it, open it and sign in. Install Docker Engine (`curl -fsSL https://get.docker.com | sh`). Docker is proposed on every machine: container scans and Testcontainers need it.
 
 ### 2. Add Claude Code to Cursor
 

@@ -34,7 +34,7 @@ export const read = (root, path) => readFile(join(root, path), 'utf8');
 const ORIGINAL_PATH = process.env.PATH;
 export const withRealPath = (env = {}) => ({ ...process.env, ...env, PATH: ORIGINAL_PATH });
 
-// A PATH with no agent tools on it (claude, cursor-agent, oc, multica), used by tests that
+// A PATH with no agent tools on it (claude, cursor-agent, oc), used by tests that
 // assert what happens when a tool is missing. git and node stay reachable because the code
 // under test genuinely needs them — on POSIX the old '/usr/bin:/bin' happened to include
 // both, which is the behaviour this reproduces on every platform.
@@ -161,7 +161,7 @@ export async function startFakeAgentmemory(memories = []) {
 // Windows, so this makes an interpolated path survive the trip.
 export const posix = (path) => path.replace(/\\/g, '/');
 
-// A stand-in for any local service the checks probe over HTTP — Multica's self-hosted server, in
+// A stand-in for any local service the checks probe over HTTP — agentmemory, in
 // practice. Answers 200 on every path, which is all `httpOk` asks of it.
 export async function startFakeHttp(body = { ok: true }) {
   const server = createServer((request, response) => {
@@ -224,67 +224,6 @@ export async function writeTracedTests(root, featureId, criteria = [1]) {
   const number = featureId.slice(0, 3);
   const body = criteria.map((criterion) => `test('${number}:AC-${criterion} behaves as specified', () => {});`).join('\n');
   await write(join(root, 'tests', `${featureId}.test.js`), `${body}\n`);
-}
-
-const FAKE_MULTICA = `#!/usr/bin/env node
-const fs = require('fs');
-const statePath = process.env.FAKE_MULTICA_STATE;
-const state = fs.existsSync(statePath) ? JSON.parse(fs.readFileSync(statePath, 'utf8')) : { issues: [], projects: [], comments: [] };
-const args = process.argv.slice(2);
-const option = (name) => { const index = args.indexOf(name); return index === -1 ? undefined : args[index + 1]; };
-const all = (name) => args.flatMap((arg, index) => (arg === name ? [args[index + 1]] : []));
-const find = (ref) => state.issues.find((issue) => issue.key === ref || issue.id === ref);
-const save = () => fs.writeFileSync(statePath, JSON.stringify(state, null, 2));
-const out = (value) => process.stdout.write(typeof value === 'string' ? value + '\\n' : JSON.stringify(value));
-const [area, action, ref] = args;
-if (area === '--version') out('multica 0.0.0-fake');
-else if (area === 'auth') out('Logged in as test@example.com');
-else if (area === 'daemon') out({ status: process.env.FAKE_MULTICA_DAEMON || 'running', agents: ['claude'] });
-else if (area === 'config') out('Server URL: ' + (process.env.FAKE_MULTICA_SERVER || 'http://localhost:8080') + '\\nApp URL: http://localhost:3000');
-else if (area === 'agent') out([{ name: 'Lambda' }]);
-else if (area === 'project' && action === 'list') out(state.projects);
-else if (area === 'project' && action === 'create') { const project = { id: 'proj-' + (state.projects.length + 1), title: option('--title') }; state.projects.push(project); out(project); }
-else if (area === 'issue' && action === 'create') {
-  const issue = { id: 'uuid-' + (state.issues.length + 1), key: 'SPEC-' + (state.issues.length + 1), title: option('--title'), description: option('--description'), assignee: option('--assignee'), project: option('--project'), parent: option('--parent'), status: option('--status') || 'backlog', metadata: {} };
-  state.issues.push(issue); out(issue);
-}
-else if (area === 'issue' && action === 'metadata') { const issue = find(args[3]); issue.metadata[option('--key')] = option('--value'); }
-else if (area === 'issue' && action === 'list') {
-  const filters = all('--metadata').map((pair) => { const [key, ...rest] = pair.split('='); return [key, JSON.parse(rest.join('='))]; });
-  out(state.issues.filter((issue) => filters.every(([key, value]) => String(issue.metadata[key]) === String(value)) && (!option('--project') || issue.project === option('--project'))));
-}
-else if (area === 'issue' && action === 'get') out(find(ref));
-else if (area === 'issue' && action === 'status') find(ref).status = args[3];
-else if (area === 'issue' && action === 'comment') state.comments.push({ issue: args[3], content: option('--content') });
-const WRITES = ['create', 'metadata', 'status', 'comment'];
-if (WRITES.includes(action)) save();
-`;
-
-export async function installFakeMultica() {
-  const { chmod, mkdtemp: makeTemp, writeFile: write, readFile: readRaw } = await import('node:fs/promises');
-  const { dirname } = await import('node:path');
-  const dir = await makeTemp(join(tmpdir(), 'fake-multica-'));
-  await installFakeBin(dir, 'multica', FAKE_MULTICA);
-  const statePath = join(dir, 'state.json');
-  const env = { PATH: [dir, dirname(process.execPath), ORIGINAL_PATH].join(delimiter), FAKE_MULTICA_STATE: statePath };
-  // The fake CLI rewrites state.json in place, so a reader can catch it empty or half-written.
-  // Rare on its own, reliable once the suites run in parallel and compete for I/O.
-  const state = async () => {
-    for (let attempt = 0; ; attempt += 1) {
-      try {
-        return JSON.parse(await readRaw(statePath, 'utf8'));
-      } catch (error) {
-        if (attempt >= 20) throw error;
-        await new Promise((settle) => { setTimeout(settle, 25); });
-      }
-    }
-  };
-  const update = async (change) => {
-    const current = await state();
-    change(current);
-    await write(statePath, JSON.stringify(current));
-  };
-  return { dir, env, state, update };
 }
 
 export async function patchProject(root, patch) {

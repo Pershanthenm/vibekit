@@ -7,9 +7,9 @@
     {
       "name": "vibe-check-cli",
       "source": "./plugin",
-      "description": "Vibe-check-cli: spec-driven, multi-agent development for Claude Code, Cursor and Multica.",
+      "description": "Vibe-check-cli: spec-driven, multi-agent development for Claude Code and Cursor.",
       "version": "0.2.0-beta"
     }
   ],
-  "description": "Vibe-check-cli: spec-driven, multi-agent development for Claude Code, Cursor and Multica."
+  "description": "Vibe-check-cli: spec-driven, multi-agent development for Claude Code and Cursor."
 }

@@ -1,6 +1,6 @@
 # Setting up Vibe-check-cli on a Mac, all inside Cursor
 
-Everything runs from **Cursor**: the Claude Code panel is your lead, Cursor's built-in terminal handles the few commands, and Multica's board opens as a Cursor tab. The only other app is **Docker Desktop**, which runs quietly in the background. Plan on about an hour the first time.
+Everything runs from **Cursor**: the Claude Code panel is your lead, and Cursor's built-in terminal handles the few commands. The only other app is **Docker Desktop**, which runs quietly in the background. Plan on about an hour the first time.
 
 **You'll need**
 - macOS 14 (Sonoma) or newer
@@ -14,7 +14,6 @@ Everything runs from **Cursor**: the Claude Code panel is your lead, Cursor's bu
 |---|---|
 | Claude Code panel (Spark icon in the sidebar) | Talking to the lead: every `/vibe-check-cli:` command |
 | Terminal (View → Terminal, or ⌃`) | The one-time bootstrap and the odd command that needs your password |
-| A Simple Browser tab | Your Multica board at `localhost:3000` |
 | Cursor's own Agent chat and Agents window | Cursor agents, when you choose to open lanes yourself |
 
 ---
@@ -93,14 +92,13 @@ Claude checks what's missing and shows a menu of what it will install. Tick what
 
 | Item | What it is | Required? |
 |---|---|---|
-| Docker | Runs Multica's self-hosted server | Yes |
+| Docker | Container scans and Testcontainers | Yes |
 | Cursor CLI | Lets Claude start background Cursor agents | Yes |
 | agentmemory | Memory shared by Claude and Cursor, started in the background | Yes |
 | agentmemory hooks | Captures sessions automatically in Claude Code and Cursor | Yes |
-| Multica | The agent board and Multica lanes, self-hosted here | Yes |
 | OpenContext | Your cross-project knowledge library | If enabled |
 
-Docker, the Cursor CLI, agentmemory and Multica are **installation requirements**, not
+Docker, the Cursor CLI and agentmemory are **installation requirements**, not
 per-project extras. They used to be installed only when a project selected the matching engine or
 memory provider, which meant picking one engine silently left you without the others until the
 day you switched.
@@ -146,7 +144,7 @@ Claude runs `vibecheck advise prefer dotnet-vue`. For your playbook, ask Claude 
 /vibe-check-cli:new-project laptop asset management for our IT team
 ```
 
-Claude sets up git, then asks its questions as menus in the panel: platform, constraints, architecture and security, the stack layer by layer, then security controls. When asked **"Who runs parallel tasks?"**, choose **Multica board**. At the end it commits the specs for you.
+Claude sets up git, then asks its questions as menus in the panel: platform, constraints, architecture and security, the stack layer by layer, then security controls. At the end it commits the specs for you.
 
 **Already have a codebase?** Skip the menus and run this in the terminal instead, inside the
 repository:
@@ -163,55 +161,7 @@ a test command, which is deliberate.
 
 ---
 
-## Part 7 — Multica, with a Claude agent and a Cursor agent
-
-**1. Install it.** Make sure Docker is running, then in the panel:
-
-```text
-/vibe-check-cli:setup multica
-```
-
-Claude installs Multica and its server, then hands you the one step that signs you in through your browser. **Run it in Cursor's terminal**:
-
-```bash
-multica setup self-host
-```
-
-It starts Multica's server in Docker, signs you in and starts the daemon, the background process that runs agents on your Mac.
-
-**2. Open the board in Cursor.** ⌘⇧P → **Simple Browser: Show** → `http://localhost:3000`. Drag the tab wherever you like; many people keep it beside the editor. If a page doesn't work well in the Simple Browser, open the same address in your normal browser.
-
-**3. Create two agents.** In the Multica tab, under **Agents → New agent**. Your Mac already appears as a runtime, with Claude Code and the Cursor CLI detected.
-
-| Agent | Tool | Suggested role |
-|---|---|---|
-| `Lambda` | Claude Code | Default: API, domain, mobile, security tests |
-| `Nova` | Cursor Agent | The Vue front end |
-
-**4. Tell Claude who does what.** In the panel:
-
-```text
-Use Multica agent Lambda by default and route src/*.WebApp/** to Nova. Keep the board on and sign-off on the board.
-```
-
-Claude updates `specs/project.json` to this, runs `vibecheck sync` and commits:
-
-```json
-"workflow": { "engine": "multica", "routes": [ { "match": "src/*.WebApp/**", "agent": "Nova" } ] },
-"multica": { "agent": "Lambda", "remote": "local", "board": true, "doneOnBoard": true }
-```
-
-**5. Prove it works.** The self-test can take a few minutes, so run it in Cursor's terminal:
-
-```bash
-vibecheck multica selftest
-```
-
-A real agent picks up a throwaway issue on your board, pushes a branch back into your project, and moves it to review. You can watch it happen in the Multica tab.
-
----
-
-## Part 8 — What your stack needs to build and test
+## Part 7 — What your stack needs to build and test
 
 These ask for your password or open installers, so use Cursor's terminal.
 
@@ -230,7 +180,7 @@ The `foundation` feature wires these into the `test`, `smoke` and `ui` commands.
 
 ---
 
-## Part 9 — Go
+## Part 8 — Go
 
 In the panel:
 
@@ -240,9 +190,9 @@ In the panel:
 
 Approve the foundation spec and plan when Claude asks. From then on it's always the same loop, inside Cursor:
 1. Claude builds the shared groundwork.
-2. Lambda and Nova take the parallel work. Watch them in the Multica tab.
+2. Cursor and Claude agents take the parallel work, one lane each. Watch them on the live console.
 3. Claude merges it, runs tests, smoke and UI, and moves the feature to In review.
-4. You try it, then move it to Done in the Multica tab.
+4. You try it, then `vibecheck status <id> done`.
 
 ---
 
@@ -250,8 +200,7 @@ Approve the foundation spec and plan when Claude asks. From then on it's always 
 
 1. Check Docker is running (menu bar whale).
 2. Open Cursor and your project. The Claude panel starts with the project's state and anything you signed off on the board.
-3. If the health check or Claude says Multica's daemon is down, run `multica daemon start` in Cursor's terminal.
-4. `/vibe-check-cli:run` in the panel; the Multica board in its tab.
+3. `/vibe-check-cli:run` in the panel.
 
 ---
 
@@ -292,8 +241,6 @@ Ask in the panel first:
 | An install stops asking for a password | Run that one command in Cursor's terminal |
 | `command not found` in Cursor's terminal | Close the terminal tab and open a new one |
 | Docker won't start | Open Docker from Applications and wait for "running"; macOS 14+ is required |
-| Multica tab is blank | Check Docker is running; otherwise open `localhost:3000` in your normal browser |
-| Self-test times out | Open the issue in the Multica tab; the run log shows why (usually the agent is on the wrong runtime) |
 | A feature bounced back from Done | Read the comment on the issue: it lists what's missing |
 
 More detail: `GUIDE.md`

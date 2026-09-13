@@ -62,7 +62,7 @@ async function noProjectScreen(root) {
   const hasCode = await looksLikeExistingCode(root);
   return [
     '',
-    `  ${bold('vibecheck')} ${dim('· spec-driven development for Claude Code, Cursor and Multica')}`,
+    `  ${bold('vibecheck')} ${dim('· spec-driven development for Claude Code and Cursor')}`,
     '',
     `  ${hasCode ? 'There is code here, but no vibecheck project yet.' : 'No project here yet.'}`,
     '',

@@ -38,7 +38,7 @@ An always-on, spec-driven agent workflow. **Claude Code is the orchestrator; Cur
 
 The plugin puts the `vibecheck` CLI on Claude Code's PATH, registers the hooks and adds the `/vibe-check-cli:*` skills. No separate terminal needed. Optional: `npm install -g ./plugin` to use `vibecheck` in a normal terminal too.
 
-**Required tools.** `vibecheck setup` installs **Docker**, the **Cursor CLI** (`cursor-agent`), **agentmemory** and **Multica** on every machine, alongside Node.js, Git and Claude Code. These are requirements rather than per-project extras: a project that picks one engine or memory provider would otherwise never install the others, and the gap only surfaces the day you switch. Run `vibecheck setup --dry-run` to see the plan without changing anything, and `vibecheck health` to see what is still missing.
+**Required tools.** `vibecheck setup` installs **Docker**, the **Cursor CLI** (`cursor-agent`) and **agentmemory** on every machine, alongside Node.js, Git and Claude Code. These are requirements rather than per-project extras: a project that picks one engine or memory provider would otherwise never install the others, and the gap only surfaces the day you switch. Run `vibecheck setup --dry-run` to see the plan without changing anything, and `vibecheck health` to see what is still missing.
 
 Two costs worth knowing up front. Docker Desktop is a heavy install that wants a reboot, and it is now proposed on every machine. And agentmemory has **no automatic install on native Windows**: setup prints it as a manual WSL2 step rather than running it, so `vibecheck health` keeps reporting it until you move to WSL2 or accept a standing red line. Sign-ins are yours to do: `agent login` for the Cursor CLI, and `claude` once for Claude Code.
 
@@ -113,8 +113,8 @@ Assess, modernize and migrate are specified but not built. See
 | Role | Who | How |
 |---|---|---|
 | Orchestrator | Claude Code (panel in Cursor) | Specs, plans, dispatch, merge, verification, review; kept on the workflow by hooks |
-| Builders | Cursor agents and Claude agents | One lane each, in its own git worktree or on Multica |
-| Shared brain | Both | `AGENTS.md`, `specs/`, Cursor rules, agentmemory, OpenContext, the Multica board |
+| Builders | Cursor agents and Claude agents | One lane each, in its own git worktree |
+| Shared brain | Both | `AGENTS.md`, `specs/`, Cursor rules, agentmemory, OpenContext |
 
 Route lanes to whichever agent suits the work, by the files a lane touches:
 ```jsonc
@@ -126,30 +126,7 @@ Route lanes to whichever agent suits the work, by the files a lane touches:
   ]
 }
 ```
-With Multica, route to agents instead: `{ "match": "web/**", "agent": "Nova (Cursor)" }`, with `multica.agent` (e.g. a Claude Code agent) as the default. `vibecheck lanes <id>` shows who gets each lane before you dispatch. A lane goes to the route that matches most of its files; ties go to the earlier route.
-
-## Multica, running entirely on your machine
-
-[Multica](https://github.com/multica-ai/multica) is a self-hostable workspace where coding agents (Claude Code, Cursor Agent, Codex and 20 more) take issues like teammates. With Vibe-check-cli it runs fully local by default: the Multica server in Docker on your machine, the Multica daemon on your machine, and agents that clone your project folder directly. No GitHub, no cloud account, no pushing.
-
-**Get it running:**
-```bash
-vibecheck setup --only docker,multica   # installs Multica with its server, runs "multica setup self-host", starts the daemon
-```
-Then open the Multica app it prints (usually http://localhost:3000), create an agent on this machine's runtime (Agents → New agent), and put its name in `specs/project.json` under `"multica": { "agent": "<name>" }`. Prove the whole chain:
-```bash
-vibecheck multica selftest              # a real agent takes a throwaway issue, commits, pushes a branch back into your project, moves it to review; then it's cleaned up
-```
-
-**What it does for you:**
-- **Parallel lanes** (`workflow.engine: "multica"`, or "Multica board" in the menus). Each ready `[P]` lane becomes an issue assigned to your agent, under the feature's issue. The brief says: clone this project folder, branch from this commit, commit with task ids, push the branch back, move to review. `vibecheck lanes` reads each issue's status; `vibecheck merge` merges and verifies the branches, then marks the issues done. Commit before dispatching, since lanes start from your last commit.
-- **A board of your project** (`multica.board: true`). Every feature appears as an issue whose status follows the workflow (draft → backlog, approved/planned → todo, in progress, done), with every task as a sub-issue that moves to Done when it's verified. `vibecheck multica sync` backfills without duplicates.
-- **Done is marked on Multica** (`multica.doneOnBoard: true`, the default with a board). When a feature passes review and has fresh evidence, `vibecheck status <id> done` moves its issue to In review with a checklist comment (criteria traced, test/smoke/UI results, commit). You drag it to Done on the board. At the next session start, or with `vibecheck multica pull`, Vibe-check-cli re-checks everything and records it in the specs, or moves it back to In review with the reason if something went stale. Local done is refused, even with `--force`. Parallel lanes stay In review after merging and move to Done only when `verify --run` passes on the merged code.
-- **Health:** `vibecheck multica status` shows whether the server is self-hosted here and reachable, the daemon is running, and your agent exists. `vibecheck health` includes the same checks.
-
-Agents on other machines or on Multica Cloud? Set `"multica": { "remote": "origin" }`: lanes then start from your git remote (push first), and agents push their branches there.
-
-Multica's licence is Apache 2.0 plus additional conditions on hosted services, commercial embedding and branding. Self-hosting it for your own team is fine; read the terms if you plan to offer it to others.
+`vibecheck lanes <id>` shows who gets each lane before you dispatch. A lane goes to the route that matches most of its files; ties go to the earlier route.
 
 ## Any platform, any stack, any licensing policy
 
@@ -577,7 +554,7 @@ After editing, Claude runs `vibecheck sync`. `AGENTS.md`, `CLAUDE.md`, the subag
 
 ## CLI reference
 
-`init` · `adopt [--force] [--json]` · `analyze [feature] [--json]` · `sync` · `feature "<name>" [--from <requirements file>]` · `status <id> <status>` · `list` · `check` · `next [--json]` · `lanes <id>` · `dispatch <id> [--engine] [--dry-run]` · `merge <id>` · `memory <status|recall|remember>` · `knowledge <status|search|manifest|publish>` · `context <feature|topic>` · `docs <status|new|stamp>` · `advise [domain "<idea>"|next|recommend|apply [preset]|components|presets|prefer]` · `security [questions|apply|status]` · `verify [feature] [--run] [--repeat <n>]` · `wizard [--out <file>]` · `dashboard [--open] [--out <file>] [--static] [--json]` · `multica [status|sync|pull|selftest]` · `projects [--prune] [--json]` · `team <capture|status|import-ecc>` · `standards <list|index|inject>` · `cursor-kit [--remove]` · `setup [--dry-run] [--only]` · `health [--live]` (alias `doctor`) · `version` · `hook <event>`.
+`init` · `adopt [--force] [--json]` · `analyze [feature] [--json]` · `sync` · `feature "<name>" [--from <requirements file>]` · `status <id> <status>` · `list` · `check` · `next [--json]` · `lanes <id>` · `dispatch <id> [--engine] [--dry-run]` · `merge <id>` · `memory <status|recall|remember>` · `knowledge <status|search|manifest|publish>` · `context <feature|topic>` · `docs <status|new|stamp>` · `advise [domain "<idea>"|next|recommend|apply [preset]|components|presets|prefer]` · `security [questions|apply|status]` · `verify [feature] [--run] [--repeat <n>]` · `wizard [--out <file>]` · `dashboard [--open] [--out <file>] [--static] [--json]` · `projects [--prune] [--json]` · `team <capture|status|import-ecc>` · `standards <list|index|inject>` · `cursor-kit [--remove]` · `setup [--dry-run] [--only]` · `health [--live]` (alias `doctor`) · `version` · `hook <event>`.
 
 Run `vibecheck` on its own for what to do next in the current folder, or `vibecheck --help` for
 every command.
@@ -790,7 +767,6 @@ repeats each suite to catch flakes, and records evidence against a commit — th
 - Stack scores come from explicit, editable rules in `src/advisor/recommend.js`, not a model. Licence classes reflect each project's main licence; check the licences of your full dependency tree for a real product. They encode common trade-offs, not a guarantee; the ADR records the reasoning so it can be challenged.
 - Mermaid is checked for a known diagram type and the required kind per document, not fully parsed. A syntax error inside a diagram shows up when it renders; the reviewer step covers that.
 - Stamping is an honest-effort check, not proof: `--still-accurate` exists because some source changes don't affect a document. The reviewer verifies docs against code before a feature is done.
-- The Multica integration follows its documented CLI and was tested against a simulated `multica` with real git clones and pushes, not a live Multica server. `vibecheck multica selftest` is the check that matters on your machine: it fails clearly if your agent's runtime can't reach the project folder or push to it.
 - `vibecheck setup` runs official installers (some via `curl | sh` or `irm | iex`, as their vendors document). It shows every command and asks first; `--dry-run` shows the plan without changing anything.
 - Escape hatches: `--force` on `status`/`sync`, or `"enforce": false`. Debug hooks with `claude --debug` and the `/plugin` Errors tab.
 
@@ -816,6 +792,6 @@ Then restart Claude Code. `vibecheck health` tells you when the installed plugin
 
 ```bash
 cd plugin
-npm test          # 92 integration tests (incl. mixed Cursor/Claude lanes and panel setup): machine setup, advisor, security, traceability, smoke/UI evidence, hooks, gates, docs, lanes, done-on-Multica (fake CLI + real git)
+npm test          # integration tests (incl. mixed Cursor/Claude lanes and panel setup): machine setup, advisor, security, traceability, smoke/UI evidence, hooks, gates, docs, lanes
 npm run build     # regenerate skills/ after editing src/generators/workflow.js
 ```

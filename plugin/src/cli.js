@@ -23,7 +23,6 @@ import { lanes } from './commands/lanes.js';
 import { list } from './commands/list.js';
 import { memory } from './commands/memory.js';
 import { merge } from './commands/merge.js';
-import { multica } from './commands/multica.js';
 import { next } from './commands/next.js';
 import { standards } from './commands/standards.js';
 import { sync } from './commands/sync.js';
@@ -31,7 +30,7 @@ import { verify } from './commands/verify.js';
 import { security } from './commands/security.js';
 import { startScreen, unknownCommand } from './guide.js';
 
-const COMMANDS = { init, adopt, analyze, scan, sync, feature, status, list, dashboard, wizard, check, next, lanes, dispatch, merge, memory, knowledge, context, docs, advise, security, standards, verify, multica, health, doctor: health, setup, version, 'cursor-agents': cursorAgents, 'cursor-kit': cursorAgents, team, projects, hook };
+const COMMANDS = { init, adopt, analyze, scan, sync, feature, status, list, dashboard, wizard, check, next, lanes, dispatch, merge, memory, knowledge, context, docs, advise, security, standards, verify, health, doctor: health, setup, version, 'cursor-agents': cursorAgents, 'cursor-kit': cursorAgents, team, projects, hook };
 
 const OPTIONS = {
   dir: { type: 'string' },
@@ -65,7 +64,7 @@ const OPTIONS = {
   help: { type: 'boolean', short: 'h' },
 };
 
-const HELP = `Vibe-check-cli — spec-driven, multi-agent development for Claude Code, Cursor and Multica
+const HELP = `Vibe-check-cli — spec-driven, multi-agent development for Claude Code and Cursor
 
 Usage
   vibecheck setup [--dry-run] [--yes] [--only a,b] [--json]
@@ -89,7 +88,7 @@ Usage
                                                          --fix appends criteria with no task or no test to tasks.md as work
   vibecheck next [--json]                                The next workflow step (what /run executes)
   vibecheck lanes <feature>                              Ready [P] lanes, or the status of dispatched lanes
-  vibecheck dispatch <feature> [--engine cursor|claude|manual|multica] [--dry-run]
+  vibecheck dispatch <feature> [--engine cursor|claude|manual] [--dry-run]
                                                          One git worktree + headless agent per lane
   vibecheck merge <feature>                              Merge finished lanes back and clean up worktrees
   vibecheck memory <status | list | search "<q>" | recall "<q>" | remember "<fact>">
@@ -105,7 +104,6 @@ Usage
   vibecheck security [questions | apply | status]       Security baseline by menu, tailored to your stack
   vibecheck standards <list | index | inject "<task>">   Your coding standards, injected only where relevant
   vibecheck verify [feature] [--run] [--repeat <n>]      Trace acceptance criteria to tests, and run each suite n times (flaky ≠ passing)
-  vibecheck multica <status | sync | pull | selftest>    Multica: health, board mirror, done sign-offs, real agent round trip
   vibecheck projects [--prune] [--json]                  Every Vibe-check-cli project on this machine: where it is and what's next
   vibecheck team <capture | status> [--skip a,b]         Put your skills, subagents and plugins into the plugin, so every dev gets them
   vibecheck team import-ecc <names> [--version x]        Import chosen Everything Claude Code skills, agents and commands into the team kit

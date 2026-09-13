@@ -2,7 +2,6 @@ import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { serverInfo } from '../multica.js';
 import { userCursorAgentsCurrent, userCursorAgentsDir } from '../commands/cursor-agents.js';
 import { marketplaceAddArg, teamPluginsSync } from '../team.js';
 import { firstAvailable, httpOk, majorVersion, probe } from './probe.js';
@@ -58,7 +57,7 @@ export const TOOLS = [
     install: { macos: 'xcode-select --install', linux: 'sudo apt-get install -y git', wsl: 'sudo apt-get install -y git', windows: 'winget install Git.Git' },
   },
   {
-    id: 'docker', name: 'Docker', why: 'Multica self-hosting, Testcontainers, container scans', needed: () => true,
+    id: 'docker', name: 'Docker', why: 'Testcontainers, container scans, local services', needed: () => true,
     check: () => {
       const info = probe('docker', ['info']);
       if (info.ok) return status(true, 'running');
@@ -131,22 +130,6 @@ export const TOOLS = [
     id: 'opencontext', name: 'OpenContext CLI', why: 'your cross-project knowledge library', needed: (project) => !project || project.knowledge.provider === 'opencontext',
     check: () => { const result = probe('oc', ['--help']); return result.ok ? status(true, 'installed') : missing(); },
     install: { ...UNIX(`npm install -g @aicontextlab/cli && cd "${homedir()}" && oc init --tools cursor,claude`), windows: `npm install -g @aicontextlab/cli; cd "${homedir()}"; oc init --tools cursor,claude` },
-  },
-  {
-    id: 'multica', name: 'Multica CLI + local server', why: 'agent board and Multica lanes, self-hosted on this machine', needed: () => true,
-    check: async () => {
-      if (!probe('multica', ['version']).ok) return missing();
-      const server = await serverInfo();
-      if (!server.url || !(await httpOk(`${server.url}/health`, 3000))) return status(false, server.url ? `server at ${server.url} not reachable` : 'no server configured', { fix: 'configure' });
-      const daemon = probe('multica', ['daemon', 'status', '--output', 'json']);
-      if (!daemon.ok || /not running|stopped|dead|inactive/i.test(daemon.output)) return status(false, `server ok at ${server.url}; daemon not running`, { fix: 'start' });
-      return status(true, `${server.local ? 'self-hosted here' : 'remote server'} at ${server.url}, daemon running`, { warn: !server.local });
-    },
-    configure: 'multica setup self-host',
-    interactive: ['configure'],
-    install: { macos: 'curl -fsSL https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.sh | bash -s -- --with-server', linux: 'curl -fsSL https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.sh | bash -s -- --with-server', wsl: 'curl -fsSL https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.sh | bash -s -- --with-server', windows: '$env:MULTICA_MODE="with-server"; irm https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.ps1 | iex' },
-    start: 'multica daemon start',
-    after: 'Open the Multica app it prints (usually http://localhost:3000), create an agent on this machine\'s runtime (Agents → New agent), put its name in multica.agent in specs/project.json, then run: vibecheck multica selftest',
   },
 ];
 

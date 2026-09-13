@@ -1,6 +1,6 @@
 ---
 name: health
-description: "Check that every tool this project needs is installed and working (Claude Code, Cursor CLI, memory, knowledge, Multica, hooks), and explain fixes. Use when something seems broken or before a first run."
+description: "Check that every tool this project needs is installed and working (Claude Code, Cursor CLI, memory, knowledge, hooks), and explain fixes. Use when something seems broken or before a first run."
 argument-hint: "[live]"
 ---
 
@@ -12,6 +12,5 @@ Scope: $ARGUMENTS
 
 1. Run `vibecheck health --json`. Add `--live` before a first real run, or when the user asks for a full check (it sends a few one-line prompts to Claude and Cursor).
 2. Summarise briefly: what works, then each problem with its fix. Group by tools, project and live checks.
-3. For problems whose fix is a command, offer to run it through /vibe-check-cli:setup. Explain the ones only the user can do: signing in, starting Docker Desktop, creating agents in Multica.
-4. If the project uses Multica and everything else is green, suggest `vibecheck multica selftest` as the final proof.
+3. For problems whose fix is a command, offer to run it through /vibe-check-cli:setup. Explain the ones only the user can do: signing in and starting Docker Desktop.
 

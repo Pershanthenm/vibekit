@@ -30,10 +30,9 @@ const value = key in out ? out[key] : out['*'];
 if (value !== undefined) console.log(value);
 `;
 
-// Docker and Multica are required of every project now, so a machine that is meant to be healthy
-// has to answer for them too. `multicaUrl` is the fake self-hosted server the check calls
-// /health on; it is passed in because the port is only known once that server is listening.
-const HEALTHY = (claudeAnswer = 'VIBECHECK_OK', multicaUrl = 'http://127.0.0.1:1') => ({
+// Docker is required of every project now, so a machine that is meant to be healthy has to
+// answer for it too.
+const HEALTHY = (claudeAnswer = 'VIBECHECK_OK') => ({
   claude: replies({
     '--version': '2.1.300 (Claude Code)',
     plugin: 'vibe-check-cli@vibe-check-cli enabled\nagentmemory@agentmemory enabled',
@@ -43,12 +42,6 @@ const HEALTHY = (claudeAnswer = 'VIBECHECK_OK', multicaUrl = 'http://127.0.0.1:1
   oc: replies({ '--version': 'oc 1.4.0', search: '[]' }),
   agentmemory: replies({ '*': 'agentmemory 0.9' }),
   docker: replies({ info: 'Server Version: 27.0.3', '*': 'Docker version 27.0.3' }),
-  multica: replies({
-    version: 'multica 1.2.0',
-    config: `server_url: ${multicaUrl}`,
-    daemon: '{"status":"running"}',
-    '*': '',
-  }),
   vibecheck: `#!/usr/bin/env node
 require('child_process').spawnSync(process.execPath, [${JSON.stringify(BIN)}, ...process.argv.slice(2)], { stdio: 'inherit' });
 `,
@@ -67,12 +60,11 @@ async function projectOnHealthyMachine(claudeAnswer) {
   process.env.VIBECHECK_CURSOR_DIR = join(await mkdtemp(join(tmpdir(), 'vc-cursor-')), '.cursor');
   await run(['cursor-agents']);
   const memory = await startFakeAgentmemory();
-  const multica = await startFakeHttp({ status: 'ok' });
-  process.env.PATH = [await fakeBin(HEALTHY(claudeAnswer, multica.url)), TOOL_FREE_PATH].join(delimiter);
+  process.env.PATH = [await fakeBin(HEALTHY(claudeAnswer)), TOOL_FREE_PATH].join(delimiter);
   process.env.AGENTMEMORY_URL = memory.url;
   const root = await newProject('--yes');
   gitInit(root);
-  return { root, memory, multica, close: async () => { await memory.close(); await multica.close(); } };
+  return { root, memory, close: () => memory.close() };
 }
 
 test('health --live passes when every piece works, end to end', async () => {
@@ -120,17 +112,17 @@ test('the checklist follows the project configuration', async () => {
   const root = await newProject('--yes');
   const path = join(root, 'specs/project.json');
   const base = JSON.parse(await readFile(path, 'utf8'));
-  const ids = (overrides) => toolsFor({ ...base, ...overrides, workflow: { ...base.workflow, ...overrides.workflow }, multica: { ...base.multica, ...overrides.multica } }).map((tool) => tool.id);
+  const ids = (overrides) => toolsFor({ ...base, ...overrides, workflow: { ...base.workflow, ...overrides.workflow } }).map((tool) => tool.id);
 
-  // Docker, the Cursor CLI, agentmemory and Multica are required of every project, so they are
-  // not engine-dependent any more. What still follows the configuration is the rest.
+  // Docker, the Cursor CLI and agentmemory are required of every project, so they are not
+  // engine-dependent any more. What still follows the configuration is the rest.
   const lean = ids({ workflow: { engine: 'claude' }, memory: { ...base.memory, provider: 'none' }, knowledge: { ...base.knowledge, provider: 'none' } });
   assert.ok(['node', 'git', 'claude', 'vibecheck-plugin', 'vibecheck-cli'].every((id) => lean.includes(id)), lean.join(', '));
   assert.ok(!lean.includes('opencontext'), 'a project with no knowledge provider does not need OpenContext');
 
-  for (const engine of ['claude', 'cursor', 'multica']) {
+  for (const engine of ['claude', 'cursor']) {
     const required = ids({ workflow: { engine } });
-    assert.ok(['docker', 'cursor-agent', 'agentmemory', 'multica'].every((id) => required.includes(id)), `${engine}: ${required.join(', ')}`);
+    assert.ok(['docker', 'cursor-agent', 'agentmemory'].every((id) => required.includes(id)), `${engine}: ${required.join(', ')}`);
   }
 });
 
@@ -214,14 +206,6 @@ test('the Claude panel gets setup and health commands', async () => {
   assert.equal(setupSkill.userOnly, true, 'installing software only happens when the user asks');
   assert.ok(SKILLS.some((skill) => skill.name === 'health' && !skill.userOnly));
   assert.ok(!SKILLS.some((skill) => skill.name === 'doctor'), 'no leftover doctor skill');
-});
-
-test('steps that need a browser sign-in are flagged for the terminal, not run by Claude', async () => {
-  const { planSteps } = await import('../src/commands/setup.js');
-  const multica = (await import('../src/machine/tools.js')).TOOLS.find((tool) => tool.id === 'multica');
-  const steps = planSteps([{ ok: false, tool: multica }], 'macos');
-  assert.deepEqual(steps.map((entry) => [entry.kind, entry.interactive]), [['install', false], ['configure', true], ['start', false]]);
-  assert.match(steps[0].command, /install\.sh \| bash -s -- --with-server/, 'the Mac install includes the self-hosted server');
 });
 
 test('non-interactive setup hands sign-in steps to the user and skips what depends on them', async () => {
