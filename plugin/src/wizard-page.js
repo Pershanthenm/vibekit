@@ -4,18 +4,21 @@
 // and starters.js — so the two can never offer different stacks. Nothing is retyped here; add a
 // component to the catalogue and it appears in the form on the next `vibecheck wizard`.
 //
-// The chrome comes from page-chrome.js, the same module the dashboard uses, so setting a project
-// up and then tracking it look like one product rather than two.
+// The chrome comes from page-chrome.js, the same module the dashboard uses, and the form is built
+// from the design system's wizard components: a stepper in the sidebar, choice cards, and a
+// sticky footer that carries the one action that matters on each step.
 //
 // It produces exactly one thing: the requirements.json that `vibecheck advise apply --from` and
 // `vibecheck init --from` already accept. The page decides nothing and scaffolds nothing — the
 // recommendation, the licence exclusions and the validation all still happen in the CLI, where
-// they are tested.
+// they are tested. Handing the answers back is a choice at the end, not a thing this page does on
+// its own: either you run the command yourself, or, when the form is being served, you send them
+// to the running vibecheck and it does the same work on the other side.
 
 import { componentsFor } from './advisor/components.js';
 import { BAAS, STATIC_QUESTIONS } from './advisor/questions.js';
 import { STARTERS } from './advisor/starters.js';
-import { escape, shell } from './page-chrome.js';
+import { CHROME_SCRIPT, escape, icon, shell } from './page-chrome.js';
 
 const LAYERS = ['backend', 'web', 'mobile', 'desktop', 'database'];
 const LAYER_QUESTION = {
@@ -28,14 +31,14 @@ const LAYER_QUESTION = {
 const LAYER_HEADER = { backend: 'Backend', web: 'Web', mobile: 'Mobile', desktop: 'Desktop', database: 'Database' };
 
 // The page's own layout. Question text and options still come from the catalogue; only the
-// grouping lives here, because the terminal asks in rounds and a form scrolls in sections.
+// grouping lives here, because the terminal asks in rounds and a form moves a step at a time.
 const SECTIONS = [
   { title: 'What you are building', icon: 'home', ids: ['platform', 'appType', 'scale', 'clients'] },
   { title: 'Constraints', icon: 'issues', ids: ['licensing', 'ecosystem', 'team', 'data'] },
   { title: 'Architecture and security', icon: 'board', ids: ['architecture', 'signin', 'security', 'compliance'] },
-  { title: 'Stack', icon: 'stack', layers: true },
-  { title: 'Starting point', icon: 'spark', starter: true },
-  { title: 'Delivery', icon: 'tools', ids: ['hosting', 'integrations'] },
+  { title: 'Stack', icon: 'features', layers: true },
+  { title: 'Starting point', icon: 'star', starter: true },
+  { title: 'Delivery', icon: 'cog', ids: ['hosting', 'integrations'] },
   { title: 'Agent workflow', icon: 'tests', ids: ['autonomy', 'engine', 'context'] },
 ];
 
@@ -90,115 +93,126 @@ export function wizardModel() {
 // `</script>` inside embedded JSON would end the block early; escaping < prevents that.
 const embed = (value) => JSON.stringify(value).replace(/</g, '\\u003c');
 
-// Only what the form adds on top of the shared chrome.
+// Only what the form adds on top of the design system. Everything visible is an Atlas component.
 const PAGE_STYLE = `
-/* the step rail across the top: where you are, and how much is left */
-.steps{background:var(--surf);border:1px solid var(--line);border-radius:var(--r);
-  padding:22px 26px 16px;margin-bottom:16px;position:relative}
-.strack{position:absolute;left:60px;right:60px;top:38px;height:2px;background:var(--line2);border-radius:2px}
-.sfill{height:100%;width:0;background:var(--grad);border-radius:2px;transition:width .45s cubic-bezier(.16,1,.3,1)}
-.snodes{display:grid;position:relative;z-index:1}
-.sn{display:flex;flex-direction:column;align-items:center;gap:9px;text-decoration:none;color:inherit}
-.sn:hover{text-decoration:none}
-.sc{width:30px;height:30px;border-radius:50%;background:var(--surf);border:2px solid var(--line2);
-  color:var(--tx3);display:grid;place-items:center;font-size:12.5px;font-weight:600;
-  transition:background .3s,border-color .3s,color .3s}
-.sn:hover .sc{border-color:var(--tx3);color:var(--tx2)}
-.sn.done .sc{background:var(--grad);border-color:transparent;color:#0d1108}
-.sn.on .sc{background:var(--grad);border-color:transparent;color:#0d1108;
-  box-shadow:0 0 0 5px rgba(182,242,74,.16)}
-.sn i{font-style:normal;font-size:12px;font-weight:500;color:var(--tx3);text-align:center;line-height:1.3}
-.sn.on i{color:var(--tx)}
-.sn.done i{color:var(--tx2)}
-
-.steplabel{font-size:10.5px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--tx3)}
-fieldset{border:0;padding:0;margin:22px 0 0}
-fieldset:first-of-type{margin-top:16px}
-legend{padding:0;font-size:14.5px;font-weight:600;color:var(--tx)}
-.why{font-size:12.5px;color:var(--tx3);margin:3px 0 12px}
-.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:9px}
-label.opt{display:flex;gap:11px;align-items:flex-start;padding:13px 15px;border:1px solid var(--line);
-  border-radius:14px;cursor:pointer;background:var(--surf2);transition:border-color .22s,background .22s,transform .22s}
-label.opt:hover{border-color:var(--line2);transform:translateY(-2px)}
-label.opt:has(input:checked){border-color:rgba(182,242,74,.42);background:rgba(182,242,74,.06)}
-label.opt input{margin:3px 0 0;flex:none;accent-color:var(--lime)}
-.opt-body{min-width:0;display:flex;flex-direction:column;gap:2px}
-.opt-label{font-weight:500;font-size:13.5px;color:var(--tx)}
-.opt-desc{font-size:12.5px;color:var(--tx3);line-height:1.5}
-.lic{font-size:11px;color:var(--tx3);opacity:.8;margin-top:3px}
-.other{margin-top:10px}
-.other .inp2{font-size:13px;padding:9px 12px}
-#out{max-height:320px}
-.missing{color:var(--am);font-size:13px;margin-top:12px}
-ol.next{padding-left:20px;color:var(--tx2);font-size:13.5px}
-ol.next li{margin:9px 0}
-@media (max-width:760px){
-  .steps{padding:16px 14px 12px}
-  .strack{left:24px;right:24px;top:34px}
-  .sn i{display:none}
-}
-@media (max-width:560px){ .opts{grid-template-columns:1fr} }`;
+.step{display:none}
+.step.on{display:grid;gap:var(--gutter);animation:pageIn var(--dur-slow) var(--ease-decelerate) both}
+.hidden{display:none!important}
+.question.hidden,.choice.hidden{display:none!important}
+#handoff .choices{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.sent{display:grid;gap:var(--sp-3)}`;
 
 /**
- * The whole wizard as one self-contained page: no build step, no network, no dependencies.
- * Unlike the dashboard it does need JavaScript — it is a form, and the alternative is posting
- * somewhere, which there is nothing to post to.
+ * The whole wizard as one self-contained page: no build step, no dependencies.
+ *
+ * Unlike the dashboard it does need JavaScript — it is a form that hides the questions your
+ * earlier answers made irrelevant, and the alternative is asking all of them and ignoring most.
+ * A page without scripting says so rather than showing a form that cannot work.
+ *
+ * `control` is the URL that accepts the finished answers, present only when this page is being
+ * served. Then the last step can offer to build from here as well as from a terminal.
  */
-export function renderWizard({ projectName = '' } = {}) {
+export function renderWizard({ projectName = '', control = null } = {}) {
   const name = projectName || 'New project';
   const model = wizardModel();
+  const last = SECTIONS.length;
 
-  // Rendered server-side so the rail and the stepper exist before the script runs, and so the
-  // anchors work even if it never does.
-  const nav = [
-    ...SECTIONS.map((section, index) => ({
-      href: `#step-${index}`, label: section.title, icon: section.icon, current: index === 0,
-    })),
-    { href: '#result', label: 'Hand it back', icon: 'doc' },
-  ];
-
+  // Rendered server-side so the stepper exists before the script runs, and so its shape does not
+  // shift when it does.
   const stepper = `
-      <div class="steps">
-        <div class="strack"><div class="sfill" id="sfill"></div></div>
-        <div class="snodes" style="grid-template-columns:repeat(${SECTIONS.length}, 1fr)">
-${SECTIONS.map((section, index) => `          <a class="sn${index === 0 ? ' on' : ''}" href="#step-${index}" data-step="${index}"><span class="sc">${index + 1}</span><i>${escape(section.title)}</i></a>`).join('\n')}
-        </div>
-      </div>`;
+      ${SECTIONS.map((section, index) => `<a href="#step-${index}" class="${index === 0 ? 'current' : ''}" data-step="${index}" data-tip="${escape(section.title)}">
+        <span class="n">${index + 1}</span><span class="lbl">${escape(section.title)}</span><span class="cnt"></span>
+      </a>`).join('\n      ')}
+      <a href="#step-${last}" data-step="${last}" data-tip="Hand it back">
+        <span class="n">${last + 1}</span><span class="lbl">Hand it back</span><span class="cnt"></span>
+      </a>`;
 
-  const body = `${stepper}
+  const body = `
+      <noscript>
+        <div class="alert warn">${icon('issues')}<div><b>This form needs JavaScript</b>
+        <p>It hides the questions your earlier answers make irrelevant. Run <code>vibecheck advise</code>
+        in a terminal instead — it asks the same things.</p></div></div>
+      </noscript>
 
-      <section class="cd">
-        <h2>Answer what you know; skip what you don't.</h2>
-        <p class="cs" style="margin-bottom:0">Nothing is installed or written from this page. At the end you get a
-        <code>requirements.json</code> to hand back to Claude Code, which does the scaffolding and can
-        still ask about anything you left blank.</p>
-      </section>
+      <div class="card" id="intro">
+        <div class="card-head"><div class="card-title">Answer what you know; skip what you don't.<small>Nothing is installed or written until the last step</small></div></div>
+        <p class="t-muted">At the end you get a <code>requirements.json</code>. You can run the command yourself,
+        or${control ? ' send it straight to the vibecheck that is serving this page.' : ' — when this form is served rather than opened from a file — send it straight to the running vibecheck.'}</p>
+      </div>
 
       <form id="form"></form>
 
-      <section class="cd" id="result">
-        <span class="steplabel">Last step</span>
-        <h2 style="margin-top:6px">Hand this back</h2>
-        <p class="cs">Save it into your project as <code>specs/requirements.json</code>, or copy it and
-        paste it to Claude Code.</p>
-        <div class="actions">
-          <button type="button" class="btn primary" id="download">Download requirements.json</button>
-          <button type="button" class="btn" id="copy">Copy to clipboard</button>
-        </div>
-        <p class="missing hidden" id="missing"></p>
-        <pre id="out">{}</pre>
-        <ol class="next">
-          <li>Put the file in your project at <code>specs/requirements.json</code>.</li>
-          <li>In that folder run <code>vibecheck advise apply</code> — or tell Claude Code
-            <em>"apply my requirements"</em> and it runs it for you.</li>
-          <li>It writes <code>specs/project.json</code>, a technology-selection ADR recording why each
-            choice won, and scaffolds the project.</li>
-        </ol>
-      </section>`;
+      <section class="card step" id="step-${last}" data-section="${last}">
+        <div class="card-head"><div class="card-title">Hand it back<small>Step ${last + 1} of ${last + 1}</small></div></div>
+        <div class="alert warn hidden" id="missing"></div>
 
-  const script = `
+        <div class="question">
+          <div class="qh"><h3>How do you want to build it?</h3></div>
+          <div class="choices" id="handoff">
+            <label class="choice" data-mode="cli">
+              <input type="radio" name="handoff" value="cli" checked>
+              <span class="ctl"></span>
+              <b>Build from the CLI</b>
+              <span>Save the file yourself and run the command. Works anywhere, including from a
+              file:// copy of this page.</span>
+            </label>
+            <label class="choice${control ? '' : ' hidden'}" data-mode="web">
+              <input type="radio" name="handoff" value="web">
+              <span class="ctl"></span>
+              <b>Build from here</b>
+              <span>Send the answers to the vibecheck serving this page. It writes
+              <code>specs/requirements.json</code> and picks the stack, and the console shows it happen.</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="mt-4" id="cliPane">
+          <div class="card-actions mb-3">
+            <button type="button" class="btn btn-primary" id="download">Download requirements.json</button>
+            <button type="button" class="btn btn-ghost" id="copy">Copy to clipboard</button>
+          </div>
+          <div class="next-steps">
+            <div>Put the file in your project at <code>specs/requirements.json</code>.</div>
+            <div>In that folder run <code>vibecheck advise apply</code> — or tell Claude Code
+              <em>"apply my requirements"</em> and it runs it for you.</div>
+            <div>It writes <code>specs/project.json</code>, a technology-selection ADR recording why each
+              choice won, and scaffolds the project.</div>
+          </div>
+        </div>
+
+        <div class="mt-4 hidden" id="webPane">
+          <div class="card-actions mb-3">
+            <button type="button" class="btn btn-primary" id="send">Send to vibecheck</button>
+            <button type="button" class="btn btn-ghost" id="sendOnly">Save the file only</button>
+          </div>
+          <p class="t-caption">Sending needs the write token this server printed when it started. It is
+          asked for once and kept in this browser — the link on its own can read, but not build.</p>
+          <div class="sent mt-3" id="sent"></div>
+        </div>
+
+        <h3 class="t-h4 mt-4">What gets handed over</h3>
+        <div class="review mt-3" id="review"></div>
+        <pre class="json mt-3" id="out">{}</pre>
+      </section>
+
+      <div class="wiz-foot">
+        <button type="button" class="btn btn-ghost" id="back">Back</button>
+        <div class="mid"><span id="stepName"></span><div class="dots" id="dots"></div></div>
+        <button type="button" class="btn btn-primary" id="next">Next</button>
+      </div>`;
+
+  // The chrome's own behaviour first — theme, drawer, toast — then this page's. `escape` is
+  // declared here rather than in the chrome because the dashboard gets it from the render module,
+  // and two declarations of the same name in one script block is a syntax error, not a warning.
+  const script = `${CHROME_SCRIPT}
+const ENTITIES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const escape = (text) => String(text ?? '').replace(/[&<>"']/g, (char) => ENTITIES[char]);
+
 const MODEL = ${embed(model)};
+const CONTROL = ${control ? embed(control) : 'null'};
 const answers = {};
+const LAST = ${last};
+let step = 0;
 
 // Which stack layers this project actually has. Mirrors neededLayers() in questions.js: a
 // backend is always present, the rest follow from the platform and any extra clients.
@@ -244,20 +258,21 @@ function starterFits(option) {
 }
 
 function optionHtml(q, option) {
-  const type = q.multi ? 'checkbox' : 'radio';
-  const lic = option.licenceName ? '<span class="lic">' + option.licenceName + '</span>' : '';
-  return '<label class="opt" data-option="' + option.id + '">' +
-    '<input type="' + type + '" name="' + q.id + '" value="' + option.id + '">' +
-    '<span class="opt-body"><span class="opt-label">' + option.label + '</span>' +
-    '<span class="opt-desc">' + (option.description || '') + '</span>' + lic + '</span></label>';
+  const multi = q.multi ? ' multi' : '';
+  const lic = option.licenceName ? '<span class="lic">' + escape(option.licenceName) + '</span>' : '';
+  return '<label class="choice' + multi + '" data-option="' + escape(option.id) + '">' +
+    '<input type="' + (q.multi ? 'checkbox' : 'radio') + '" name="' + escape(q.id) + '" value="' + escape(option.id) + '">' +
+    '<span class="ctl"></span><b>' + escape(option.label) + '</b>' +
+    '<span>' + escape(option.description || '') + '</span>' + lic + '</label>';
 }
 
 function questionHtml(q) {
-  return '<fieldset data-question="' + q.id + '">' +
-    '<legend>' + q.question + '</legend>' +
-    (q.multi ? '<p class="why">Choose any that apply, or none.</p>' : '') +
-    '<div class="opts">' + q.options.map((o) => optionHtml(q, o)).join('') + '</div>' +
-    '<div class="other"><input class="inp2" type="text" data-other="' + q.id + '" placeholder="Something else? Type it here."></div>' +
+  return '<fieldset class="question" data-question="' + escape(q.id) + '">' +
+    '<div class="qh"><h3>' + escape(q.question) + '</h3>' +
+    (q.multi ? '<span class="qsub">Choose any that apply, or none.</span>' : '') +
+    '<span class="qtag badge neutral no-dot" data-answered="' + escape(q.id) + '">Not answered</span></div>' +
+    '<div class="choices">' + q.options.map((o) => optionHtml(q, o)).join('') + '</div>' +
+    '<div class="other"><input type="text" data-other="' + escape(q.id) + '" placeholder="Something else? Type it here." aria-label="Something else for: ' + escape(q.question) + '"></div>' +
     '</fieldset>';
 }
 
@@ -267,14 +282,16 @@ function build() {
     let questions = section.questions;
     if (section.layers) questions = Object.values(MODEL.layerQuestions);
     if (section.starter) questions = [MODEL.starter];
-    return '<section class="cd" id="step-' + index + '" data-section="' + index + '">' +
-      '<span class="steplabel">Step ' + (index + 1) + ' of ' + MODEL.sections.length + '</span>' +
-      '<h2 style="margin-top:6px">' + section.title + '</h2>' +
+    return '<section class="card step" id="step-' + index + '" data-section="' + index + '">' +
+      '<div class="card-head"><div class="card-title">' + escape(section.title) +
+      '<small>Step ' + (index + 1) + ' of ' + (LAST + 1) + '</small></div></div>' +
       questions.map(questionHtml).join('') + '</section>';
   }).join('');
   form.addEventListener('change', onChange);
   form.addEventListener('input', onChange);
+  document.getElementById('dots').innerHTML = Array.from({ length: LAST + 1 }, () => '<i></i>').join('');
   refresh();
+  show(0);
 }
 
 function onChange(event) {
@@ -283,6 +300,7 @@ function onChange(event) {
     const text = target.value.trim();
     if (text) answers[target.dataset.other] = { other: text };
     else delete answers[target.dataset.other];
+    target.closest('.other').classList.toggle('has', Boolean(text));
   } else if (target.name) {
     const id = target.closest('fieldset').dataset.question;
     if (target.type === 'checkbox') {
@@ -291,31 +309,41 @@ function onChange(event) {
       answers[id] = target.value;
     }
     const other = document.querySelector('[data-other="' + id + '"]');
-    if (other) other.value = '';
+    if (other) { other.value = ''; other.closest('.other').classList.remove('has'); }
   }
   refresh();
 }
 
-// The stepper is the only progress signal on a long form: a step is done when every question
-// still showing inside it has an answer, and the first one that isn't is where you are.
-function markSteps() {
-  const sections = [...document.querySelectorAll('section[data-section]')];
-  const states = sections.map((section) => {
-    const visible = [...section.querySelectorAll('fieldset[data-question]')]
-      .filter((f) => !f.classList.contains('hidden'));
-    return visible.length > 0 && visible.every((f) => answers[f.dataset.question] !== undefined);
+/** Which questions are showing on a step, and how many of them have an answer. */
+function visibleIn(section) {
+  return [...section.querySelectorAll('fieldset[data-question]')].filter((f) => !f.classList.contains('hidden'));
+}
+function answeredIn(section) {
+  return visibleIn(section).filter((f) => answers[f.dataset.question] !== undefined).length;
+}
+
+function show(index) {
+  step = Math.max(0, Math.min(LAST, index));
+  for (const section of document.querySelectorAll('.step')) {
+    section.classList.toggle('on', Number(section.dataset.section) === step);
+  }
+  for (const link of document.querySelectorAll('.stepper a')) {
+    link.classList.toggle('current', Number(link.dataset.step) === step);
+  }
+  document.getElementById('intro').hidden = step !== 0;
+  document.getElementById('back').disabled = step === 0;
+  document.getElementById('next').textContent = step === LAST ? 'Done' : 'Next';
+  document.getElementById('next').disabled = step === LAST;
+  document.getElementById('stepName').textContent = step === LAST
+    ? 'Hand it back'
+    : 'Step ' + (step + 1) + ' of ' + (LAST + 1) + ' · ' + MODEL.sections[step].title;
+  const dots = document.querySelectorAll('#dots i');
+  dots.forEach((dot, index) => {
+    const section = document.querySelector('[data-section="' + index + '"]');
+    dot.classList.toggle('on', index === step);
+    dot.classList.toggle('done', index < LAST && section && visibleIn(section).length > 0 && answeredIn(section) === visibleIn(section).length);
   });
-  const current = states.indexOf(false);
-  document.querySelectorAll('.sn').forEach((node, index) => {
-    node.classList.toggle('done', states[index] === true);
-    node.classList.toggle('on', index === current);
-  });
-  const done = states.filter(Boolean).length;
-  const fill = document.getElementById('sfill');
-  if (fill) fill.style.width = Math.round((done / states.length) * 100) + '%';
-  document.querySelectorAll('.nb[href^="#step-"]').forEach((link, index) => {
-    link.classList.toggle('on', index === (current === -1 ? states.length - 1 : current));
-  });
+  scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
 }
 
 // Hide what does not apply rather than letting someone answer a question that will be ignored.
@@ -328,47 +356,113 @@ function refresh() {
   const hosting = document.querySelector('[data-question="hosting"]');
   if (hosting) hosting.classList.toggle('hidden', !needsHosting());
 
-  document.querySelectorAll('fieldset[data-question]').forEach((fieldset) => {
+  for (const fieldset of document.querySelectorAll('fieldset[data-question]')) {
     const id = fieldset.dataset.question;
     const model = MODEL.layerQuestions[id] || (id === 'starter' ? MODEL.starter : null);
-    if (!model) return;
-    fieldset.querySelectorAll('[data-option]').forEach((label) => {
+    if (!model) continue;
+    for (const label of fieldset.querySelectorAll('[data-option]')) {
       const option = model.options.find((entry) => entry.id === label.dataset.option);
       const ok = licenceAllows(option && option.licence) && (id !== 'starter' || starterFits(option));
       label.classList.toggle('hidden', !ok);
       const input = label.querySelector('input');
       if (!ok && input.checked) { input.checked = false; delete answers[id]; }
-    });
+    }
     if (id === 'starter') {
-      const anyFits = [...fieldset.querySelectorAll('[data-option]')].some((label) => !label.classList.contains('hidden') && label.dataset.option !== 'none');
+      const anyFits = [...fieldset.querySelectorAll('[data-option]')]
+        .some((label) => !label.classList.contains('hidden') && label.dataset.option !== 'none');
       fieldset.classList.toggle('hidden', !anyFits);
     }
-  });
+  }
+
+  // The chosen card carries the state, so the answer is visible without reading the controls.
+  for (const label of document.querySelectorAll('.choice')) {
+    const input = label.querySelector('input');
+    if (input) label.classList.toggle('on', input.checked);
+  }
+  for (const tag of document.querySelectorAll('[data-answered]')) {
+    const answered = answers[tag.dataset.answered] !== undefined;
+    tag.textContent = answered ? 'Answered' : 'Not answered';
+    tag.className = 'qtag badge no-dot ' + (answered ? 'ok' : 'neutral');
+  }
 
   const visible = [...document.querySelectorAll('fieldset[data-question]')].filter((f) => !f.classList.contains('hidden'));
   const unanswered = visible.filter((f) => answers[f.dataset.question] === undefined).map((f) => f.dataset.question);
   document.getElementById('progress').textContent = (visible.length - unanswered.length) + ' of ' + visible.length + ' answered';
 
+  for (const link of document.querySelectorAll('.stepper a[data-step]')) {
+    const index = Number(link.dataset.step);
+    const section = document.querySelector('[data-section="' + index + '"]');
+    if (!section || index === LAST) continue;
+    const total = visibleIn(section).length;
+    const done = answeredIn(section);
+    link.querySelector('.cnt').textContent = total ? done + '/' + total : '';
+    link.classList.toggle('done', total > 0 && done === total);
+  }
+
   const missing = document.getElementById('missing');
   missing.classList.toggle('hidden', unanswered.length === 0);
-  missing.textContent = unanswered.length
-    ? unanswered.length + ' still unanswered (' + unanswered.join(', ') + '). Hand it over anyway — Claude Code will ask about the rest.'
+  missing.innerHTML = unanswered.length
+    ? '<div><b>' + unanswered.length + ' still unanswered</b><p>' + escape(unanswered.join(', ')) +
+      '. Hand it over anyway — the CLI asks about the rest.</p></div>'
     : '';
 
   document.getElementById('out').textContent = JSON.stringify(answers, null, 2);
-  markSteps();
+  renderReview();
 }
+
+function labelFor(id, value) {
+  const model = MODEL.layerQuestions[id] || (id === 'starter' ? MODEL.starter : MODEL.sections.flatMap((s) => s.questions).find((q) => q.id === id));
+  const option = model && model.options.find((entry) => entry.id === value);
+  return option ? option.label : value;
+}
+
+function renderReview() {
+  const rows = [];
+  MODEL.sections.forEach((section, index) => {
+    const holder = document.querySelector('[data-section="' + index + '"]');
+    if (!holder) return;
+    for (const fieldset of visibleIn(holder)) {
+      const id = fieldset.dataset.question;
+      const value = answers[id];
+      const text = value === undefined ? 'Not answered'
+        : Array.isArray(value) ? (value.map((entry) => labelFor(id, entry)).join(', ') || 'None')
+        : value && value.other ? value.other
+        : labelFor(id, value);
+      rows.push('<div class="row"><span class="k">' + escape(id) + '</span>' +
+        '<span class="v' + (value === undefined ? ' empty' : '') + '">' + escape(text) + '</span>' +
+        '<span class="sec">' + escape(section.title) + '</span></div>');
+    }
+  });
+  document.getElementById('review').innerHTML = rows.join('');
+}
+
+// --- Handing it back ------------------------------------------------------------------------
+
+function mode() {
+  const checked = document.querySelector('input[name="handoff"]:checked');
+  return checked ? checked.value : 'cli';
+}
+function syncPanes() {
+  const web = mode() === 'web';
+  document.getElementById('cliPane').classList.toggle('hidden', web);
+  document.getElementById('webPane').classList.toggle('hidden', !web);
+  for (const label of document.querySelectorAll('#handoff .choice')) {
+    label.classList.toggle('on', label.querySelector('input').checked);
+  }
+}
+document.getElementById('handoff').addEventListener('change', syncPanes);
 
 document.getElementById('copy').addEventListener('click', async () => {
   const button = document.getElementById('copy');
+  const text = JSON.stringify(answers, null, 2);
   try {
-    await navigator.clipboard.writeText(JSON.stringify(answers, null, 2));
+    await navigator.clipboard.writeText(text);
     button.textContent = 'Copied';
   } catch {
     // Clipboard access is blocked in some embedded viewers; selecting the text still works.
     const range = document.createRange();
     range.selectNodeContents(document.getElementById('out'));
-    const selection = window.getSelection();
+    const selection = getSelection();
     selection.removeAllRanges();
     selection.addRange(range);
     button.textContent = 'Selected — press Ctrl/Cmd+C';
@@ -382,31 +476,107 @@ document.getElementById('download').addEventListener('click', () => {
   const link = document.createElement('a');
   link.href = url;
   link.download = 'requirements.json';
-  document.body.appendChild(link);
+  document.body.append(link);
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 
-// Embedded viewers (and the artifact sandbox) render this in an iframe, where a script-driven
-// download is silently inert. Offering a button that does nothing is worse than not offering it,
-// so in that case the page says plainly that copying is the way out.
-if (window.self !== window.top) {
-  document.getElementById('download').classList.add('hidden');
+// Embedded viewers render this in an iframe, where a script-driven download is silently inert.
+// Offering a button that does nothing is worse than not offering it.
+if (self !== top) {
+  document.getElementById('download').hidden = true;
   const note = document.createElement('p');
-  note.className = 'why';
-  note.textContent = 'Downloads are blocked when this page is embedded — use Copy, then paste it to Claude Code or save it yourself as specs/requirements.json.';
-  document.getElementById('result').insertBefore(note, document.getElementById('missing'));
+  note.className = 't-caption mb-3';
+  note.textContent = 'Downloads are blocked when this page is embedded — use Copy instead.';
+  document.getElementById('cliPane').prepend(note);
 }
 
-build();`;
+async function send(action, button, label) {
+  if (!CONTROL) return;
+  const key = stored('vibecheck-token') || await askToken();
+  if (!key) return;
+  button.classList.add('loading');
+  let response;
+  try {
+    response = await fetch(CONTROL, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + key },
+      body: JSON.stringify({ action: action, requirements: answers }),
+    });
+  } catch {
+    button.classList.remove('loading');
+    return report('danger', 'The server is not reachable', 'Is the console still running?');
+  }
+  button.classList.remove('loading');
+  if (response.status === 401 || response.status === 403) {
+    store('vibecheck-token', '');
+    return report('danger', 'That token was not accepted', 'Check the token the console printed and try again.');
+  }
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) return report('danger', 'Refused', result.error || 'The project would not take those answers.');
+  const written = [result.result && result.result.saved, result.result && result.result.adrPath].filter(Boolean);
+  report('ok', label, written.length ? 'Written: ' + written.join(', ') : 'Saved.');
+  toast(label);
+}
+
+function report(tone, title, detail) {
+  document.getElementById('sent').innerHTML =
+    '<div class="alert ' + tone + '"><div><b>' + escape(title) + '</b><p>' + escape(detail) + '</p></div></div>';
+}
+
+function askToken() {
+  return new Promise((resolve) => {
+    const mask = document.createElement('div');
+    mask.className = 'modal-mask on';
+    mask.innerHTML = '<div class="modal"><h3>Write token</h3>' +
+      '<p>Sending needs the token this server printed when it started. It is kept in this browser only.</p>' +
+      '<div class="form mt-4"><label>Token<input class="input" type="password" id="tokenInput" autocomplete="off" spellcheck="false"></label></div>' +
+      '<div class="actions"><button type="button" class="btn btn-ghost" id="tokenCancel">Cancel</button>' +
+      '<button type="button" class="btn btn-primary" id="tokenSave">Save</button></div></div>';
+    document.body.append(mask);
+    const input = mask.querySelector('#tokenInput');
+    input.focus();
+    const close = (value) => { mask.remove(); resolve(value); };
+    mask.querySelector('#tokenCancel').addEventListener('click', () => close(null));
+    mask.querySelector('#tokenSave').addEventListener('click', () => {
+      const value = input.value.trim();
+      if (!value) return close(null);
+      store('vibecheck-token', value);
+      close(value);
+    });
+    input.addEventListener('keydown', (event) => { if (event.key === 'Enter') mask.querySelector('#tokenSave').click(); });
+  });
+}
+
+if (CONTROL) {
+  document.getElementById('send').addEventListener('click', (event) => send('requirements.apply', event.currentTarget, 'Applied — the console will show it'));
+  document.getElementById('sendOnly').addEventListener('click', (event) => send('requirements.save', event.currentTarget, 'Saved to specs/requirements.json'));
+}
+
+// --- Moving between steps -------------------------------------------------------------------
+
+document.getElementById('back').addEventListener('click', () => show(step - 1));
+document.getElementById('next').addEventListener('click', () => show(step + 1));
+document.addEventListener('click', (event) => {
+  const link = event.target.closest('.stepper a[data-step]');
+  if (!link) return;
+  event.preventDefault();
+  show(Number(link.dataset.step));
+});
+
+build();
+syncPanes();
+`;
 
   return shell({
     title: `${name} — build your spec`,
     name,
     sub: 'Build your project spec',
-    nav,
-    right: '<span class="stamp" id="progress">0 of 0 answered</span>',
+    crumb: 'Spec wizard',
+    navLabel: 'Steps',
+    nav: `<div class="stepper">${stepper}</div>`,
+    right: '<span class="badge neutral" id="progress">0 of 0 answered</span>',
     style: PAGE_STYLE,
     body,
     script,
