@@ -19,7 +19,8 @@ import { applySelection } from './advisor/selection.js';
 import { stateDir } from './evidence.js';
 import { findFeature, listFeatures } from './features.js';
 import { writeText } from './fsutil.js';
-import { FEATURE_STATUSES } from './schema.js';
+import { clearQueue, drain, enqueue, remove as removeQueued } from './queue.js';
+import { ENGINES, FEATURE_STATUSES } from './schema.js';
 import { collectScan, fixPlanFor } from './scan.js';
 import { status as setStatus } from './commands/feature.js';
 
@@ -191,6 +192,46 @@ async function runScan(root, project, { ids }) {
   return { ran, manual: plan.manual, stopped, scan: await collectScan(root, project) };
 }
 
+// --- The queue ---------------------------------------------------------------------------------
+
+/**
+ * Queue a feature, and start working through the queue immediately. There is no second button to
+ * press: queueing something is the instruction to build it.
+ *
+ * The refusals that matter — a feature that is not in-progress, a dirty tree, lanes already
+ * dispatched, no ready parallel tasks — all live in `vibecheck dispatch`, which the drain runs as
+ * its own process. Duplicating them here would give the console its own opinion about when work
+ * may start, and the two would drift. What this does check is that the feature exists and the
+ * engine is one the schema knows, because those decide what gets spawned.
+ */
+async function queueAdd(root, project, { id, engine }) {
+  if (typeof id !== 'string' || !id) throw new BadRequest('Which feature?');
+  if (engine != null && !ENGINES.includes(engine)) {
+    throw new BadRequest(`"${engine}" is not an engine. Expected one of: ${ENGINES.join(', ')}.`);
+  }
+  let feature;
+  try {
+    feature = findFeature(await listFeatures(root), id);
+  } catch (error) {
+    throw new BadRequest(error?.message ?? `No feature matches ${id}.`);
+  }
+  const { entry, added } = await enqueue(root, { feature: feature.id, engine: engine ?? null });
+  // Deliberately not awaited: the drain runs for as long as the agents do, and the request that
+  // started it should come back at once. The page watches the states change.
+  drain(root).catch(() => {});
+  return { entry, added, feature: feature.id };
+}
+
+async function queueRemove(root, project, { entry }) {
+  if (typeof entry !== 'string' || !entry) throw new BadRequest('Which queued item?');
+  const { removed, reason } = await removeQueued(root, entry);
+  if (!removed && reason === 'running') throw new Refused('That one has already started. Let it finish.');
+  if (!removed) throw new BadRequest('That is not in the queue.');
+  return { removed: entry };
+}
+
+const queueClear = async (root) => clearQueue(root);
+
 /**
  * Every action the console may take, by name. An allowlist rather than a dispatcher: a request
  * naming anything not in here is refused before anything reads the rest of it.
@@ -202,6 +243,9 @@ export const ACTIONS = {
   'requirements.save': saveRequirements,
   'requirements.apply': applyRequirements,
   'scan.run': runScan,
+  'queue.add': queueAdd,
+  'queue.remove': queueRemove,
+  'queue.clear': queueClear,
 };
 
 /** Returns whatever the action wants to report back, or nothing where there is nothing to say. */

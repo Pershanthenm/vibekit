@@ -269,6 +269,32 @@ document.addEventListener('click', (event) => {
   }
 });
 
+// --- The queue: pressing Build it is the whole gesture ----------------------------------------
+// There is no separate start. The server adds the entry and begins working through the queue, so
+// the button reports what the server did rather than what the page hopes will happen.
+
+document.addEventListener('click', async (event) => {
+  const target = event.target.closest && event.target.closest('[data-queue], [data-unqueue], #queueClear');
+  if (!target) return;
+
+  if (target.id === 'queueClear') {
+    const cleared = await act('queue.clear', {});
+    if (cleared) toast(cleared.removed ? 'Cleared ' + cleared.removed : 'Nothing to clear');
+    return;
+  }
+
+  if (target.dataset.unqueue) {
+    if (await act('queue.remove', { entry: target.dataset.unqueue })) toast('Removed from the queue');
+    return;
+  }
+
+  const id = target.dataset.queue;
+  target.classList.add('loading');
+  const queued = await act('queue.add', { id: id });
+  target.classList.remove('loading');
+  if (queued) toast(queued.added ? id + ' is queued — an agent is starting' : id + ' is already queued');
+});
+
 let dragged = null;
 document.addEventListener('dragstart', (event) => {
   const card = event.target.closest && event.target.closest('.task[data-id]');

@@ -3,6 +3,7 @@ import { open, stat } from 'node:fs/promises';
 import { runLogPath } from './control.js';
 import { listFeatures } from './features.js';
 import { loadManifest } from './manifest.js';
+import { queueLogPath } from './queue.js';
 
 /**
  * 192 bits, url-safe. Used for the path the console is served under and, separately, for the
@@ -66,6 +67,7 @@ export async function laneLogs(root) {
     }
   }
   logs.push({ id: 'scan/run', lane: 'fixes', feature: 'scan', path: runLogPath(root) });
+  logs.push({ id: 'queue/run', lane: 'queue', feature: 'queue', path: queueLogPath(root) });
   return logs;
 }
 

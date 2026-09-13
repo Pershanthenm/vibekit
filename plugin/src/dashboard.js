@@ -12,6 +12,7 @@ import { checkFeature, listFeatures, progress } from './features.js';
 import { filesOfTask, parseTasks, planLanes, readyParallelTasks } from './lanes.js';
 import { loadManifest } from './manifest.js';
 import { nextAction } from './next.js';
+import { isDraining, readQueue } from './queue.js';
 import { reviewProblems } from './review.js';
 export { renderDashboard } from './dashboard-view.js';
 
@@ -170,8 +171,10 @@ export async function collectState(root, project, { setup = null, problems = [] 
   const features = await listFeatures(root);
   const repo = repoState(root);
   const collected = await Promise.all(features.map((feature) => featureState(root, project, feature, repo)));
+  const queue = await readQueue(root).catch(() => ({ entries: [] }));
   return {
     tests: testSummary(collected),
+    queue: { entries: queue.entries, draining: isDraining(root) },
     project: {
       name: project.project.name,
       generatedAt: new Date().toISOString(),

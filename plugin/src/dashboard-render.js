@@ -62,6 +62,9 @@ export const TASK_KINDS = { test: 'Write the test first', impl: 'Build it', docs
 export const STATE_WORDS = { ok: 'Passing', flaky: 'Flaky', failed: 'Failing', missing: 'Not run' };
 export const STATE_TONE = { ok: 'ok', flaky: 'warn', failed: 'danger', missing: 'neutral' };
 // A gate switched off in project.json is not passing — it is not in play.
+export const QUEUE_WORDS = { queued: 'Waiting', running: 'Building', done: 'Finished', failed: 'Failed' };
+export const QUEUE_TONE = { queued: 'info', running: 'accent', done: 'ok', failed: 'danger' };
+
 export const GATE_TONE = { ok: 'ok', blocked: 'danger', off: 'neutral' };
 export const GATE_MARK = { ok: 'ok', blocked: 'fail', off: 'na' };
 
@@ -89,6 +92,7 @@ export function normalise(state) {
     project: { name: 'Project', generatedAt: new Date().toISOString(), ...(state?.project ?? {}) },
     tests: { ok: 0, flaky: 0, failed: 0, missing: 0, suites: 0, stale: 0, untraced: 0, ...tests },
     next: state?.next ?? null,
+    queue: { entries: [], draining: false, ...(state?.queue ?? {}) },
     setup: state?.setup ?? null,
     problems: state?.problems ?? [],
     features: state?.features ?? [],
@@ -368,6 +372,7 @@ export function pageFeature(state, ctx, id) {
           <h2>${escape(feature.title)}</h2><p>${escape(feature.id)}</p>
         </div>
         <div class="cluster" style="--i:1">${badge(STAGE_TONE[feature.status] ?? 'neutral', STAGE_WORDS[feature.status] ?? feature.status)}
+          ${feature.status === 'in-progress' ? queueButton(feature, state, ctx) : ''}
           <a class="btn btn-ghost" href="#/overview">Back to overview</a></div>
       </div>
       <div class="card seq" style="--i:2"><div class="stage-track">${track}</div></div>
@@ -422,12 +427,63 @@ export function pageFeature(state, ctx, id) {
       </div>`;
 }
 
+/** The wall-clock time something happened, which is all anyone wants from a queue. */
+export const clock = (iso) => {
+  const at = iso ? new Date(iso) : null;
+  return at && !Number.isNaN(at.getTime()) ? at.toTimeString().slice(0, 5) : '';
+};
+
+/**
+ * Queueing a feature is the instruction to build it: the entry is added and an agent starts.
+ * There is no second button, because a queue you have to remember to start is a list.
+ */
+export function pageQueue(state, ctx) {
+  const entries = [...(state.queue?.entries ?? [])].reverse();
+  const waiting = entries.filter((entry) => entry.state === 'queued').length;
+  const running = entries.filter((entry) => entry.state === 'running').length;
+  const eligible = state.features.filter((feature) => feature.status === 'in-progress');
+  return `
+      <div class="page-head seq">
+        <div style="--i:0"><h2>Queue</h2><p>${running ? `${plural(running, 'feature')} building` : waiting ? `${plural(waiting, 'feature')} waiting` : 'Nothing queued.'} Queued work starts straight away — one feature at a time, its lanes in parallel.</p></div>
+        <div class="cluster" style="--i:1">${entries.length && ctx.writable ? '<button type="button" class="btn btn-ghost" id="queueClear">Clear what has not started</button>' : ''}</div>
+      </div>
+      <div class="grid seq" style="--seq-base:60ms">
+        <div class="card span-7" style="--i:2">
+          <div class="card-head"><div class="card-title">In the queue<small>Newest first</small></div>
+            ${badge(running ? 'accent' : waiting ? 'info' : 'ok', running ? 'Building' : waiting ? `${waiting} waiting` : 'Idle')}</div>
+          ${entries.length ? `<div class="todo">${entries.map((entry) => `<div class="item" data-key="queued-${escape(entry.id)}">
+            ${badge(QUEUE_TONE[entry.state] ?? 'neutral', QUEUE_WORDS[entry.state] ?? entry.state, false)}
+            <div><b>${escape(entry.feature)}</b><span>${escape(entry.note ?? (entry.state === 'running' ? `started ${clock(entry.startedAt)}` : entry.state === 'queued' ? `queued ${clock(entry.queuedAt)}` : `finished ${clock(entry.finishedAt)}`))}${entry.engine ? ` · ${escape(entry.engine)}` : ''}</span></div>
+            ${ctx.writable && entry.state !== 'running' ? `<button type="button" class="btn btn-subtle btn-sm" data-unqueue="${escape(entry.id)}">Remove</button>` : '<span></span>'}
+          </div>`).join('')}</div>` : empty('Nothing queued', 'Open a feature that is in progress and press Build it.')}
+        </div>
+        <div class="card span-5" style="--i:3">
+          <div class="card-head"><div class="card-title">Ready to build<small>Features that are in progress</small></div></div>
+          ${eligible.length ? `<div class="todo">${eligible.map((feature) => `<div class="item" data-key="ready-${escape(feature.id)}">
+            ${badge('neutral', `${feature.tasks.done}/${feature.tasks.total}`, false)}
+            <div><b>${escape(feature.title)}</b><span>${escape(feature.id)}</span></div>
+            ${queueButton(feature, state, ctx)}
+          </div>`).join('')}</div>` : empty('Nothing in progress', 'Move a feature to In progress on the board first.')}
+          <p class="t-caption mt-3">An agent gets its own git worktree and only the tasks in its lane. Its output appears in the console at the foot of the page, and <b>vibecheck merge</b> brings the work back.</p>
+        </div>
+      </div>`;
+}
+
+/** The one control that starts work. Read-only pages get the command instead of a dead button. */
+export function queueButton(feature, state, ctx) {
+  const already = (state.queue?.entries ?? []).find((entry) => entry.feature === feature.id && (entry.state === 'queued' || entry.state === 'running'));
+  if (!ctx.writable) return cmd(`vibecheck dispatch ${feature.id}`);
+  if (already) return `<span class="t-caption nowrap">${escape(QUEUE_WORDS[already.state] ?? already.state)}</span>`;
+  return `<button type="button" class="btn btn-primary btn-sm" data-queue="${escape(feature.id)}">Build it</button>`;
+}
+
 export const PAGES = {
   overview: { title: 'Overview', icon: 'home', render: pageOverview },
   board: { title: 'Board', icon: 'board', render: pageBoard },
   features: { title: 'Features', icon: 'features', render: pageFeatures },
   tests: { title: 'Tests', icon: 'tests', render: pageTests },
   issues: { title: 'Issues', icon: 'issues', render: pageIssues },
+  queue: { title: 'Queue', icon: 'lanes', render: pageQueue },
 };
 
 /** One page by name. `feature` is the only one that takes an argument. */
@@ -455,11 +511,13 @@ export function renderAll(given, ctx) {
 export function navItems(given) {
   const state = normalise(given);
   const issues = issuesOf(state).length;
+  const active = (state.queue?.entries ?? []).filter((entry) => entry.state === 'queued' || entry.state === 'running').length;
   return [
     { href: '#/overview', label: 'Overview', icon: 'home', route: 'overview' },
     { href: '#/board', label: 'Board', icon: 'board', route: 'board' },
     { href: '#/features', label: 'Features', icon: 'features', route: 'features', pip: String(state.features.length) },
     { href: '#/tests', label: 'Tests', icon: 'tests', route: 'tests', pip: `${state.tests.ok}/${state.tests.suites}` },
     { href: '#/issues', label: 'Issues', icon: 'issues', route: 'issues', pip: issues ? String(issues) : '' },
+    { href: '#/queue', label: 'Queue', icon: 'lanes', route: 'queue', pip: active ? String(active) : '' },
   ];
 }
