@@ -95,6 +95,12 @@ const embed = (value) => JSON.stringify(value).replace(/</g, '\\u003c');
 
 // Only what the form adds on top of the design system. Everything visible is an Atlas component.
 const PAGE_STYLE = `
+/* The stepper sits inside the sidebar's .nav, which keeps its links on one line. A step title is a
+   phrase rather than a menu word, so here it wraps — which is what the design system's own
+   line-height on .lbl is for. Without this a long title paints straight over its count. */
+.stepper .lbl{white-space:normal;overflow-wrap:break-word}
+.stepper a{align-items:flex-start}
+.stepper .n,.stepper .cnt{margin-top:1px}
 .step{display:none}
 .step.on{display:grid;gap:var(--gutter);animation:pageIn var(--dur-slow) var(--ease-decelerate) both}
 .hidden{display:none!important}

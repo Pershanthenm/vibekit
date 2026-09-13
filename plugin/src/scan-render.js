@@ -163,7 +163,7 @@ export function pageFindings(scan, ctx, selected = []) {
   const fixable = scan.findings.filter((entry) => entry.action).length;
   return `
       <div class="page-head seq">
-        <div style="--i:0"><h2>Findings</h2><p>${plural(scan.findings.length, 'finding')} · ${fixable} a command can fix · ${selected.length} selected</p></div>
+        <div style="--i:0"><h2>Findings</h2><p>${plural(scan.findings.length, 'finding')} · ${fixable} a command can fix, ${scan.findings.length - fixable} need you · ${selected.length} selected</p></div>
         <div class="cluster" style="--i:1">
           ${ctx.writable ? '<button type="button" class="btn btn-ghost" id="pickFixable">Select everything fixable</button>' : ''}
           ${ctx.writable ? `<a class="btn btn-primary" href="#/plan">Review plan (${selected.length})</a>` : ''}

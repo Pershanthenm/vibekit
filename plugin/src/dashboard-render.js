@@ -450,14 +450,14 @@ export const clock = (iso) => {
 export function tunnelCard(state, ctx, step = 10) {
   const tunnel = state.tunnel;
   if (!tunnel) {
-    return `<div class="card span-6" style="--i:${step}">
+    return `<div class="card span-12" style="--i:${step}">
           <div class="card-head"><div class="card-title">Reach this from a phone<small>Only while the console is served</small></div></div>
           ${empty('Not being served', 'This page was written to a file. Run the command below to serve it live.')}
           <div class="mt-3">${cmd('vibecheck dashboard --serve --tunnel')}</div>
         </div>`;
   }
   const on = tunnel.open;
-  return `<div class="card span-6" style="--i:${step}">
+  return `<div class="card span-12" style="--i:${step}">
           <div class="card-head"><div class="card-title">Reach this from a phone<small>${on ? 'A public address points here right now' : 'Nothing outside this machine can reach the console'}</small></div>
             ${badge(on ? 'warn' : 'ok', on ? 'Tunnel open' : 'Closed')}</div>
           ${on ? `<p class="t-caption">Open it on your phone. The random path keeps the page private and the write token is what stops a reader changing anything.</p>
@@ -478,7 +478,7 @@ export function pageQueue(state, ctx) {
   const eligible = state.features.filter((feature) => feature.status === 'in-progress');
   return `
       <div class="page-head seq">
-        <div style="--i:0"><h2>Queue</h2><p>${running ? `${plural(running, 'feature')} building` : waiting ? `${plural(waiting, 'feature')} waiting` : 'Nothing queued.'} Queued work starts straight away — one feature at a time, its lanes in parallel.</p></div>
+        <div style="--i:0"><h2>Queue</h2><p>${running ? `${plural(running, 'feature')} building.` : waiting ? `${plural(waiting, 'feature')} waiting.` : 'Nothing queued.'} Queued work starts straight away — one feature at a time, its lanes in parallel.</p></div>
         <div class="cluster" style="--i:1">${entries.length && ctx.writable ? '<button type="button" class="btn btn-ghost" id="queueClear">Clear what has not started</button>' : ''}</div>
       </div>
       <div class="grid seq" style="--seq-base:60ms">
