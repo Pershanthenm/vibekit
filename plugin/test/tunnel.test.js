@@ -6,8 +6,10 @@
 // which is what lets them assert on the parsing and the timeouts rather than on Cloudflare.
 
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { after, test } from 'node:test';
+import { serveDashboard } from '../src/commands/dashboard.js';
 import { TUNNEL_URL, installHint, openTunnel } from '../src/tunnel.js';
+import { EXAMPLE, newProject } from './helpers.js';
 
 console.log = () => {};
 
@@ -81,4 +83,96 @@ test('the install hint matches the platform, so nobody is told to run brew on Wi
   assert.match(installHint('darwin'), /brew/);
   assert.match(installHint('linux'), /developers\.cloudflare\.com/);
   assert.ok(installHint('sunos').length, 'an unknown platform still gets somewhere to look');
+});
+
+// --- Turning it off, and on again --------------------------------------------------------------
+//
+// Being done for the day is a thing that happens, and Ctrl-C was the only way to say it. These
+// drive the switch on the page against a stand-in opener, so they assert on what the server does
+// with a tunnel rather than on Cloudflare handing one out.
+
+const opened = [];
+const stub = (url = 'https://stub-one.trycloudflare.com') => async () => {
+  const handle = { url, closed: false, close() { this.closed = true; } };
+  opened.push(handle);
+  return handle;
+};
+
+const servers = [];
+after(() => Promise.all(servers.map((server) => server.close())));
+
+const served = async (options) => {
+  const root = await newProject('--from', EXAMPLE);
+  const server = await serveDashboard(root, { port: 0, ...options });
+  servers.push(server);
+  return server;
+};
+
+const ask = (server, action) => fetch(`http://127.0.0.1:${server.port}${server.control}`, {
+  method: 'POST',
+  headers: { 'content-type': 'application/json', authorization: `Bearer ${server.token}` },
+  body: JSON.stringify({ action }),
+});
+
+test('the tunnel can be closed from the page, and the console keeps running', async () => {
+  const server = await served({ open: stub() });
+
+  const started = await (await ask(server, 'tunnel.start')).json();
+  assert.equal(started.result.open, true);
+  assert.match(started.result.reach, /trycloudflare\.com\/[\w-]+\/$/, 'the address includes the secret path, not just the host');
+
+  const stopped = await (await ask(server, 'tunnel.stop')).json();
+  assert.equal(stopped.result.open, false);
+  assert.equal(opened.at(-1).closed, true, 'cloudflared is actually shut down, not just forgotten');
+
+  const page = await fetch(server.url);
+  assert.equal(page.status, 200, 'and the console on this machine is untouched');
+});
+
+test('reopening asks for a fresh address, so a link you closed stays closed', async () => {
+  let nth = 0;
+  const server = await served({ open: async () => {
+    nth += 1;
+    const handle = { url: `https://name-${nth}.trycloudflare.com`, closed: false, close() { this.closed = true; } };
+    opened.push(handle);
+    return handle;
+  } });
+
+  const first = await (await ask(server, 'tunnel.start')).json();
+  await ask(server, 'tunnel.stop');
+  const second = await (await ask(server, 'tunnel.start')).json();
+
+  assert.notEqual(second.result.url, first.result.url);
+});
+
+test('a tunnel that will not open is reported, and leaves the console alone', async () => {
+  const server = await served({ open: async () => { throw new Error('cloudflared is not installed'); } });
+
+  const response = await ask(server, 'tunnel.start');
+  assert.equal(response.status, 409, 'a refusal, not a crash');
+  assert.match((await response.json()).error, /not installed/);
+  assert.equal((await fetch(server.url)).status, 200);
+});
+
+test('the state the page renders from says whether there is a way in from outside', async () => {
+  const server = await served({ open: stub('https://visible-one.trycloudflare.com') });
+
+  const before = await (await fetch(new URL('state.json', server.url))).json();
+  assert.equal(before.tunnel.open, false);
+
+  await ask(server, 'tunnel.start');
+  const after = await (await fetch(new URL('state.json', server.url))).json();
+  assert.equal(after.tunnel.open, true);
+  assert.equal(after.tunnel.url, 'https://visible-one.trycloudflare.com');
+});
+
+test('closing the console closes the tunnel with it', async () => {
+  const root = await newProject('--from', EXAMPLE);
+  const server = await serveDashboard(root, { port: 0, open: stub('https://goes-with-it.trycloudflare.com') });
+  await ask(server, 'tunnel.start');
+  const handle = opened.at(-1);
+
+  await server.close();
+
+  assert.equal(handle.closed, true, 'a tunnel must never outlive the thing it points at');
 });

@@ -54,7 +54,7 @@ Every change to this repository reaches every developer's machine on their next 
 
 ## 4. Continuous integration
 
-`.github/workflows/tests.yml` is already in the kit. On every pull request and every push to `main`, it runs the 293 integration tests and Claude Code's own plugin validator. If you use the ruleset above, pick the **tests** check as required.
+`.github/workflows/tests.yml` is already in the kit. On every pull request and every push to `main`, it runs the 308 integration tests and Claude Code's own plugin validator. If you use the ruleset above, pick the **tests** check as required.
 
 ## 5. First release
 

@@ -269,6 +269,20 @@ document.addEventListener('click', (event) => {
   }
 });
 
+// --- The tunnel: closing the way in, without closing the console ------------------------------
+
+document.addEventListener('click', async (event) => {
+  const target = event.target.closest && event.target.closest('[data-tunnel]');
+  if (!target) return;
+  const wanted = target.dataset.tunnel;
+  target.classList.add('loading');
+  const result = await act(wanted === 'stop' ? 'tunnel.stop' : 'tunnel.start', {});
+  target.classList.remove('loading');
+  if (!result) return;
+  // Said plainly, because someone reading over the tunnel is about to lose this page.
+  toast(wanted === 'stop' ? 'The tunnel is closed. The console is still running here.' : 'Tunnel open');
+});
+
 // --- The queue: pressing Build it is the whole gesture ----------------------------------------
 // There is no separate start. The server adds the entry and begins working through the queue, so
 // the button reports what the server did rather than what the page hopes will happen.

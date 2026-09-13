@@ -94,7 +94,7 @@ p{color:#9ea19a;margin:0 0 6px}code{color:#b6f24a}</style></head>
  * titles and blocker text that quote file paths and review comments, and that is not something to
  * put on a shared network by accident.
  */
-export async function serveDashboard(root, { port = DEFAULT_PORT, host = '127.0.0.1', path = secret(), token = secret() } = {}) {
+export async function serveDashboard(root, { port = DEFAULT_PORT, host = '127.0.0.1', path = secret(), token = secret(), open: openWith = openTunnel } = {}) {
   const prefix = `/${path}`;
   const control = `${prefix}/do`;
   const scanFeed = `${prefix}/scan.json`;
@@ -109,10 +109,44 @@ export async function serveDashboard(root, { port = DEFAULT_PORT, host = '127.0.
     for (const client of clients) client.write(frame);
   };
 
+  // --- The way in from outside ---------------------------------------------------------------
+  //
+  // The server owns the tunnel rather than the command that started it, because the point is to be
+  // able to put the tunnel away without putting the console away. Stopping it leaves everything on
+  // this machine running; starting it again asks Cloudflare for a fresh hostname, so a link you
+  // said stop to stays stopped.
+  let opened = null;
+  let tunnelState = { open: false, url: null, reach: null, since: null, error: null, busy: false };
+  const tunnelStatus = () => ({ ...tunnelState });
+
+  const startTunnel = async () => {
+    if (opened || tunnelState.busy) return tunnelStatus();
+    tunnelState = { ...tunnelState, busy: true, error: null };
+    try {
+      opened = await openWith(server.address().port);
+      // The tunnel reaches the whole server, so the secret path still decides what is reachable:
+      // the public hostname on its own lands on the same bare 404 as any other wrong path.
+      tunnelState = { open: true, url: opened.url, reach: `${opened.url}${prefix}/`, since: new Date().toISOString(), error: null, busy: false };
+    } catch (error) {
+      opened = null;
+      tunnelState = { open: false, url: null, reach: null, since: null, error: error?.message ?? 'The tunnel could not be opened.', busy: false };
+    }
+    return tunnelStatus();
+  };
+
+  const stopTunnel = async () => {
+    if (opened) opened.close();
+    opened = null;
+    tunnelState = { open: false, url: null, reach: null, since: null, error: null, busy: false };
+    return tunnelStatus();
+  };
+
+  const tunnel = { status: tunnelStatus, start: startTunnel, stop: stopTunnel };
+
   const currentState = async () => {
     const project = await loadProject(root);
     const problems = await collectProblems(root, project).catch(() => []);
-    return collectState(root, project, { problems });
+    return collectState(root, project, { problems, tunnel: tunnelStatus() });
   };
 
   // The scan walks every spec, every recorded run and every document, so it is read when a page is
@@ -285,7 +319,7 @@ export async function serveDashboard(root, { port = DEFAULT_PORT, host = '127.0.
       // A project that cannot be read yet is not a reason to refuse: the wizard's whole job is
       // to produce the answers that create one. Actions needing a project load it themselves.
       const project = await loadProject(root).catch(() => null);
-      const result = await apply(root, project, body);
+      const result = await apply(root, project, body, { tunnel });
       return json(response, 200, { ok: true, result: result ?? null, state: await currentState().catch(() => null) });
     } catch (error) {
       const status = error instanceof BadRequest ? 400 : error instanceof Refused ? 409 : 500;
@@ -366,8 +400,11 @@ export async function serveDashboard(root, { port = DEFAULT_PORT, host = '127.0.
     path,
     token,
     control,
+    tunnel,
     close: () => new Promise((closed) => {
       if (timer) clearInterval(timer);
+      if (opened) opened.close();
+      opened = null;
       for (const client of clients) client.end();
       clients.clear();
       server.close(closed);
@@ -405,28 +442,27 @@ export async function dashboard({ root, out, json, open, static: isStatic, serve
     console.log('  browser. Reading needs only the link; changing the project needs this as well.');
     if (lan) console.log('\n  Bound to every interface on this network — it carries your feature titles and blockers.');
 
+    // Closed with the console either way, so a tunnel never outlives the thing it points at.
+    const shut = () => { server.tunnel.stop(); process.exit(0); };
+    process.once('SIGINT', shut);
+    process.once('SIGTERM', shut);
+
     if (tunnel) {
-      const opened = await openTunnel(server.port).catch((error) => {
-        console.error(`\n✖ No tunnel: ${error.message}`);
+      const state = await server.tunnel.start();
+      if (state.error) {
+        console.error(`\n✖ No tunnel: ${state.error}`);
         console.error('  The console is still running on this machine, at the address above.');
-        return null;
-      });
-      if (opened) {
-        // The tunnel reaches the whole server, so the secret path still decides what is reachable:
-        // the public hostname on its own lands on the same bare 404 as any other wrong path.
-        const reach = `${opened.url}/${server.path}/`;
-        console.log(`\n  On your phone: ${reach}`);
-        console.log(`  Spec wizard:   ${reach}wizard`);
-        console.log('\n  ! That hostname is public while this runs. The random path is what keeps the page');
-        console.log('    private, and the write token is what stops a reader changing anything. Stop when');
-        console.log('    you are done — Ctrl-C here closes the tunnel with the console.');
-        // Closed with the console, so a tunnel never outlives the thing it points at.
-        const shut = () => { opened.close(); process.exit(0); };
-        process.once('SIGINT', shut);
-        process.once('SIGTERM', shut);
+      } else {
+        console.log(`\n  On your phone: ${state.reach}`);
+        console.log(`  Spec wizard:   ${state.reach}wizard`);
+        console.log('\n  ! That hostname is public while it is open. The random path is what keeps the page');
+        console.log('    private, and the write token is what stops a reader changing anything.');
+        console.log('    Done for now? Turn the tunnel off on the Overview page — the console keeps');
+        console.log('    running, and turning it back on gets a fresh address.');
       }
     } else {
       console.log('\n  To reach it from a phone: vibecheck dashboard --serve --tunnel');
+      console.log('  Or turn one on from the Overview page once the console is open.');
     }
     if (open) openInBrowser(server.url);
     return;

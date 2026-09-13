@@ -192,6 +192,30 @@ async function runScan(root, project, { ids }) {
   return { ran, manual: plan.manual, stopped, scan: await collectScan(root, project) };
 }
 
+// --- Reaching the console from a phone ---------------------------------------------------------
+
+/**
+ * Open and close the tunnel from the page itself.
+ *
+ * A tunnel is a public hostname pointed at this machine, so being able to put it away without
+ * killing the console is the difference between a session you supervise and one you forget about.
+ * The console keeps running either way; only the way in from outside goes.
+ *
+ * Reopening deliberately does not reuse the old hostname — Cloudflare assigns a new one each time,
+ * and a link that stops working when you said stop is the honest outcome.
+ */
+async function tunnelStart(root, project, body, { tunnel } = {}) {
+  if (!tunnel) throw new Refused('This console is not managing a tunnel.');
+  const state = await tunnel.start();
+  if (state.error) throw new Refused(state.error);
+  return state;
+}
+
+async function tunnelStop(root, project, body, { tunnel } = {}) {
+  if (!tunnel) throw new Refused('This console is not managing a tunnel.');
+  return tunnel.stop();
+}
+
 // --- The queue ---------------------------------------------------------------------------------
 
 /**
@@ -246,11 +270,19 @@ export const ACTIONS = {
   'queue.add': queueAdd,
   'queue.remove': queueRemove,
   'queue.clear': queueClear,
+  'tunnel.start': tunnelStart,
+  'tunnel.stop': tunnelStop,
 };
 
-/** Returns whatever the action wants to report back, or nothing where there is nothing to say. */
-export async function apply(root, project, body) {
+/**
+ * Returns whatever the action wants to report back, or nothing where there is nothing to say.
+ *
+ * `services` is what the running server owns and the files do not — currently the tunnel. It is
+ * passed rather than imported so that an action can only touch what the caller decided to hand
+ * over, and so a test can serve without one.
+ */
+export async function apply(root, project, body, services = {}) {
   const action = ACTIONS[body?.action];
   if (!action) throw new BadRequest(`Unknown action: ${body?.action ?? '(none)'}`);
-  return action(root, project, body);
+  return action(root, project, body, services);
 }

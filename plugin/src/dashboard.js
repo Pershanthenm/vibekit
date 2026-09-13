@@ -167,7 +167,7 @@ async function featureState(root, project, feature, repo) {
 }
 
 /** Everything the page shows, as plain JSON. Safe to serialise, diff or publish. */
-export async function collectState(root, project, { setup = null, problems = [] } = {}) {
+export async function collectState(root, project, { setup = null, problems = [], tunnel = null } = {}) {
   const features = await listFeatures(root);
   const repo = repoState(root);
   const collected = await Promise.all(features.map((feature) => featureState(root, project, feature, repo)));
@@ -175,6 +175,9 @@ export async function collectState(root, project, { setup = null, problems = [] 
   return {
     tests: testSummary(collected),
     queue: { entries: queue.entries, draining: isDraining(root) },
+    // What the running server is doing, which no file records: whether there is a way in from
+    // outside right now. Null where the page was rendered by the CLI rather than served.
+    tunnel,
     project: {
       name: project.project.name,
       generatedAt: new Date().toISOString(),

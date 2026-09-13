@@ -93,6 +93,7 @@ export function normalise(state) {
     tests: { ok: 0, flaky: 0, failed: 0, missing: 0, suites: 0, stale: 0, untraced: 0, ...tests },
     next: state?.next ?? null,
     queue: { entries: [], draining: false, ...(state?.queue ?? {}) },
+    tunnel: state?.tunnel ?? null,
     setup: state?.setup ?? null,
     problems: state?.problems ?? [],
     features: state?.features ?? [],
@@ -269,6 +270,7 @@ export function pageOverview(state, ctx) {
             <a class="btn btn-subtle btn-sm" href="#/issues">Open</a></div>`).join('')}</div>`
     : empty('Nothing to fix', 'Specs and generated files agree.')}
         </div>
+        ${tunnelCard(state, ctx, 10)}
       </div>`;
 }
 
@@ -437,6 +439,38 @@ export const clock = (iso) => {
  * Queueing a feature is the instruction to build it: the entry is added and an agent starts.
  * There is no second button, because a queue you have to remember to start is a list.
  */
+/**
+ * The way in from outside, and the switch that closes it.
+ *
+ * A tunnel is a public hostname pointed at this machine. Being able to put it away without
+ * stopping the console is the difference between a session you supervise and one you forget you
+ * left open, so the state and the switch belong on the page you are already looking at — not
+ * only in the terminal that started it.
+ */
+export function tunnelCard(state, ctx, step = 10) {
+  const tunnel = state.tunnel;
+  if (!tunnel) {
+    return `<div class="card span-6" style="--i:${step}">
+          <div class="card-head"><div class="card-title">Reach this from a phone<small>Only while the console is served</small></div></div>
+          ${empty('Not being served', 'This page was written to a file. Run the command below to serve it live.')}
+          <div class="mt-3">${cmd('vibecheck dashboard --serve --tunnel')}</div>
+        </div>`;
+  }
+  const on = tunnel.open;
+  return `<div class="card span-6" style="--i:${step}">
+          <div class="card-head"><div class="card-title">Reach this from a phone<small>${on ? 'A public address points here right now' : 'Nothing outside this machine can reach the console'}</small></div>
+            ${badge(on ? 'warn' : 'ok', on ? 'Tunnel open' : 'Closed')}</div>
+          ${on ? `<p class="t-caption">Open it on your phone. The random path keeps the page private and the write token is what stops a reader changing anything.</p>
+          <div class="mt-3">${cmd(tunnel.reach ?? tunnel.url ?? '')}</div>`
+    : `<p class="t-caption">Turning one on asks Cloudflare for a fresh address. The one you closed stays closed.</p>`}
+          ${tunnel.error ? `<div class="mt-3">${alertBox('warn', 'The tunnel did not open', [tunnel.error])}</div>` : ''}
+          ${ctx.writable ? `<div class="cluster mt-3">
+            <button type="button" class="btn ${on ? 'btn-ghost' : 'btn-primary'} btn-sm" data-tunnel="${on ? 'stop' : 'start'}">${on ? 'Turn it off' : 'Turn one on'}</button>
+            ${on ? '<span class="t-caption">Closing it drops anyone reading over it, including you if you came that way.</span>' : ''}
+          </div>` : `<div class="mt-3">${cmd('vibecheck dashboard --serve --tunnel')}</div>`}
+        </div>`;
+}
+
 export function pageQueue(state, ctx) {
   const entries = [...(state.queue?.entries ?? [])].reverse();
   const waiting = entries.filter((entry) => entry.state === 'queued').length;
