@@ -43,7 +43,7 @@ const embed = (value) => JSON.stringify(value).replace(/</g, '\\u003c');
  * needs the secret path; changing the project needs something the page was never given.
  */
 const APP_SCRIPT = `
-let DATA = window.__VIBECHECK__;
+let DATA = window.__VIBEKIT__;
 const CONTROL = window.__CONTROL__ || null;
 const SCAN_URL = window.__SCAN_URL__ || null;
 const ctx = { writable: Boolean(CONTROL) };
@@ -86,7 +86,7 @@ async function rescan() {
 
 function renderCurrent() {
   if (!SCAN_PAGES[route.name]) return renderPage(route.name, route.arg, DATA, ctx);
-  if (!SCAN) return '<div class="card"><div class="empty"><b>No scan yet</b>Run vibecheck scan, or open this page from the served console.</div></div>';
+  if (!SCAN) return '<div class="card"><div class="empty"><b>No scan yet</b>Run vibekit scan, or open this page from the served console.</div></div>';
   const plan = fixPlanFor(SCAN, picked);
   if (route.name === 'plan') return pagePlan(SCAN, ctx, picked, plan);
   if (route.name === 'execute') return pageExecute(SCAN, ctx, picked, lastRun);
@@ -103,7 +103,7 @@ function paint() {
   const title = titleOf(route);
   document.title = DATA.project.name + ' — ' + title;
   document.getElementById('crumb').innerHTML =
-    '<span>Vibe-check</span><span>/</span><span>' + escape(DATA.project.name) + '</span><span>/</span><b>' + escape(title) + '</b>';
+    '<span>VibeKit</span><span>/</span><span>' + escape(DATA.project.name) + '</span><span>/</span><b>' + escape(title) + '</b>';
   const active = route.name === 'feature' ? 'features' : route.name;
   const counts = { features: String(DATA.features.length), tests: DATA.tests.ok + '/' + DATA.tests.suites, issues: String(issuesOf(DATA).length) };
   for (const link of document.querySelectorAll('#nav a')) {
@@ -140,7 +140,7 @@ window.__update__ = update;
 // The token is asked for once per browser and kept there. A JSON content type means a form on
 // another site cannot forge one of these requests without the browser asking us first.
 
-const token = () => stored('vibecheck-token');
+const token = () => stored('vibekit-token');
 
 function askToken() {
   return new Promise((resolve) => {
@@ -159,7 +159,7 @@ function askToken() {
     mask.querySelector('#tokenSave').addEventListener('click', () => {
       const value = input.value.trim();
       if (!value) return close(null);
-      store('vibecheck-token', value);
+      store('vibekit-token', value);
       close(value);
     });
     input.addEventListener('keydown', (event) => { if (event.key === 'Enter') mask.querySelector('#tokenSave').click(); });
@@ -182,7 +182,7 @@ async function act(action, body) {
     return false;
   }
   if (response.status === 401 || response.status === 403) {
-    store('vibecheck-token', '');
+    store('vibekit-token', '');
     toast('That token was not accepted');
     return false;
   }
@@ -371,7 +371,7 @@ export function renderDashboard(state, { live = false, intervalSeconds = 3, stre
   const script = [
     CHROME_SCRIPT,
     browserSource(),
-    `window.__VIBECHECK__ = ${embed(state)};`,
+    `window.__VIBEKIT__ = ${embed(state)};`,
     scan ? `window.__SCAN__ = ${embed(scan)};` : '',
     scanUrl ? `window.__SCAN_URL__ = ${embed(scanUrl)};` : '',
     control ? `window.__CONTROL__ = ${embed(control)};` : '',

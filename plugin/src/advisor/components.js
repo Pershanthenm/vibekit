@@ -86,7 +86,7 @@ export const PRESETS = {
   'local-desktop': { backend: 'none', desktop: 'tauri', database: 'sqlite' },
 };
 
-const userComponentsPath = () => join(process.env.VIBECHECK_HOME || join(homedir(), '.vibe-check-cli'), 'components.json');
+const userComponentsPath = () => join(process.env.VIBEKIT_HOME || join(homedir(), '.vibekit'), 'components.json');
 
 function toComponent(raw) {
   const commands = raw.commands ?? {};

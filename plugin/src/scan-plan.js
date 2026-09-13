@@ -16,9 +16,9 @@ export const EFFORT_HOURS = { S: 1, M: 4, L: 16 };
  * scan never invents a repair. A finding with no entry here is fixed by a person, not a button.
  */
 export const FIX_ACTIONS = {
-  sync: { label: 'Regenerate', command: 'vibecheck sync', detail: 'Rewrites the generated files from the specs.' },
-  'analyze.fix': { label: 'Append the missing work', command: 'vibecheck analyze --fix', detail: 'Adds a task for every criterion that has none.' },
-  'verify.run': { label: 'Run the suites', command: 'vibecheck verify --all --run', detail: 'Runs the tests and records the evidence against this commit.' },
+  sync: { label: 'Regenerate', command: 'vibekit sync', detail: 'Rewrites the generated files from the specs.' },
+  'analyze.fix': { label: 'Append the missing work', command: 'vibekit analyze --fix', detail: 'Adds a task for every criterion that has none.' },
+  'verify.run': { label: 'Run the suites', command: 'vibekit verify --all --run', detail: 'Runs the tests and records the evidence against this commit.' },
 };
 
 /**

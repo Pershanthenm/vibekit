@@ -2,7 +2,7 @@
 //
 // A manifest records "running" when an agent starts and "finished" when it ends. If whatever was
 // dispatching is killed in between, the second write never happens, and every reader — the board,
-// the live page, `vibecheck lanes`, `vibecheck merge` — goes on reporting an agent that is not
+// the live page, `vibekit lanes`, `vibekit merge` — goes on reporting an agent that is not
 // there. Nobody is working on that feature and the page says somebody is, which is the one thing
 // a board must never do.
 //
@@ -105,7 +105,7 @@ test('a dispatched lane records the agent it started, and reads as stopped once 
   await installFakeBin(bin, 'cursor-agent', SLOW_AGENT);
   process.env.PATH = [bin, TOOL_FREE_PATH].join(delimiter);
   process.env.AGENTMEMORY_URL = 'http://127.0.0.1:9';
-  process.env.VIBECHECK_HOME = await mkdtemp(join(tmpdir(), 'vc-home-'));
+  process.env.VIBEKIT_HOME = await mkdtemp(join(tmpdir(), 'vc-home-'));
 
   const root = await newProject('--from', EXAMPLE);
   await setDocsEnabled(root, false);
@@ -150,7 +150,7 @@ test('a dispatched lane records the agent it started, and reads as stopped once 
 //
 // This is what the end-to-end test above kept tripping over, and it was the manifest's fault, not
 // the test's. A plain write truncates the file first, so a reader arriving in between sees zero
-// bytes — and zero bytes read as "there is no manifest". For `vibecheck dispatch` that is not a
+// bytes — and zero bytes read as "there is no manifest". For `vibekit dispatch` that is not a
 // cosmetic glitch: assertDispatchable treats no manifest as permission to dispatch again, over
 // worktrees that already exist.
 

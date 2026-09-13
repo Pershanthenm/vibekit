@@ -18,7 +18,7 @@ const ORIGINAL_ENV = { ...process.env };
 const top = (result, layer) => result.layers[layer]?.ranked[0]?.id;
 
 beforeEach(async () => {
-  process.env.VIBECHECK_HOME = await mkdtemp(join(tmpdir(), 'vibecheck-home-'));
+  process.env.VIBEKIT_HOME = await mkdtemp(join(tmpdir(), 'vibekit-home-'));
   process.env.AGENTMEMORY_URL = 'http://127.0.0.1:9';
   process.env.PATH = TOOL_FREE_PATH;
 });
@@ -106,7 +106,7 @@ test('bring your own stack: Other on any layer, or your own component catalogue'
   assert.equal(project.stack.backend, 'Elixir Phoenix');
   assert.match(project.commands.test, /Set the test command/);
 
-  await writeFile(join(process.env.VIBECHECK_HOME, 'components.json'), JSON.stringify([{
+  await writeFile(join(process.env.VIBEKIT_HOME, 'components.json'), JSON.stringify([{
     id: 'phoenix', layer: 'backend', label: 'Elixir Phoenix', languages: ['Elixir'], licence: { name: 'MIT', class: 'permissive' },
     summary: 'Fault-tolerant realtime web framework', testing: 'ExUnit', commands: { install: 'mix deps.get', test: 'mix test', lint: 'mix credo' },
   }]));
@@ -174,7 +174,7 @@ test('menu keys: arrows wrap, space toggles, enter confirms, Other and cancel', 
 });
 
 test('init walks the adaptive menus end to end without a terminal', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'vibecheck-wizard-'));
+  const root = await mkdtemp(join(tmpdir(), 'vibekit-wizard-'));
   const child = promisify(execFile)(process.execPath, [BIN, 'init', '--dir', root], { env: { ...process.env } });
   child.child.stdin.end(['laptop-tracker', 'Track company laptops', ...Array(60).fill('')].join('\n') + '\n');
   const { stdout } = await child;
@@ -186,6 +186,6 @@ test('init walks the adaptive menus end to end without a terminal', async () => 
 
 test('Cursor gets the terminal wizard instead of chat menus', () => {
   const body = SKILLS.find((skill) => skill.name === 'new-project').body(CURSOR_CONTEXT);
-  assert.match(body, /run `vibecheck advise` in the integrated terminal/);
+  assert.match(body, /run `vibekit advise` in the integrated terminal/);
   assert.doesNotMatch(body, /AskUserQuestion/);
 });

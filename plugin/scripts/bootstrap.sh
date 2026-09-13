@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Fresh machine (macOS, Linux, WSL2): installs Node.js 20+ if needed, installs vibecheck, then runs the guided setup.
-# --minimal installs only what's needed to continue from the Claude Code panel (/vibe-check-cli:setup).
+# Fresh machine (macOS, Linux, WSL2): installs Node.js 20+ if needed, installs vibekit, then runs the guided setup.
+# --minimal installs only what's needed to continue from the Claude Code panel (/vibekit:setup).
 # Works whether it's started with `bash` or `sh`: nvm needs bash, so the script switches to it.
 if [ -z "${BASH_VERSION:-}" ]; then
   exec bash "$0" "$@"
@@ -51,12 +51,12 @@ npm install -g "$DIR"
 
 if [ "${1:-}" = "--minimal" ]; then
   shift
-  vibecheck setup --only claude,team-marketplaces,vibecheck-plugin,vibecheck-cli,cursor-agents "$@"
+  vibekit setup --only claude,team-marketplaces,vibekit-plugin,vibekit-cli,cursor-agents "$@"
   echo
-  echo "Next: load the plugin into Claude Code, then run /vibe-check-cli:setup"
+  echo "Next: load the plugin into Claude Code, then run /vibekit:setup"
   echo "  In a Claude Code session: type /reload-plugins (no restart needed)."
   echo "  In Cursor's Claude panel, if that isn't available: Command Palette → Developer: Reload Window."
-  echo "Open a new terminal tab too, so the vibecheck command is found there."
+  echo "Open a new terminal tab too, so the vibekit command is found there."
   exit 0
 fi
-exec vibecheck setup "$@"
+exec vibekit setup "$@"

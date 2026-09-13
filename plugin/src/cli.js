@@ -64,57 +64,57 @@ const OPTIONS = {
   help: { type: 'boolean', short: 'h' },
 };
 
-const HELP = `Vibe-check-cli — spec-driven, multi-agent development for Claude Code and Cursor
+const HELP = `VibeKit — spec-driven, multi-agent development for Claude Code and Cursor
 
 Usage
-  vibecheck setup [--dry-run] [--yes] [--only a,b] [--json]
+  vibekit setup [--dry-run] [--yes] [--only a,b] [--json]
                                                          Install, configure and start what this machine/project needs
-  vibecheck health [--live] [--json]                     Check everything (--live proves Claude, Cursor, memory end to end)
-  vibecheck init [--yes | --from <file.json>] [--force]  Menu-driven setup: requirements → stack recommendation → project
-  vibecheck adopt [--force] [--json]                     Adopt an existing codebase: detect the as-is stack and write as-is docs
-  vibecheck advise [domain "<idea>" | next | recommend | apply [preset] | components [layer] | presets | prefer <ids...>]
+  vibekit health [--live] [--json]                     Check everything (--live proves Claude, Cursor, memory end to end)
+  vibekit init [--yes | --from <file.json>] [--force]  Menu-driven setup: requirements → stack recommendation → project
+  vibekit adopt [--force] [--json]                     Adopt an existing codebase: detect the as-is stack and write as-is docs
+  vibekit advise [domain "<idea>" | next | recommend | apply [preset] | components [layer] | presets | prefer <ids...>]
                                                          Platform-first menus; per-layer stack and licence advice
-  vibecheck sync [--force]                               Regenerate agent files from specs/project.json
-  vibecheck feature "<name>"                             Scaffold specs/features/NNN-name/
-  vibecheck status <feature> <status>                    draft | approved | planned | in-progress | done
-  vibecheck list                                         Features with status and progress
-  vibecheck wizard [--out <file>]                        Fill in the project spec in a browser, then: vibecheck advise apply
-  vibecheck dashboard [--serve [--port <n>] [--host 0.0.0.0] [--tunnel]] [--open] [--out <file>] [--static] [--json]
-  vibecheck scan [--json] [--open] [--out <file>]
+  vibekit sync [--force]                               Regenerate agent files from specs/project.json
+  vibekit feature "<name>"                             Scaffold specs/features/NNN-name/
+  vibekit status <feature> <status>                    draft | approved | planned | in-progress | done
+  vibekit list                                         Features with status and progress
+  vibekit wizard [--out <file>]                        Fill in the project spec in a browser, then: vibekit advise apply
+  vibekit dashboard [--serve [--port <n>] [--host 0.0.0.0] [--tunnel]] [--open] [--out <file>] [--static] [--json]
+  vibekit scan [--json] [--open] [--out <file>]
                                                          Lifecycle and test status. --serve streams changes and lane output
                                                          live, under a random path that changes every start
-  vibecheck check                                        Validate specs and detect drift (exit 1 on problems)
-  vibecheck analyze [feature] [--fix] [--json]            Do the spec, plan, tasks and tests agree? (exit 1 on contradictions)
+  vibekit check                                        Validate specs and detect drift (exit 1 on problems)
+  vibekit analyze [feature] [--fix] [--json]            Do the spec, plan, tasks and tests agree? (exit 1 on contradictions)
                                                          --fix appends criteria with no task or no test to tasks.md as work
-  vibecheck next [--json]                                The next workflow step (what /run executes)
-  vibecheck lanes <feature>                              Ready [P] lanes, or the status of dispatched lanes
-  vibecheck dispatch <feature> [--engine cursor|claude|manual] [--dry-run]
+  vibekit next [--json]                                The next workflow step (what /run executes)
+  vibekit lanes <feature>                              Ready [P] lanes, or the status of dispatched lanes
+  vibekit dispatch <feature> [--engine cursor|claude|manual] [--dry-run]
                                                          One git worktree + headless agent per lane
-  vibecheck merge <feature>                              Merge finished lanes back and clean up worktrees
-  vibecheck memory <status | list | search "<q>" | recall "<q>" | remember "<fact>">
-  vibecheck memory <correct <id> "<fact>" | forget <id>... | capture [<kind>...]>
+  vibekit merge <feature>                              Merge finished lanes back and clean up worktrees
+  vibekit memory <status | list | search "<q>" | recall "<q>" | remember "<fact>">
+  vibekit memory <correct <id> "<fact>" | forget <id>... | capture [<kind>...]>
                                                          Shared long-term memory via agentmemory:
                                                          see what it holds, fix it, and choose what
-                                                         vibecheck records without being asked
-  vibecheck knowledge <status | search "<q>" | manifest [folder] | publish>
+                                                         vibekit records without being asked
+  vibekit knowledge <status | search "<q>" | manifest [folder] | publish>
                                                          Curated cross-project knowledge via OpenContext
-  vibecheck context <feature id | topic>                 One brief from memory + knowledge
-  vibecheck docs <status | new <kind> [feature] | stamp <path...> [--still-accurate]>
+  vibekit context <feature id | topic>                 One brief from memory + knowledge
+  vibekit docs <status | new <kind> [feature] | stamp <path...> [--still-accurate]>
                                                          Living docs & diagrams with freshness tracking
-  vibecheck security [questions | apply | status]       Security baseline by menu, tailored to your stack
-  vibecheck standards <list | index | inject "<task>" | discover>
+  vibekit security [questions | apply | status]       Security baseline by menu, tailored to your stack
+  vibekit standards <list | index | inject "<task>" | discover>
                                                          Your coding standards, injected only where relevant.
                                                          discover reports which areas of the code have none
-  vibecheck verify [feature] [--run] [--repeat <n>]      Trace acceptance criteria to tests, and run each suite n times (flaky ≠ passing)
-  vibecheck projects [--prune] [--json]                  Every Vibe-check-cli project on this machine: where it is and what's next
-  vibecheck team <capture | status> [--skip a,b]         Put your skills, subagents and plugins into the plugin, so every dev gets them
-  vibecheck team import-ecc <names> [--version x]        Import chosen Everything Claude Code skills, agents and commands into the team kit
-  vibecheck cursor-kit [--remove]                        Install (or remove) the subagents and team skills for Cursor
-  vibecheck hook <session-start|pre-edit|stop>           Claude Code hook entry points (used by the plugin)
+  vibekit verify [feature] [--run] [--repeat <n>]      Trace acceptance criteria to tests, and run each suite n times (flaky ≠ passing)
+  vibekit projects [--prune] [--json]                  Every VibeKit project on this machine: where it is and what's next
+  vibekit team <capture | status> [--skip a,b]         Put your skills, subagents and plugins into the plugin, so every dev gets them
+  vibekit team import-ecc <names> [--version x]        Import chosen Everything Claude Code skills, agents and commands into the team kit
+  vibekit cursor-kit [--remove]                        Install (or remove) the subagents and team skills for Cursor
+  vibekit hook <session-start|pre-edit|stop>           Claude Code hook entry points (used by the plugin)
 
 Options
   --dir <path>   Project root (default: current directory)
-  --force        Overwrite files vibecheck did not generate / bypass status gates`;
+  --force        Overwrite files vibekit did not generate / bypass status gates`;
 
 export async function run(argv) {
   const { values, positionals } = parseArgs({ args: argv, options: OPTIONS, allowPositionals: true });
@@ -122,7 +122,7 @@ export async function run(argv) {
   const root = resolve(values.dir ?? '.');
 
   if (values.help) return console.log(HELP);
-  // Bare `vibecheck` is a question, not a mistake: answer it with what to do next here.
+  // Bare `vibekit` is a question, not a mistake: answer it with what to do next here.
   if (!name) return console.log(await startScreen(root));
   // A typo used to print the help and exit 0, so a script could not tell it from success.
   if (!COMMANDS[name]) {

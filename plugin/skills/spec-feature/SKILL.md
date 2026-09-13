@@ -11,7 +11,7 @@ argument-hint: "<feature description>"
 Feature: $ARGUMENTS
 
 1. Read `AGENTS.md` and `specs/00-product.md` so the feature fits the product and respects its non-goals.
-2. Find the folder in `specs/features/`; if none exists, run `vibecheck feature "<short name>"`. Bugs get a small spec too (1–3 acceptance criteria).
+2. Find the folder in `specs/features/`; if none exists, run `vibekit feature "<short name>"`. Bugs get a small spec too (1–3 acceptance criteria).
 3. Fill `spec.md`, replacing every TODO:
    - **Problem** — who has it and why it matters now.
    - **User stories** — "As a <user>, I want <goal> so that <benefit>."
@@ -19,5 +19,5 @@ Feature: $ARGUMENTS
    - **Edge cases** — empty, invalid, offline, slow, concurrent, unauthorised.
    - **Out of scope** and **Open questions**.
 4. Describe what and why only — no frameworks, files or class names; those belong in the plan.
-5. Ask the user the open questions. Only after they explicitly approve, run `vibecheck status <id> approved`.
+5. Ask the user the open questions. Only after they explicitly approve, run `vibekit status <id> approved`.
 

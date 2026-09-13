@@ -12,7 +12,7 @@ import { FEATURE_STATUSES } from '../schema.js';
 
 export async function feature({ root, args, from }) {
   const title = args.join(' ').trim();
-  if (!title) throw new Error('Usage: vibecheck feature "<feature name>" [--from <requirements file>]');
+  if (!title) throw new Error('Usage: vibekit feature "<feature name>" [--from <requirements file>]');
   const project = await loadProject(root);
   const id = nextFeatureId(await listFeatures(root), title);
   await writeMissing(root, featureFiles({ id, title, targets: project.targets }));
@@ -33,7 +33,7 @@ async function seedFromRequirements(root, id, source) {
   if (!requirements.length) {
     console.log(`
 ! No requirements found in ${source}. Expected bullets, a numbered list, or sentences saying what must happen.`);
-    console.log('  Write the spec with /vibe-check-cli:spec-feature instead.');
+    console.log('  Write the spec with /vibekit:spec-feature instead.');
     return;
   }
 
@@ -47,7 +47,7 @@ ${summarise(requirements, source)}`);
 export async function status({ root, args, force = false }) {
   const [query, next] = args;
   if (!query || !FEATURE_STATUSES.includes(next)) {
-    throw new Error(`Usage: vibecheck status <feature> <${FEATURE_STATUSES.join('|')}>`);
+    throw new Error(`Usage: vibekit status <feature> <${FEATURE_STATUSES.join('|')}>`);
   }
   const current = findFeature(await listFeatures(root), query);
   const updated = { ...current, status: next, spec: setFrontMatterValue(current.spec, 'status', next) };

@@ -7,7 +7,7 @@ description: "Validate specs and detect drift in generated agent files."
 
 # Spec check
 
-1. Run `vibecheck check` and `vibecheck list`.
+1. Run `vibekit check` and `vibekit list`.
 2. Summarise problems grouped by feature, then drift in generated files.
-3. Propose fixes and ask before applying them. Generated files are fixed by editing `specs/project.json` and running `vibecheck sync`, never by hand.
+3. Propose fixes and ask before applying them. Generated files are fixed by editing `specs/project.json` and running `vibekit sync`, never by hand.
 

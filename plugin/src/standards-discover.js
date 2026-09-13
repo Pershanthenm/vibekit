@@ -1,6 +1,6 @@
 // What a codebase has, and which of it nothing has been written down about.
 //
-// STANDARDS AC-8 asks for `vibecheck standards discover`. The specification is explicit about what
+// STANDARDS AC-8 asks for `vibekit standards discover`. The specification is explicit about what
 // that command may and may not do: extracting "this team returns errors as ProblemDetails and names
 // tests after the criterion" is judgement, and "a deterministic implementation would produce
 // confident nonsense". So nothing here reads a line of code and decides what a convention is.

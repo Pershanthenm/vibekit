@@ -2,18 +2,18 @@
 //
 // The page is generated from the same catalogue the CLI asks from — questions.js, components.js
 // and starters.js — so the two can never offer different stacks. Nothing is retyped here; add a
-// component to the catalogue and it appears in the form on the next `vibecheck wizard`.
+// component to the catalogue and it appears in the form on the next `vibekit wizard`.
 //
 // The chrome comes from page-chrome.js, the same module the dashboard uses, and the form is built
 // from the design system's wizard components: a stepper in the sidebar, choice cards, and a
 // sticky footer that carries the one action that matters on each step.
 //
-// It produces exactly one thing: the requirements.json that `vibecheck advise apply --from` and
-// `vibecheck init --from` already accept. The page decides nothing and scaffolds nothing — the
+// It produces exactly one thing: the requirements.json that `vibekit advise apply --from` and
+// `vibekit init --from` already accept. The page decides nothing and scaffolds nothing — the
 // recommendation, the licence exclusions and the validation all still happen in the CLI, where
 // they are tested. Handing the answers back is a choice at the end, not a thing this page does on
 // its own: either you run the command yourself, or, when the form is being served, you send them
-// to the running vibecheck and it does the same work on the other side.
+// to the running vibekit and it does the same work on the other side.
 
 import { componentsFor } from './advisor/components.js';
 import { BAAS, STATIC_QUESTIONS } from './advisor/questions.js';
@@ -71,7 +71,7 @@ const starterQuestion = () => ({
       fits: item.fits,
       needs: item.needs ?? [],
     })),
-    { id: 'none', label: 'From scratch', description: 'vibecheck generates the layout and conventions', licence: 'permissive', licenceName: '—' },
+    { id: 'none', label: 'From scratch', description: 'vibekit generates the layout and conventions', licence: 'permissive', licenceName: '—' },
   ],
 });
 
@@ -136,14 +136,14 @@ export function renderWizard({ projectName = '', control = null } = {}) {
   const body = `
       <noscript>
         <div class="alert warn">${icon('issues')}<div><b>This form needs JavaScript</b>
-        <p>It hides the questions your earlier answers make irrelevant. Run <code>vibecheck advise</code>
+        <p>It hides the questions your earlier answers make irrelevant. Run <code>vibekit advise</code>
         in a terminal instead — it asks the same things.</p></div></div>
       </noscript>
 
       <div class="card" id="intro">
         <div class="card-head"><div class="card-title">Answer what you know; skip what you don't.<small>Nothing is installed or written until the last step</small></div></div>
         <p class="t-muted">At the end you get a <code>requirements.json</code>. You can run the command yourself,
-        or${control ? ' send it straight to the vibecheck that is serving this page.' : ' — when this form is served rather than opened from a file — send it straight to the running vibecheck.'}</p>
+        or${control ? ' send it straight to the vibekit that is serving this page.' : ' — when this form is served rather than opened from a file — send it straight to the running vibekit.'}</p>
       </div>
 
       <form id="form"></form>
@@ -166,7 +166,7 @@ export function renderWizard({ projectName = '', control = null } = {}) {
               <input type="radio" name="handoff" value="web">
               <span class="ctl"></span>
               <b>Build from here</b>
-              <span>Send the answers to the vibecheck serving this page. It writes
+              <span>Send the answers to the vibekit serving this page. It writes
               <code>specs/requirements.json</code> and picks the stack, and the console shows it happen.</span>
             </label>
           </div>
@@ -179,7 +179,7 @@ export function renderWizard({ projectName = '', control = null } = {}) {
           </div>
           <div class="next-steps">
             <div>Put the file in your project at <code>specs/requirements.json</code>.</div>
-            <div>In that folder run <code>vibecheck advise apply</code> — or tell Claude Code
+            <div>In that folder run <code>vibekit advise apply</code> — or tell Claude Code
               <em>"apply my requirements"</em> and it runs it for you.</div>
             <div>It writes <code>specs/project.json</code>, a technology-selection ADR recording why each
               choice won, and scaffolds the project.</div>
@@ -188,7 +188,7 @@ export function renderWizard({ projectName = '', control = null } = {}) {
 
         <div class="mt-4 hidden" id="webPane">
           <div class="card-actions mb-3">
-            <button type="button" class="btn btn-primary" id="send">Send to vibecheck</button>
+            <button type="button" class="btn btn-primary" id="send">Send to vibekit</button>
             <button type="button" class="btn btn-ghost" id="sendOnly">Save the file only</button>
           </div>
           <p class="t-caption">Sending needs the write token this server printed when it started. It is
@@ -500,7 +500,7 @@ if (self !== top) {
 
 async function send(action, button, label) {
   if (!CONTROL) return;
-  const key = stored('vibecheck-token') || await askToken();
+  const key = stored('vibekit-token') || await askToken();
   if (!key) return;
   button.classList.add('loading');
   let response;
@@ -516,7 +516,7 @@ async function send(action, button, label) {
   }
   button.classList.remove('loading');
   if (response.status === 401 || response.status === 403) {
-    store('vibecheck-token', '');
+    store('vibekit-token', '');
     return report('danger', 'That token was not accepted', 'Check the token the console printed and try again.');
   }
   const result = await response.json().catch(() => ({}));
@@ -548,7 +548,7 @@ function askToken() {
     mask.querySelector('#tokenSave').addEventListener('click', () => {
       const value = input.value.trim();
       if (!value) return close(null);
-      store('vibecheck-token', value);
+      store('vibekit-token', value);
       close(value);
     });
     input.addEventListener('keydown', (event) => { if (event.key === 'Enter') mask.querySelector('#tokenSave').click(); });

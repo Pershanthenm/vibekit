@@ -13,7 +13,7 @@ export const SKILL_MODES = ['plugin', 'project'];
 // the workflow. Listing fewer is how a single-editor team stops carrying the others' clutter.
 export const EDITORS = ['claude', 'cursor', 'antigravity', 'windsurf'];
 export const MEMORY_PROVIDERS = ['agentmemory', 'none'];
-// What vibecheck may record without being asked. Re-exported so project.json has one vocabulary.
+// What vibekit may record without being asked. Re-exported so project.json has one vocabulary.
 export { CAPTURE_KINDS };
 export const KNOWLEDGE_PROVIDERS = ['opencontext', 'none'];
 export const MOBILE_APPROACHES = [
@@ -164,7 +164,7 @@ function validateMemory(memory) {
     !MEMORY_PROVIDERS.includes(memory.provider) && `memory.provider must be one of: ${MEMORY_PROVIDERS.join(', ')}`,
     !/^https?:\/\//.test(memory.url) && 'memory.url must be an http(s) URL',
     !(Number.isInteger(memory.recallLimit) && memory.recallLimit > 0) && 'memory.recallLimit must be a positive integer',
-    !Array.isArray(capture) && 'memory.capture must be a list of what vibecheck may record by itself',
+    !Array.isArray(capture) && 'memory.capture must be a list of what vibekit may record by itself',
     unknown.length && `memory.capture has nothing called ${unknown.join(', ')} (choose from: ${CAPTURE_KINDS.join(', ')})`,
   ].filter(Boolean);
 }

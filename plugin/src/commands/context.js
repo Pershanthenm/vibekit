@@ -12,9 +12,9 @@ async function resolveTarget(root, query) {
 
 export async function context({ root, args }) {
   const query = args.join(' ').trim();
-  if (!query) throw new Error('Usage: vibecheck context <feature id | topic>');
+  if (!query) throw new Error('Usage: vibekit context <feature id | topic>');
   const project = await loadProject(root);
   const feature = await resolveTarget(root, query);
   const brief = feature ? await contextForFeature(project, feature) : renderContext(await gatherContext(project, query), `Context for "${query}"`);
-  console.log(brief || 'No memories or knowledge documents matched (check "vibecheck memory status" and "vibecheck knowledge status").');
+  console.log(brief || 'No memories or knowledge documents matched (check "vibekit memory status" and "vibekit knowledge status").');
 }

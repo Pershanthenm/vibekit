@@ -10,10 +10,10 @@ argument-hint: "<architecture change>"
 
 Change: $ARGUMENTS
 
-1. Capture the current state: `specs/01-architecture.md`, `docs/architecture.md`, the ADRs in `specs/decisions/`, `vibecheck docs status` and `vibecheck context "<change>"`.
+1. Capture the current state: `specs/01-architecture.md`, `docs/architecture.md`, the ADRs in `specs/decisions/`, `vibekit docs status` and `vibekit context "<change>"`.
 2. Draft the next ADR (`specs/decisions/NNNN-<slug>.md`, status **proposed**): context, options considered with trade-offs, decision, consequences, migration steps. Present it and stop until the user approves.
-3. On approval: set the ADR to **accepted**, update `specs/01-architecture.md` and `specs/project.json` (stack, architecture notes), then `vibecheck sync`.
-4. In the same turn, update every document `vibecheck docs status` flags — architecture diagrams first, then deployment, data model and design system — using /vibe-check-cli:docs. The stop hook will not let the turn end with stale architecture docs.
-5. Impact: list in-flight and done features affected. Append a note to affected plans; for code that must move, create a migration feature (`vibecheck feature "migrate: <change>"`) whose acceptance criteria describe the end state.
-7. Save the reasoning to memory (`vibecheck memory remember`) and, if knowledge is on, run `vibecheck knowledge publish`.
+3. On approval: set the ADR to **accepted**, update `specs/01-architecture.md` and `specs/project.json` (stack, architecture notes), then `vibekit sync`.
+4. In the same turn, update every document `vibekit docs status` flags — architecture diagrams first, then deployment, data model and design system — using /vibekit:docs. The stop hook will not let the turn end with stale architecture docs.
+5. Impact: list in-flight and done features affected. Append a note to affected plans; for code that must move, create a migration feature (`vibekit feature "migrate: <change>"`) whose acceptance criteria describe the end state.
+7. Save the reasoning to memory (`vibekit memory remember`) and, if knowledge is on, run `vibekit knowledge publish`.
 

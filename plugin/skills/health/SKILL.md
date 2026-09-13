@@ -10,7 +10,7 @@ argument-hint: "[live]"
 
 Scope: $ARGUMENTS
 
-1. Run `vibecheck health --json`. Add `--live` before a first real run, or when the user asks for a full check (it sends a few one-line prompts to Claude and Cursor).
+1. Run `vibekit health --json`. Add `--live` before a first real run, or when the user asks for a full check (it sends a few one-line prompts to Claude and Cursor).
 2. Summarise briefly: what works, then each problem with its fix. Group by tools, project and live checks.
-3. For problems whose fix is a command, offer to run it through /vibe-check-cli:setup. Explain the ones only the user can do: signing in and starting Docker Desktop.
+3. For problems whose fix is a command, offer to run it through /vibekit:setup. Explain the ones only the user can do: signing in and starting Docker Desktop.
 

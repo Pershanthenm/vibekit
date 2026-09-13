@@ -23,9 +23,9 @@ import { EXAMPLE, newProject, patchProject } from './helpers.js';
 
 console.log = () => {};
 
-const CURSOR = '.cursor/rules/vibecheck-workflow.mdc';
-const ANTIGRAVITY = '.agents/rules/vibecheck-workflow.md';
-const WINDSURF = '.windsurf/rules/vibecheck-workflow.md';
+const CURSOR = '.cursor/rules/vibekit-workflow.mdc';
+const ANTIGRAVITY = '.agents/rules/vibekit-workflow.md';
+const WINDSURF = '.windsurf/rules/vibekit-workflow.md';
 
 const has = (root, path) => exists(join(root, path));
 

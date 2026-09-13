@@ -11,10 +11,10 @@ argument-hint: "<feature id>"
 Feature: $ARGUMENTS
 
 1. Make sure the working tree is clean (commit or stash).
-2. Run `vibecheck merge <id>`. It merges each finished lane branch with `--no-ff`, removes its worktree and prints the tasks each lane covered.
-3. On a conflict: resolve it preserving both lanes' intent, commit, and run `vibecheck merge <id>` again.
-4. Run lint, typecheck and test on the merged result; fix failures with the implementer agent. Run `vibecheck docs status` — lane changes often make diagrams stale.
+2. Run `vibekit merge <id>`. It merges each finished lane branch with `--no-ff`, removes its worktree and prints the tasks each lane covered.
+3. On a conflict: resolve it preserving both lanes' intent, commit, and run `vibekit merge <id>` again.
+4. Run lint, typecheck and test on the merged result; fix failures with the implementer agent. Run `vibekit docs status` — lane changes often make diagrams stale.
 5. Tick the merged tasks in `tasks.md` and any acceptance criteria now proven by passing tests, then commit.
-7. If a conflict or failure taught something reusable (e.g. two lanes both touched a shared file), save it: `vibecheck memory remember "<lesson and why>"`.
-8. Continue with /vibe-check-cli:run.
+7. If a conflict or failure taught something reusable (e.g. two lanes both touched a shared file), save it: `vibekit memory remember "<lesson and why>"`.
+8. Continue with /vibekit:run.
 

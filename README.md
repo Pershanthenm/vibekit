@@ -1,4 +1,4 @@
-# Vibe-check-cli
+# VibeKit
 
 **Spec-driven, multi-agent development for Claude Code and Cursor.** Claude Code leads; Claude and Cursor subagents build in parallel; nothing ships until it's traced to a spec and passes tests, smoke tests and UI tests.
 
@@ -7,7 +7,7 @@
 ![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-8A63D2)
 ![Cursor](https://img.shields.io/badge/Cursor-subagents%20%26%20skills-black)
 
-Vibe-check-cli is a Claude Code plugin plus a team kit. Install it once and every developer gets the same workflow, the same skills and subagents, and the same quality gates, in both Claude Code and Cursor.
+VibeKit is a Claude Code plugin plus a team kit. Install it once and every developer gets the same workflow, the same skills and subagents, and the same quality gates, in both Claude Code and Cursor.
 
 ## How it works
 
@@ -21,7 +21,7 @@ flowchart LR
   F -->|you sign off| G[Done]
 ```
 
-1. **Describe it by menu.** `/vibe-check-cli:new-project` asks about platform, constraints, architecture, stack and security, with up to four options per question. It recommends a stack layer by layer, with the licences shown, and writes the decision down.
+1. **Describe it by menu.** `/vibekit:new-project` asks about platform, constraints, architecture, stack and security, with up to four options per question. It recommends a stack layer by layer, with the licences shown, and writes the decision down.
 2. **Specs before code.** Every feature gets testable acceptance criteria and a plan. Hooks block code edits until a spec is approved.
 3. **Parallel builders.** Independent tasks go to Claude and Cursor agents at the same time, each in its own git worktree. Routing rules decide who builds what.
 4. **Proof, not promises.** Each acceptance criterion must be traced to a named test. Tests, smoke tests and UI tests must pass on the exact commit, and docs and diagrams must be fresh.
@@ -31,7 +31,7 @@ flowchart LR
 
 | | |
 |---|---|
-| **Workflow commands** | `/vibe-check-cli:new-project`, `run`, `spec-feature`, `plan-feature`, `implement-feature`, `dispatch`, `merge-lanes`, `review-feature`, `security`, `docs`, `rearchitect`, `spec-check`, `setup`, `health` |
+| **Workflow commands** | `/vibekit:new-project`, `run`, `spec-feature`, `plan-feature`, `implement-feature`, `dispatch`, `merge-lanes`, `review-feature`, `security`, `docs`, `rearchitect`, `spec-check`, `setup`, `health` |
 | **Subagents** | **architect**, **test-engineer**, **implementer**, **reviewer**, plus the team's own (for example **database-reviewer**, **security-reviewer**), in Claude Code and Cursor |
 | **Team skills** | A shared kit in [`team/`](team/), including a curated selection from [Everything Claude Code](https://github.com/affaan-m/ECC) (API design, TDD, security review, Docker, deployment and more) |
 | **Guardrails** | Hooks at session start, before every edit, and at the end of every turn |
@@ -42,13 +42,13 @@ flowchart LR
 | **Review gate** | A feature cannot be marked done without an approving `review.md` for the current commit; a review of code that has since changed does not count |
 | **Quality gates** | Acceptance-criteria traceability, test, smoke and UI evidence per commit, living docs, a security baseline mapped to OWASP ASVS |
 | **Flake detection** | Each suite can be required to pass *n* times (`standards.testing.runs`, or `--repeat`). A suite that passes sometimes is reported as flaky and does not count as evidence |
-| **Live status page** | `vibecheck dashboard` renders the whole lifecycle *and* test status to one self-contained HTML page; setup, dispatch and init open it automatically and refresh it as they run |
-| **Browser wizard** | Not everyone wants twenty questions in a terminal. `vibecheck wizard` opens a form in the browser, then hands back a `requirements.json` that `advise apply` scaffolds from — the same catalogue, the same licence rules |
+| **Live status page** | `vibekit dashboard` renders the whole lifecycle *and* test status to one self-contained HTML page; setup, dispatch and init open it automatically and refresh it as they run |
+| **Browser wizard** | Not everyone wants twenty questions in a terminal. `vibekit wizard` opens a form in the browser, then hands back a `requirements.json` that `advise apply` scaffolds from — the same catalogue, the same licence rules |
 | **Boilerplate, if one fits** | Once the stack is chosen, `advise` offers starters that actually fit it — ABP, ASP.NET Zero, JHipster, create-t3-app, Cookiecutter Django and others — each with its licence and whether it costs money, or generates the structure from scratch |
-| **A CLI that guides** | Bare `vibecheck` reads the folder and answers *what do I do next*, rather than printing every command. A mistyped command suggests the right one and exits non-zero, so a typo cannot look like success |
+| **A CLI that guides** | Bare `vibekit` reads the folder and answers *what do I do next*, rather than printing every command. A mistyped command suggests the right one and exits non-zero, so a typo cannot look like success |
 | **Machine setup** | `setup` installs and configures what each machine needs; `health` checks everything and names the fix |
 | **Any agent editor** | One project, four front ends: Claude Code, Cursor, Google Antigravity and Windsurf each get their own generated config from a single `specs/project.json`; Codex reads `AGENTS.md` directly |
-| **Standards, injected** | `standards/` holds one file per topic with a tiny `index.yml`; `vibecheck standards inject "<task>"` returns only the standards that matter, instead of loading the library |
+| **Standards, injected** | `standards/` holds one file per topic with a tiny `index.yml`; `vibekit standards inject "<task>"` returns only the standards that matter, instead of loading the library |
 | **Brownfield** | `adopt` detects the stack of an existing repository and writes as-is docs, guessing nothing |
 | **Anti-hallucination** | Every generated `AGENTS.md` carries mandatory evidence rules: cite the source, never invent an API or command, never report an unrun check as passing |
 
@@ -64,36 +64,36 @@ In short: install **Cursor**, add the **Claude Code** extension (by Anthropic) a
 ```powershell
 winget install --id Git.Git -e
 # open a new terminal tab, then:
-git clone TEAM-REPO-URL "$HOME\tools\vibe-check-cli"
-powershell -ExecutionPolicy Bypass -File "$HOME\tools\vibe-check-cli\plugin\scripts\onboard.ps1" TEAM-REPO-URL
+git clone TEAM-REPO-URL "$HOME\tools\vibekit"
+powershell -ExecutionPolicy Bypass -File "$HOME\tools\vibekit\plugin\scripts\onboard.ps1" TEAM-REPO-URL
 ```
 
 **macOS and Linux**
 ```bash
-git clone TEAM-REPO-URL ~/tools/vibe-check-cli
-bash ~/tools/vibe-check-cli/plugin/scripts/onboard.sh TEAM-REPO-URL
+git clone TEAM-REPO-URL ~/tools/vibekit
+bash ~/tools/vibekit/plugin/scripts/onboard.sh TEAM-REPO-URL
 ```
 
 Then, in the Claude Code panel:
 
 ```text
 /reload-plugins
-/vibe-check-cli:setup
-/vibe-check-cli:health live
+/vibekit:setup
+/vibekit:health live
 ```
 
 ## Everyday use
 
 | You want to… | Type in the Claude panel |
 |---|---|
-| Start a project | `/vibe-check-cli:new-project <what you're building>` |
-| Fill the spec in a browser instead | `vibecheck wizard` in a terminal, then `vibecheck advise apply` |
-| Start from an existing codebase | `vibecheck adopt` in a terminal, then `/vibe-check-cli:run` |
-| Keep going | `/vibe-check-cli:run` (stops at every decision that's yours) |
-| See where everything stands | `vibecheck dashboard --open` |
-| Check your machine | `/vibe-check-cli:health` |
+| Start a project | `/vibekit:new-project <what you're building>` |
+| Fill the spec in a browser instead | `vibekit wizard` in a terminal, then `vibekit advise apply` |
+| Start from an existing codebase | `vibekit adopt` in a terminal, then `/vibekit:run` |
+| Keep going | `/vibekit:run` (stops at every decision that's yours) |
+| See where everything stands | `vibekit dashboard --open` |
+| Check your machine | `/vibekit:health` |
 | See all your projects | "list my projects" |
-| Check the specs are consistent | `/vibe-check-cli:spec-check` |
+| Check the specs are consistent | `/vibekit:spec-check` |
 
 Projects live in `~/projects/<name>` (on Windows, `C:\Users\<you>\projects\<name>`).
 
@@ -102,11 +102,11 @@ Projects live in `~/projects/<name>` (on Windows, `C:\Users\<you>\projects\<name
 - **Cursor** with the **Claude Code** extension, Claude Code on its own, or **Google Antigravity** — every project is scaffolded for all three
 - A Claude plan that includes Claude Code, and a Cursor account
 - **Git**, and **Node.js 20+** (the setup installs Node.js if it's missing)
-- **Docker**, the **Cursor CLI** and **agentmemory** — `vibecheck setup` installs
+- **Docker**, the **Cursor CLI** and **agentmemory** — `vibekit setup` installs
   these on every machine. They are requirements, not per-project extras, so switching engine
   or memory provider later never leaves you missing a tool.
   On native Windows agentmemory has no automatic install and is reported as a manual WSL2
-  step; `vibecheck health` will keep flagging it until you move to WSL2 or accept it.
+  step; `vibekit health` will keep flagging it until you move to WSL2 or accept it.
 - Windows 10 22H2 or 11, macOS 14 or newer, or a modern Linux (WSL2 works too). The test suite runs on all three in CI on every pull request
 
 ## Documentation
@@ -124,7 +124,7 @@ Projects live in `~/projects/<name>` (on Windows, `C:\Users\<you>\projects\<name
 
 ## Updating and starting over
 
-When the team kit changes: `git pull` in `~/tools/vibe-check-cli`, rerun the bootstrap for your OS (see [ONBOARDING.md](ONBOARDING.md#keeping-up-to-date)), then `/reload-plugins`. To remove every trace and reinstall, while keeping your projects, use the reset script ([ONBOARDING.md](ONBOARDING.md#starting-over)).
+When the team kit changes: `git pull` in `~/tools/vibekit`, rerun the bootstrap for your OS (see [ONBOARDING.md](ONBOARDING.md#keeping-up-to-date)), then `/reload-plugins`. To remove every trace and reinstall, while keeping your projects, use the reset script ([ONBOARDING.md](ONBOARDING.md#starting-over)).
 
 **Developing the plugin itself?** Your marketplace may point at your working copy rather than a
 clone you pull. Before uninstalling and reinstalling to pick up new capabilities, run
@@ -144,8 +144,8 @@ npm test          # 326 integration tests
 npm run build     # regenerate plugin skills and subagents (including the team kit)
 ```
 
-Maintaining the team kit: `vibecheck team capture`, `vibecheck team import-ecc`, `vibecheck team status` (see [TEAM.md](TEAM.md)).
+Maintaining the team kit: `vibekit team capture`, `vibekit team import-ecc`, `vibekit team status` (see [TEAM.md](TEAM.md)).
 
 ## License
 
-No licence has been chosen for Vibe-check-cli yet (see [docs/GITHUB.md](docs/GITHUB.md)). Third-party content in the team kit keeps its own licence: see [THIRD_PARTY_NOTICES.md](team/THIRD_PARTY_NOTICES.md).
+No licence has been chosen for VibeKit yet (see [docs/GITHUB.md](docs/GITHUB.md)). Third-party content in the team kit keeps its own licence: see [THIRD_PARTY_NOTICES.md](team/THIRD_PARTY_NOTICES.md).

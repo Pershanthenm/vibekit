@@ -47,7 +47,7 @@ const EF6_MIGRATION = `namespace Legacy.Migrations
 }`;
 
 async function legacyRepo() {
-  const root = await mkdtemp(join(tmpdir(), 'vibecheck-adopt-'));
+  const root = await mkdtemp(join(tmpdir(), 'vibekit-adopt-'));
   await mkdir(join(root, 'src', 'Web', 'Migrations'), { recursive: true });
   await writeFile(join(root, 'src', 'Web', 'Web.csproj'), CSPROJ);
   await writeFile(join(root, 'src', 'Web', 'packages.config'), PACKAGES_CONFIG);

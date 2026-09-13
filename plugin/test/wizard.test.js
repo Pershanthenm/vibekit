@@ -11,7 +11,7 @@ import { renderWizard, wizardModel } from '../src/wizard-page.js';
 import { gitInit, newProject, sh } from './helpers.js';
 
 console.log = () => {};
-process.env.VIBECHECK_NO_OPEN = '1';
+process.env.VIBEKIT_NO_OPEN = '1';
 
 // The point of generating the page: a stack the CLI knows about and the form does not is a
 // stack nobody can pick in the browser, and nothing would fail to tell you.
@@ -55,7 +55,7 @@ test('the page is self-contained and makes no external requests', () => {
   const external = [...html.matchAll(/https?:\/\/[^"' ]+/g)].map(([url]) => url);
   assert.ok(external.every((url) => /fonts\.(googleapis|gstatic)\.com/.test(url)), `unexpected external request: ${external}`);
   assert.match(html, /requirements\.json/, 'it has to say what it produces');
-  assert.match(html, /vibecheck advise apply/, 'and how to hand it back');
+  assert.match(html, /vibekit advise apply/, 'and how to hand it back');
 });
 
 // Embedded JSON containing "</script>" would end the block early and break the page.
@@ -77,7 +77,7 @@ test('in a git repo the page is written outside the working tree', async () => {
   gitInit(root);
   await run(['wizard', '--dir', root]);
 
-  const html = await readFile(join(root, '.git', 'vibecheck', 'wizard.html'), 'utf8');
+  const html = await readFile(join(root, '.git', 'vibekit', 'wizard.html'), 'utf8');
   assert.match(html, /build your spec/i);
   assert.equal(sh(root, 'git', 'status', '--porcelain').trim(), '', 'the page must not dirty the tree');
 });
@@ -87,7 +87,7 @@ test('with no git repo it still writes, beside the project', async () => {
   const root = await newProject('--yes');
   await run(['wizard', '--dir', root]);
 
-  const html = await readFile(join(root, '.vibecheck', 'wizard.html'), 'utf8');
+  const html = await readFile(join(root, '.vibekit', 'wizard.html'), 'utf8');
   assert.match(html, /build your spec/i);
 });
 

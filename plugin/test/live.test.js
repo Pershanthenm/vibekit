@@ -25,7 +25,7 @@ const get = async (url) => {
 
 /**
  * Collect server-sent events until `wanted` is satisfied, or give up. The budget is generous
- * because the event being waited for usually follows a real `vibecheck` command scaffolding real
+ * because the event being waited for usually follows a real `vibekit` command scaffolding real
  * files, and on a loaded machine running the whole suite at once that is not quick.
  */
 async function events(url, wanted, ms = 60000) {
@@ -79,7 +79,7 @@ test('the console is served only under its secret path', async () => {
   for (const wrong of ['/', '/dashboard', `/${secret()}/`, `/${path}x/`]) {
     const miss = await get(base + wrong);
     assert.equal(miss.status, 404, `${wrong} must not be served`);
-    assert.doesNotMatch(miss.body, /vibecheck|dashboard|lifecycle/i, 'a 404 must not hint that anything is here');
+    assert.doesNotMatch(miss.body, /vibekit|dashboard|lifecycle/i, 'a 404 must not hint that anything is here');
   }
 });
 

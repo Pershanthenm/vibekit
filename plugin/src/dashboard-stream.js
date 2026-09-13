@@ -112,7 +112,7 @@ function startPolling(why) {
   if (polling) return;
   if (source) { source.close(); source = null; }
   polling = true;
-  console.info('vibecheck: ' + why + ' — asking every ' + ${POLL_MS} + 'ms instead');
+  console.info('vibekit: ' + why + ' — asking every ' + ${POLL_MS} + 'ms instead');
   const note = document.querySelector('.live');
   if (note) note.title = why + '. Updating by polling instead of streaming.';
   const again = () => { if (polling) setTimeout(() => pollOnce().then(again), ${POLL_MS}); };

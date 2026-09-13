@@ -1,7 +1,7 @@
 import { importEcc, recordedEccNames } from '../import-ecc.js';
 import { buildPlugin, bumpVersion, captureTeam, readTeam, teamPaths, teamRepo } from '../team.js';
 
-const USAGE = 'Usage: vibecheck team <capture [--skip a,b] | import-ecc <name,name,...> [--version x] | status> [--repo <folder>]';
+const USAGE = 'Usage: vibekit team <capture [--skip a,b] | import-ecc <name,name,...> [--version x] | status> [--repo <folder>]';
 const list = (items) => (items.length ? items.join(', ') : 'none');
 
 async function capture(repo, { skip }) {
@@ -14,14 +14,14 @@ async function capture(repo, { skip }) {
   report.skipped.forEach((item) => console.log(`! skipped ${item}`));
   report.localPlugins.forEach((item) => console.log(`! ${item} comes from a folder on this machine; teammates can't install it. Publish its marketplace to git to share it.`));
   console.log(`✔ Plugin rebuilt as ${version}: ${built.skills} skills, ${built.agents} subagents${built.team.plugins.length ? `, ${built.team.plugins.length} ${built.team.plugins.length === 1 ? 'dependency' : 'dependencies'}` : ''}`);
-  console.log(`\nNext: commit and push ${repo} to your team repository. Everyone else: pull, then run vibecheck setup (or /vibe-check-cli:setup).`);
+  console.log(`\nNext: commit and push ${repo} to your team repository. Everyone else: pull, then run vibekit setup (or /vibekit:setup).`);
 }
 
 async function importFromEcc(repo, { args, version, from }) {
   const given = (args[1] ?? '').split(',').map((name) => name.trim()).filter(Boolean);
   const names = given.length ? given : await recordedEccNames(repo);
   if (!given.length && names.length) console.log(`Re-importing your recorded list (${names.length} names)`);
-  if (!names.length) throw new Error('Name the ECC skills, agents or commands to import, e.g. vibecheck team import-ecc api-design,tdd-workflow,security-reviewer');
+  if (!names.length) throw new Error('Name the ECC skills, agents or commands to import, e.g. vibekit team import-ecc api-design,tdd-workflow,security-reviewer');
   const report = await importEcc(repo, names, { from, version });
   console.log(`ECC ${report.version}: imported ${report.imported.length} of ${names.length}`);
   for (const kind of ['skill', 'agent', 'command']) {
@@ -35,7 +35,7 @@ async function importFromEcc(repo, { args, version, from }) {
   const next = await bumpVersion(repo);
   console.log(`✔ Plugin rebuilt as ${next}: ${built.skills} skills, ${built.agents} subagents. Licence notice: ${teamPaths(repo).skills.replace(/skills$/, '')}THIRD_PARTY_NOTICES.md`);
   const ecc = built.team.plugins.find((plugin) => plugin.marketplace === 'ecc' || plugin.name === 'ecc');
-  if (ecc) console.log('! Your team kit also lists the full ECC plugin as a dependency, so developers would get ECC twice. Uninstall it on your machine and run: vibecheck team capture --skip ecc');
+  if (ecc) console.log('! Your team kit also lists the full ECC plugin as a dependency, so developers would get ECC twice. Uninstall it on your machine and run: vibekit team capture --skip ecc');
 }
 
 async function status(repo) {

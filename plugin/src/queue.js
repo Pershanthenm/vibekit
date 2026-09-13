@@ -1,7 +1,7 @@
 // Work you line up on the board, pushed to an agent without going back to a terminal.
 //
 // The queue is deliberately thin. It holds an ordered list of features to dispatch and nothing
-// about how to dispatch them: draining an entry runs `vibecheck dispatch`, the same command a
+// about how to dispatch them: draining an entry runs `vibekit dispatch`, the same command a
 // person runs, as its own process. So the worktrees, the briefs, the routing, the clean-tree
 // check and the refusal to dispatch a feature that is not in-progress are all enforced in one
 // place — the place they were already enforced — rather than reimplemented behind a button.
@@ -27,13 +27,13 @@ export const QUEUE_STATES = ['queued', 'running', 'done', 'failed'];
 // holding the queue forever, not to bound honest work.
 export const DISPATCH_TIMEOUT_MS = 2 * 60 * 60 * 1000;
 
-const BIN = fileURLToPath(new URL('../bin/vibecheck', import.meta.url));
+const BIN = fileURLToPath(new URL('../bin/vibekit', import.meta.url));
 
 const fallback = (root, ...parts) => {
   try {
     return stateDir(root, ...parts);
   } catch {
-    return join(root, '.vibecheck', ...parts);
+    return join(root, '.vibekit', ...parts);
   }
 };
 
@@ -126,7 +126,7 @@ const patch = (root, id, fields) => edit(root, (queue) => {
 });
 
 /**
- * Run one entry: `vibecheck dispatch <feature>`, its output appended to the queue log.
+ * Run one entry: `vibekit dispatch <feature>`, its output appended to the queue log.
  *
  * Nothing a request supplied reaches a shell — this spawns the binary directly, and the only
  * values interpolated are a feature id the caller has already matched against a real feature and
@@ -140,7 +140,7 @@ function runDispatch(root, entry, log) {
       cwd: root,
       // The console is already open in front of whoever queued this; a browser tab opening on the
       // server's machine helps nobody, and on a headless box there is nothing to open.
-      env: { ...process.env, VIBECHECK_NO_OPEN: '1' },
+      env: { ...process.env, VIBEKIT_NO_OPEN: '1' },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     const timer = setTimeout(() => child.kill(), DISPATCH_TIMEOUT_MS);

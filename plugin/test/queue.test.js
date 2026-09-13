@@ -1,6 +1,6 @@
 // Queueing is the instruction to build something, so these are mostly tests about restraint:
 // what the queue refuses to start twice, what it refuses to take away mid-flight, and that the
-// thing it eventually runs is `vibecheck dispatch` and not a private reimplementation of it.
+// thing it eventually runs is `vibekit dispatch` and not a private reimplementation of it.
 //
 // The drain is driven with an injected runner throughout. Spawning real agents here would make
 // the suite depend on a Claude or Cursor CLI being installed and on the network; what matters is

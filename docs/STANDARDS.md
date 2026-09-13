@@ -1,6 +1,6 @@
 # Standards — a library, injected only where relevant
 
-- **Product:** Vibe-check-cli
+- **Product:** VibeKit
 - **Status:** `list`, `index`, `inject` and `discover` implemented.
 - **Date:** 2026-09-11
 
@@ -66,10 +66,10 @@ are listed first so the file reads top-down.
 
 | Command | What it does |
 |---|---|
-| `vibecheck standards list` | Every standard in the index, grouped by domain |
-| `vibecheck standards index` | Rebuilds `standards/index.yml` from the files on disk |
-| `vibecheck standards inject "<task>"` | The standards relevant to that task, and nothing else |
-| `vibecheck standards inject "<task>" --paths a,b` | Also matches standards whose globs cover those files |
+| `vibekit standards list` | Every standard in the index, grouped by domain |
+| `vibekit standards index` | Rebuilds `standards/index.yml` from the files on disk |
+| `vibekit standards inject "<task>"` | The standards relevant to that task, and nothing else |
+| `vibekit standards inject "<task>" --paths a,b` | Also matches standards whose globs cover those files |
 
 Add `--json` to any of them for machine-readable output.
 
@@ -108,9 +108,9 @@ The cost is one small file in context instead of an unbounded rule set.
   command explains what to add.
 - **AC-7** ✅ Given a standard with no `description`, when indexed, then it is listed as a warning,
   because injection matches on the description and it will rarely be selected.
-- **AC-8** ✅ Given an existing codebase, when `vibecheck standards discover` runs, then the areas
+- **AC-8** ✅ Given an existing codebase, when `vibekit standards discover` runs, then the areas
   with no standard written about them are reported with examples to read, and
-  `/vibe-check-cli:standards-discover` drafts the standards for review.
+  `/vibekit:standards-discover` drafts the standards for review.
 
 ## 6. Discover
 
@@ -119,16 +119,16 @@ half of this that genuinely needs a model: extracting "this team returns errors 
 and names tests after the criterion" is judgement, not pattern matching, and a deterministic
 implementation would produce confident nonsense.
 
-So the work is split along exactly that line. `vibecheck standards discover` does the half that is
+So the work is split along exactly that line. `vibekit standards discover` does the half that is
 evidence: which areas of the tree exist, how large each is, a handful of files to read, and which
 already have a standard speaking for them. It reads no code and names no convention.
 
-`/vibe-check-cli:standards-discover` does the half that is judgement: it reads those files, writes
+`/vibekit:standards-discover` does the half that is judgement: it reads those files, writes
 what it finds as draft standards with the quotes it based them on, rebuilds the index, and asks
 you to approve, edit or delete each one. A rule the codebase does not actually follow is reported
 as a proposal rather than written down as a standard.
 
-It pairs with adoption: `vibecheck adopt` describes the stack, `discover` describes the habits.
+It pairs with adoption: `vibekit adopt` describes the stack, `discover` describes the habits.
 Standards can still be written by hand; `index` and `inject` work the same either way.
 
 ## 7. Relationship to the rest

@@ -137,7 +137,7 @@ export function pageScan(scan, ctx, selected = []) {
   return `
       <div class="page-head seq">
         <div style="--i:0"><h2>Scan report</h2><p>${escape(scan.project.name)}${scan.project.commit ? ` · ${escape(scan.project.commit.slice(0, 7))}` : ''} · ${plural(scan.project.features, 'feature')} · ${plural(scan.findings.length, 'finding')}</p></div>
-        <div class="cluster" style="--i:1">${cmd('vibecheck scan')}<a class="btn btn-ghost" href="#/findings">All findings</a></div>
+        <div class="cluster" style="--i:1">${cmd('vibekit scan')}<a class="btn btn-ghost" href="#/findings">All findings</a></div>
       </div>
       <div class="seq" style="--i:2">${flow(scan, selected)}</div>
       <div class="seq" style="--i:3">${coverageNote(scan)}</div>

@@ -1,8 +1,8 @@
-# Setting up Vibe-check-cli on Windows, all inside Cursor
+# Setting up VibeKit on Windows, all inside Cursor
 
 Everything runs from **Cursor**: the Claude Code panel is your lead, and Cursor's built-in terminal handles the few commands. Two things sit outside Cursor: **Docker Desktop**, which runs quietly in the background, and a one-time Windows feature install with a restart. Plan on about an hour and a half.
 
-**How it fits together.** Cursor runs on Windows but connects into **WSL2**, a Linux environment built into Windows. Claude Code, the Vibe-check-cli plugin, Cursor's command-line agent, agentmemory and your projects all live in there. Once connected, Cursor's terminal *is* Linux, and it feels like one machine. This is the setup the tools work best in (agentmemory needs it). A Windows-only option is at the end.
+**How it fits together.** Cursor runs on Windows but connects into **WSL2**, a Linux environment built into Windows. Claude Code, the VibeKit plugin, Cursor's command-line agent, agentmemory and your projects all live in there. Once connected, Cursor's terminal *is* Linux, and it feels like one machine. This is the setup the tools work best in (agentmemory needs it). A Windows-only option is at the end.
 
 **You'll need**
 - Windows 11, or Windows 10 22H2, with virtualization enabled (usually already on)
@@ -14,7 +14,7 @@ Everything runs from **Cursor**: the Claude Code panel is your lead, and Cursor'
 
 | Where in Cursor | What it's for |
 |---|---|
-| Claude Code panel (Spark icon in the sidebar) | Talking to the lead: every `/vibe-check-cli:` command |
+| Claude Code panel (Spark icon in the sidebar) | Talking to the lead: every `/vibekit:` command |
 | Terminal (View → Terminal, or Ctrl+`) | The one-time bootstrap and the odd command that needs your password |
 | Bottom-left corner | Shows **WSL: Ubuntu** when you're connected; always check it's there |
 
@@ -68,10 +68,10 @@ git config --global user.name "Your Name"
 git config --global user.email "you@example.com"
 ```
 
-**Put Vibe-check-cli somewhere permanent, on the Linux side.** Your C: drive appears as `/mnt/c`. Replace `YourWindowsName` with your Windows user folder name:
+**Put VibeKit somewhere permanent, on the Linux side.** Your C: drive appears as `/mnt/c`. Replace `YourWindowsName` with your Windows user folder name:
 
 ```bash
-mkdir -p ~/tools && unzip /mnt/c/Users/YourWindowsName/Downloads/vibe-check-cli.zip -d ~/tools
+mkdir -p ~/tools && unzip /mnt/c/Users/YourWindowsName/Downloads/vibekit.zip -d ~/tools
 ```
 
 Keep tools and projects in your Linux home (`~`), never under `/mnt/c`: it's slow, and git thinks every file changed. Don't move this folder later, because the plugin is installed from it.
@@ -79,12 +79,12 @@ Keep tools and projects in your Linux home (`~`), never under `/mnt/c`: it's slo
 **Install the essentials:**
 
 ```bash
-bash ~/tools/vibe-check-cli/plugin/scripts/bootstrap.sh --minimal
+bash ~/tools/vibekit/plugin/scripts/bootstrap.sh --minimal
 ```
 
-This installs Node.js if needed, then the `vibecheck` command, then offers exactly two installs. Say yes to both:
+This installs Node.js if needed, then the `vibekit` command, then offers exactly two installs. Say yes to both:
 - **Claude Code's command-line version**, which the plugin commands and background Claude agents use.
-- **The Vibe-check-cli plugin.**
+- **The VibeKit plugin.**
 
 **Load the plugin:** in the Claude panel type `/reload-plugins`, or reload Cursor (Ctrl+Shift+P → **Developer: Reload Window**). Check the bottom-left still says **WSL: Ubuntu**.
 
@@ -92,13 +92,13 @@ This installs Node.js if needed, then the `vibecheck` command, then offers exact
 
 ## Doing it all from Claude
 
-Already in a Claude Code session, with the zip unzipped to `~/tools/vibe-check-cli`? Paste this as your message:
+Already in a Claude Code session, with the zip unzipped to `~/tools/vibekit`? Paste this as your message:
 
 ```text
-Set up Vibe-check-cli for me: run `bash ~/tools/vibe-check-cli/plugin/scripts/bootstrap.sh --minimal --yes` (it can take a few minutes; allow a long timeout) and tell me what happened.
+Set up VibeKit for me: run `bash ~/tools/vibekit/plugin/scripts/bootstrap.sh --minimal --yes` (it can take a few minutes; allow a long timeout) and tell me what happened.
 ```
 
-Approve the command when Claude asks. Then type `/reload-plugins`, and continue with `/vibe-check-cli:setup` and `/vibe-check-cli:health live`. The only steps Claude can't do for you are the ones that need a password or a browser sign-in; it tells you which, and you run those in a terminal.
+Approve the command when Claude asks. Then type `/reload-plugins`, and continue with `/vibekit:setup` and `/vibekit:health live`. The only steps Claude can't do for you are the ones that need a password or a browser sign-in; it tells you which, and you run those in a terminal.
 
 Use this rather than typing `/plugin marketplace add` with a local folder: a known Claude Code issue can install local-folder plugins without their commands.
 
@@ -109,7 +109,7 @@ Use this rather than typing `/plugin marketplace add` with a local folder: a kno
 In the Claude Code panel:
 
 ```text
-/vibe-check-cli:setup
+/vibekit:setup
 ```
 
 Claude checks what's missing and shows a menu of what it will install. Tick what you want (everything is recommended):
@@ -140,7 +140,7 @@ agent login
 **Check everything.** In the panel:
 
 ```text
-/vibe-check-cli:health live
+/vibekit:health live
 ```
 
 Claude runs the full check, including a few one-line test prompts to Claude and Cursor, and explains anything that isn't green, with the fix.
@@ -165,7 +165,7 @@ For your playbook, ask Claude to create a `playbook` folder in OpenContext with 
 2. In the Claude Code panel:
 
 ```text
-/vibe-check-cli:new-project laptop asset management for our IT team
+/vibekit:new-project laptop asset management for our IT team
 ```
 
 Claude sets up git, then asks its questions as menus in the panel: platform, constraints, architecture and security, the stack layer by layer, then security controls. At the end it commits the specs for you.
@@ -174,13 +174,13 @@ Claude sets up git, then asks its questions as menus in the panel: platform, con
 repository:
 
 ```bash
-vibecheck adopt
+vibekit adopt
 ```
 
 It detects the stack from the manifests, writes `specs/project.json` marked `"origin": "adopted"`,
 and produces as-is architecture and data-model docs plus `assessment/adopt.md`. Read that report's
 **"Not determined"** section first: adopt never guesses, so anything it could not detect is listed
-there rather than filled in with a plausible default. `vibecheck check` will fail until you supply
+there rather than filled in with a plausible default. `vibekit check` will fail until you supply
 a test command, which is deliberate.
 
 ---
@@ -206,14 +206,14 @@ The `foundation` feature wires the rest into the `test`, `smoke` and `ui` comman
 In the panel:
 
 ```text
-/vibe-check-cli:run
+/vibekit:run
 ```
 
 Approve the foundation spec and plan when Claude asks. From then on it's always the same loop, inside Cursor:
 1. Claude builds the shared groundwork.
 2. Cursor and Claude agents take the parallel work, one lane each. Watch them on the live console.
 3. Claude merges it, runs tests, smoke and UI, and moves the feature to In review.
-4. You try it, then `vibecheck status <id> done`.
+4. You try it, then `vibekit status <id> done`.
 
 ---
 
@@ -221,7 +221,7 @@ Approve the foundation spec and plan when Claude asks. From then on it's always 
 
 1. Check Docker Desktop is running (system tray).
 2. Open Cursor → **File → Open Recent** → your project (it reconnects to **WSL: Ubuntu**).
-3. `/vibe-check-cli:run` in the panel.
+3. `/vibekit:run` in the panel.
 
 ---
 
@@ -229,8 +229,8 @@ Approve the foundation spec and plan when Claude asks. From then on it's always 
 
 The same four specialists exist on both sides: **architect** (plans), **test-engineer** (tests first), **implementer** (one task at a time) and **reviewer** (read-only audit).
 
-- **Claude Code:** they come with the plugin. Check with `claude plugin details vibe-check-cli@vibe-check-cli` ("Agents (4)").
-- **Cursor:** the bootstrap puts them in your Cursor user folder (`~/.cursor/agents/`), and every project gets its own copy in `.cursor/agents/`. Cursor's Agent picks them automatically, or ask directly, e.g. "use the reviewer subagent to review feature 003". Reinstall any time with `vibecheck cursor-agents`.
+- **Claude Code:** they come with the plugin. Check with `claude plugin details vibekit@vibekit` ("Agents (4)").
+- **Cursor:** the bootstrap puts them in your Cursor user folder (`~/.cursor/agents/`), and every project gets its own copy in `.cursor/agents/`. Cursor's Agent picks them automatically, or ask directly, e.g. "use the reviewer subagent to review feature 003". Reinstall any time with `vibekit cursor-agents`.
 
 Both read your project's `AGENTS.md` first, so they follow the same architecture, standards, tests and security rules.
 
@@ -238,13 +238,13 @@ Both read your project's `AGENTS.md` first, so they follow the same architecture
 
 ## Starting over
 
-To remove every trace of Vibe-check-cli and install it fresh, download the latest `vibe-check-cli.zip` to **Downloads**, then paste into the Claude panel:
+To remove every trace of VibeKit and install it fresh, download the latest `vibekit.zip` to **Downloads**, then paste into the Claude panel:
 
 ```text
-Reset and reinstall Vibe-check-cli. In PowerShell: Expand-Archive "$HOME\Downloads\vibe-check-cli.zip" -DestinationPath "$env:TEMP\vibecheck-fresh" -Force, then run powershell -ExecutionPolicy Bypass -File "$env:TEMP\vibecheck-fresh\vibe-check-cli\plugin\scripts\reset.ps1" with a long timeout (up to 10 minutes). Show me the "What Claude Code now has" part at the end.
+Reset and reinstall VibeKit. In PowerShell: Expand-Archive "$HOME\Downloads\vibekit.zip" -DestinationPath "$env:TEMP\vibekit-fresh" -Force, then run powershell -ExecutionPolicy Bypass -File "$env:TEMP\vibekit-fresh\vibekit\plugin\scripts\reset.ps1" with a long timeout (up to 10 minutes). Show me the "What Claude Code now has" part at the end.
 ```
 
-It removes the plugin, its cached copy, the `vibecheck` command, `~\tools\vibe-check-cli` and your saved preferences, then installs fresh. It leaves Claude Code, your sign-in, Cursor, your other plugins and your projects alone. Afterwards: `/reload-plugins` (or fully restart Cursor), then `/vibe-check-cli:setup`.
+It removes the plugin, its cached copy, the `vibekit` command, `~\tools\vibekit` and your saved preferences, then installs fresh. It leaves Claude Code, your sign-in, Cursor, your other plugins and your projects alone. Afterwards: `/reload-plugins` (or fully restart Cursor), then `/vibekit:setup`.
 
 ---
 
@@ -253,13 +253,13 @@ It removes the plugin, its cached copy, the `vibecheck` command, `~\tools\vibe-c
 Ask in the panel first:
 
 ```text
-/vibe-check-cli:health live
+/vibekit:health live
 ```
 
 | Symptom | Fix |
 |---|---|
 | Bottom-left doesn't say **WSL: Ubuntu** | Click **><** → **Connect to WSL**, then reopen your project |
-| `Unknown command: /vibe-check-cli:…` | Run `claude plugin list` in the terminal. Not listed: `claude plugin marketplace add "$HOME/tools/vibe-check-cli"` then `claude plugin install vibe-check-cli@vibe-check-cli`. Listed: type `/reload-plugins` (or reload the WSL-connected Cursor window) |
+| `Unknown command: /vibekit:…` | Run `claude plugin list` in the terminal. Not listed: `claude plugin marketplace add "$HOME/tools/vibekit"` then `claude plugin install vibekit@vibekit`. Listed: type `/reload-plugins` (or reload the WSL-connected Cursor window) |
 | `wsl --install` fails or mentions virtualization | Enable virtualization (Intel VT-x / AMD-V) in your BIOS, then retry |
 | `docker: command not found` in Cursor's terminal | Docker Desktop → Settings → Resources → WSL integration → Ubuntu on → Apply & restart |
 | An install stops asking for a password | Run that one command in Cursor's terminal |
@@ -272,21 +272,21 @@ Ask in the panel first:
 
 If Claude in your Cursor panel runs commands in **PowerShell**, this is your setup. It works fully except shared memory: agentmemory needs WSL2, so memory stays off.
 
-1. Download `vibe-check-cli.zip` to your **Downloads** folder.
+1. Download `vibekit.zip` to your **Downloads** folder.
 2. In the Claude Code panel in Cursor, paste:
 
 ```text
-Set up Vibe-check-cli on this Windows machine. In PowerShell: Expand-Archive "$HOME\Downloads\vibe-check-cli.zip" -DestinationPath "$HOME\tools" -Force, then run powershell -ExecutionPolicy Bypass -File "$HOME\tools\vibe-check-cli\plugin\scripts\bootstrap.ps1" --minimal --yes with a long timeout (up to 10 minutes). Tell me what happened.
+Set up VibeKit on this Windows machine. In PowerShell: Expand-Archive "$HOME\Downloads\vibekit.zip" -DestinationPath "$HOME\tools" -Force, then run powershell -ExecutionPolicy Bypass -File "$HOME\tools\vibekit\plugin\scripts\bootstrap.ps1" --minimal --yes with a long timeout (up to 10 minutes). Tell me what happened.
 ```
 
 3. Approve the commands when Claude asks. If Windows asks for permission to install Node.js, allow it.
 4. Load the plugin: type `/reload-plugins` in the panel. If the panel doesn't know that command, or Node.js was installed in step 3, **close Cursor completely and reopen it**.
-5. Type `/vibe-check-cli:` in the panel: you should see 14 commands. Run `/vibe-check-cli:setup`, then `/vibe-check-cli:health live`.
+5. Type `/vibekit:` in the panel: you should see 14 commands. Run `/vibekit:setup`, then `/vibekit:health live`.
 
-**Where your projects live:** create them under `C:\Users\<you>\projects\`, one folder each. Ask Claude "list my projects" (it runs `vibecheck projects`) to see every Vibe-check-cli project on this machine, where it is and what's next.
+**Where your projects live:** create them under `C:\Users\<you>\projects\`, one folder each. Ask Claude "list my projects" (it runs `vibekit projects`) to see every VibeKit project on this machine, where it is and what's next.
 
 **Same setup for the whole team:** see [TEAM.md](TEAM.md).
 
-When you create a project, choose **no agentmemory** in the context tools question, or ask Claude afterwards to set `"memory": { "provider": "none" }` and run `vibecheck sync`. Everything else in Parts 5 to 9 works the same, with PowerShell instead of the Ubuntu terminal.
+When you create a project, choose **no agentmemory** in the context tools question, or ask Claude afterwards to set `"memory": { "provider": "none" }` and run `vibekit sync`. Everything else in Parts 5 to 9 works the same, with PowerShell instead of the Ubuntu terminal.
 
 More detail: `GUIDE.md`

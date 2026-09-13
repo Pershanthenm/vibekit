@@ -7,7 +7,7 @@ import { findFeature, listFeatures } from '../features.js';
 import { exists, writeText } from '../fsutil.js';
 import { loadProject } from '../project.js';
 
-const USAGE = 'Usage: vibecheck docs <status | new <kind> [feature] | stamp <path...> [--still-accurate]>';
+const USAGE = 'Usage: vibekit docs <status | new <kind> [feature] | stamp <path...> [--still-accurate]>';
 const FEATURE_KINDS = ['feature', 'design'];
 const SYMBOLS = { fresh: '✔', stale: '✖', missing: '✖', todo: '…', unstamped: '…' };
 

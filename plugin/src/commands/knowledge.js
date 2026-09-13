@@ -7,7 +7,7 @@ import { recordStatusChange } from '../journal.js';
 import { isKnowledgeEnabled, knowledgeFolder, knowledgeHealth, knowledgeManifest, publishKnowledge, searchKnowledge } from '../knowledge.js';
 import { loadProject } from '../project.js';
 
-const USAGE = 'Usage: vibecheck knowledge <status | search "<query>" | manifest [folder] | publish>';
+const USAGE = 'Usage: vibekit knowledge <status | search "<query>" | manifest [folder] | publish>';
 const PROJECT_DOCS = [
   { file: 'specs/00-product.md', name: 'product', description: 'Product vision, users and scope' },
   { file: 'specs/01-architecture.md', name: 'architecture', description: 'System architecture' },
@@ -23,7 +23,7 @@ function status(project) {
 
 async function search(project, query) {
   const results = await searchKnowledge(project, query);
-  if (!results.length) return console.log('No matching documents (see "vibecheck knowledge status").');
+  if (!results.length) return console.log('No matching documents (see "vibekit knowledge status").');
   results.forEach(({ title, snippet, path }) => console.log(`- ${title}${snippet ? ` — ${snippet}` : ''}${path ? `\n  ${path}` : ''}`));
 }
 
@@ -50,7 +50,7 @@ async function publish(project, _query, root) {
   }
   const doneFeatures = (await listFeatures(root)).filter((feature) => feature.status === 'done');
   for (const feature of doneFeatures) if ((await recordStatusChange(project, feature)).knowledge) published += 1;
-  console.log(published ? `✔ Published ${published} document(s) to OpenContext: ${knowledgeFolder(project)}/` : '✖ Nothing published — see "vibecheck knowledge status"');
+  console.log(published ? `✔ Published ${published} document(s) to OpenContext: ${knowledgeFolder(project)}/` : '✖ Nothing published — see "vibekit knowledge status"');
 }
 
 const ACTIONS = { status, search, manifest, publish };

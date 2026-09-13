@@ -1,4 +1,4 @@
-// What someone sees when they type `vibecheck` with nothing after it, or misspell a command.
+// What someone sees when they type `vibekit` with nothing after it, or misspell a command.
 //
 // The old behaviour printed forty lines of usage in both cases — and a typo exited 0, so a
 // script could not tell a mistake from success. A first-time reader got every command at once
@@ -49,12 +49,12 @@ async function looksLikeExistingCode(root) {
 
 function startingOptions(hasCode) {
   const start = [
-    ['vibecheck wizard', 'pick your stack in a browser, then come back'],
-    ['vibecheck init', 'answer the same questions here in the terminal'],
+    ['vibekit wizard', 'pick your stack in a browser, then come back'],
+    ['vibekit init', 'answer the same questions here in the terminal'],
   ];
   // Ordered by what is actually true of this folder, rather than always leading with `init`.
   return hasCode
-    ? [['vibecheck adopt', 'there is already code here — adopt it, do not scaffold over it'], ...start]
+    ? [['vibekit adopt', 'there is already code here — adopt it, do not scaffold over it'], ...start]
     : start;
 }
 
@@ -62,15 +62,15 @@ async function noProjectScreen(root) {
   const hasCode = await looksLikeExistingCode(root);
   return [
     '',
-    `  ${bold('vibecheck')} ${dim('· spec-driven development for Claude Code and Cursor')}`,
+    `  ${bold('vibekit')} ${dim('· spec-driven development for Claude Code and Cursor')}`,
     '',
-    `  ${hasCode ? 'There is code here, but no vibecheck project yet.' : 'No project here yet.'}`,
+    `  ${hasCode ? 'There is code here, but no vibekit project yet.' : 'No project here yet.'}`,
     '',
     `  ${heading('Start here')}`,
     commandList(startingOptions(hasCode)),
     '',
-    `  ${dim(`Not sure? Run ${hasCode ? 'vibecheck adopt' : 'vibecheck wizard'}.`)}`,
-    `  ${dim('Every command: vibecheck --help')}`,
+    `  ${dim(`Not sure? Run ${hasCode ? 'vibekit adopt' : 'vibekit wizard'}.`)}`,
+    `  ${dim('Every command: vibekit --help')}`,
     '',
   ].join('\n');
 }
@@ -102,27 +102,27 @@ async function projectScreen(root, project) {
 
   lines.push(`  ${heading('Also useful')}`);
   lines.push(commandList([
-    ['vibecheck dashboard', 'the whole lifecycle and test status, in your browser'],
-    ['vibecheck list', 'every feature, its stage and progress'],
-    ['vibecheck check', 'are the specs valid and the generated files in sync?'],
-    ['vibecheck health', 'is everything this project needs installed and working?'],
+    ['vibekit dashboard', 'the whole lifecycle and test status, in your browser'],
+    ['vibekit list', 'every feature, its stage and progress'],
+    ['vibekit check', 'are the specs valid and the generated files in sync?'],
+    ['vibekit health', 'is everything this project needs installed and working?'],
   ]));
   lines.push('');
-  lines.push(`  ${dim('Every command: vibecheck --help')}`);
+  lines.push(`  ${dim('Every command: vibekit --help')}`);
   lines.push('');
   return lines.join('\n');
 }
 
-/** The screen for a bare `vibecheck`: what to do next, given what is actually in this folder. */
+/** The screen for a bare `vibekit`: what to do next, given what is actually in this folder. */
 export async function startScreen(root) {
   if (!(await exists(join(root, PROJECT_FILE)))) return noProjectScreen(root);
   const project = await loadProject(root).catch(() => null);
   if (!project) {
     return [
       '',
-      `  ${bold('vibecheck')}`,
+      `  ${bold('vibekit')}`,
       `  ${PROJECT_FILE} exists but could not be read.`,
-      `  ${bold('vibecheck check')} ${dim('shows what is wrong')}`,
+      `  ${bold('vibekit check')} ${dim('shows what is wrong')}`,
       '',
     ].join('\n');
   }
@@ -166,8 +166,8 @@ export function closestCommand(typed, names) {
 export function unknownCommand(typed, names) {
   const suggestion = closestCommand(typed, names);
   return [
-    `vibecheck: no such command "${typed}"`,
-    suggestion ? `Did you mean ${bold(`vibecheck ${suggestion}`)}?` : '',
-    dim('Run "vibecheck" for what to do next, or "vibecheck --help" for every command.'),
+    `vibekit: no such command "${typed}"`,
+    suggestion ? `Did you mean ${bold(`vibekit ${suggestion}`)}?` : '',
+    dim('Run "vibekit" for what to do next, or "vibekit --help" for every command.'),
   ].filter(Boolean).join('\n');
 }

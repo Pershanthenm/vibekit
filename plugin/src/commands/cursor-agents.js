@@ -6,9 +6,9 @@ import { USER_AGENT_NOTICE, cursorAgentFiles } from '../generators/agents.js';
 import { GENERATED_MARK, frontMatter, markdown } from '../generators/shared.js';
 import { readTeam, teamPaths } from '../team.js';
 
-const cursorHome = () => process.env.VIBECHECK_CURSOR_DIR || join(homedir(), '.cursor');
+const cursorHome = () => process.env.VIBEKIT_CURSOR_DIR || join(homedir(), '.cursor');
 export const userCursorAgentsDir = () => join(cursorHome(), 'agents');
-export const userCursorSkillsDir = () => join(cursorHome(), 'skills', 'vibe-check-cli');
+export const userCursorSkillsDir = () => join(cursorHome(), 'skills', 'vibekit');
 
 function parseAgent(text) {
   const match = text.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
@@ -68,7 +68,7 @@ export async function cursorAgents({ remove: removeFlag }) {
   const team = await readTeam();
   await rm(userCursorSkillsDir(), { recursive: true, force: true });
   for (const name of team.skills) await cp(join(teamPaths().skills, name), join(userCursorSkillsDir(), name), { recursive: true, dereference: true });
-  kept.forEach((path) => console.log(`! kept your own ${path} (not created by Vibe-check-cli)`));
+  kept.forEach((path) => console.log(`! kept your own ${path} (not created by VibeKit)`));
   console.log(`✔ Cursor subagents ready in ${userCursorAgentsDir()}: architect, test-engineer, implementer, reviewer${team.agents.length ? `, ${team.agents.map((file) => file.replace(/\.md$/, '')).join(', ')}` : ''}`);
   if (team.skills.length) console.log(`✔ Team skills ready for Cursor in ${userCursorSkillsDir()}: ${team.skills.join(', ')}`);
 }

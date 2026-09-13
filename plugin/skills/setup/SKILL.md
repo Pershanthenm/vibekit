@@ -11,10 +11,10 @@ disable-model-invocation: true
 
 Scope: $ARGUMENTS (empty = everything this machine and project need)
 
-1. Run `vibecheck setup --json`. It lists what is already working (`ready`) and the steps still needed (`steps`: install, configure or start), each with its exact command.
-2. If `steps` is empty, say everything is installed and continue with /vibe-check-cli:health.
+1. Run `vibekit setup --json`. It lists what is already working (`ready`) and the steps still needed (`steps`: install, configure or start), each with its exact command.
+2. If `steps` is empty, say everything is installed and continue with /vibekit:health.
 3. Ask which steps to run with **AskUserQuestion**: multi-select questions of up to 4 options each (split into several questions if needed). Label = the tool's name plus " (Recommended)", description = what it's for and the command it runs. Don't offer steps marked `manual`; list them afterwards with their instructions. Steps marked `interactive` need a browser sign-in or prompts: mention that the user will run those in Cursor's terminal (View → Terminal).
-4. Run the chosen steps with `vibecheck setup --yes --only "<id>,<id>"` (quote the id list: PowerShell mangles an unquoted one). In this mode it never runs `interactive` steps: it prints them instead, for the user to run in Cursor's terminal. Installers print a lot; summarise what happened rather than repeating it. If a step waits for a password (`sudo`) or another prompt you can't answer, stop and ask the user to run that one command in Cursor's terminal (View → Terminal).
+4. Run the chosen steps with `vibekit setup --yes --only "<id>,<id>"` (quote the id list: PowerShell mangles an unquoted one). In this mode it never runs `interactive` steps: it prints them instead, for the user to run in Cursor's terminal. Installers print a lot; summarise what happened rather than repeating it. If a step waits for a password (`sudo`) or another prompt you can't answer, stop and ask the user to run that one command in Cursor's terminal (View → Terminal).
 5. Tell the user about sign-ins you can't do for them: Cursor's CLI (`agent login` in Cursor's terminal).
-6. Finish with /vibe-check-cli:health.
+6. Finish with /vibekit:health.
 

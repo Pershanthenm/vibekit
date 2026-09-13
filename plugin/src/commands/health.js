@@ -27,12 +27,12 @@ export async function health({ root, live, json }) {
   if (json) {
     console.log(JSON.stringify({ platform: report.platform, results: all.map(({ tool, ...rest }) => rest) }, null, 2));
   } else {
-    console.log(`vibecheck health · ${PLATFORM_NAMES[report.platform]}${report.project ? ` · project ${report.project.project.name}` : ''}`);
+    console.log(`vibekit health · ${PLATFORM_NAMES[report.platform]}${report.project ? ` · project ${report.project.project.name}` : ''}`);
     Object.entries(report.groups).forEach(([title, results]) => printGroup(title, results));
     if (report.platform === 'windows') console.log('\n! Native Windows works for Claude Code and Cursor, but agentmemory needs WSL2. Running everything inside WSL2 is the smoothest path.');
-    if (!live) console.log('\nRun "vibecheck health --live" to prove the chain end to end (sends a few tiny prompts to Claude and Cursor).');
+    if (!live) console.log('\nRun "vibekit health --live" to prove the chain end to end (sends a few tiny prompts to Claude and Cursor).');
   }
   const failed = all.filter((result) => !result.ok && !result.unknown);
-  if (!json) console.log(failed.length ? `\n${failed.length} issue(s). Fix them one by one above, or run "vibecheck setup".` : '\n✔ Everything this project needs works on this machine.');
+  if (!json) console.log(failed.length ? `\n${failed.length} issue(s). Fix them one by one above, or run "vibekit setup".` : '\n✔ Everything this project needs works on this machine.');
   if (failed.length) process.exitCode = 1;
 }

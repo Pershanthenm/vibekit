@@ -4,7 +4,7 @@ import { exists, writeText } from '../fsutil.js';
 import { INDEX_FILE, STANDARDS_DIR, parseIndex, renderIndex, scanStandards, selectStandards } from '../standards.js';
 import { discoverAreas, uncovered } from '../standards-discover.js';
 
-const USAGE = `vibecheck standards <command>
+const USAGE = `vibekit standards <command>
 
   list                     Every standard in the index, by domain
   index                    Rebuild ${INDEX_FILE} from the files in ${STANDARDS_DIR}/
@@ -18,7 +18,7 @@ root of ${STANDARDS_DIR}/ are indexed under "root".`;
 
 async function readIndex(root) {
   const text = await readFile(join(root, INDEX_FILE), 'utf8').catch(() => null);
-  if (text === null) throw new Error(`No ${INDEX_FILE}. Add standards under ${STANDARDS_DIR}/ and run "vibecheck standards index".`);
+  if (text === null) throw new Error(`No ${INDEX_FILE}. Add standards under ${STANDARDS_DIR}/ and run "vibekit standards index".`);
   return parseIndex(text);
 }
 
@@ -53,17 +53,17 @@ async function runList(root, json) {
     }
     console.log(`  ${entry.name.padEnd(24)} ${entry.description || '(no description)'}`);
   }
-  console.log(`\n${entries.length} standard(s). Relevant ones only: vibecheck standards inject "<task>"`);
+  console.log(`\n${entries.length} standard(s). Relevant ones only: vibekit standards inject "<task>"`);
 }
 
 async function runInject(root, query, paths, json) {
-  if (!query && !paths.length) throw new Error('standards inject: say what you are working on, e.g. vibecheck standards inject "add an error response to the orders API"');
+  if (!query && !paths.length) throw new Error('standards inject: say what you are working on, e.g. vibekit standards inject "add an error response to the orders API"');
   const hits = selectStandards(await readIndex(root), { query, paths });
   if (json) return console.log(JSON.stringify({ query, paths, standards: hits }, null, 2));
 
   if (!hits.length) {
     console.log(`No standard matches "${query}".`);
-    console.log('That is an answer, not a failure: nothing recorded covers this yet. See everything with "vibecheck standards list".');
+    console.log('That is an answer, not a failure: nothing recorded covers this yet. See everything with "vibekit standards list".');
     return;
   }
   console.log(`${hits.length} relevant standard${hits.length === 1 ? '' : 's'} — read these, not the whole library:\n`);
@@ -99,7 +99,7 @@ async function runDiscover(root, json) {
     }
   }
   console.log(missing.length
-    ? '\nWhat those areas have in common is a judgement, not a pattern match, so this stops here.\nRun /vibe-check-cli:standards-discover to have an agent read them and draft standards for you to review.'
+    ? '\nWhat those areas have in common is a judgement, not a pattern match, so this stops here.\nRun /vibekit:standards-discover to have an agent read them and draft standards for you to review.'
     : '\nEvery area of this codebase has a standard written about it.');
 }
 

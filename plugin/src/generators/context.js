@@ -20,12 +20,12 @@ export const WORKFLOW = [
   '1. `specs/project.json` is the source of truth for stack, architecture and standards. Feature specs live in `specs/features/<id>/`.',
   '2. No production code without a feature spec whose status is `approved` (or later). If none exists, write the spec first.',
   '3. Per feature: spec (`spec.md`) → plan (`plan.md`) → tasks (`tasks.md`) → implement → review (`review.md`).',
-  '4. Change status only with `vibecheck status <id> <status>`; it refuses transitions the files don\'t support.',
+  '4. Change status only with `vibekit status <id> <status>`; it refuses transitions the files don\'t support.',
   '5. Implement one task at a time, keep the diff scoped to it, then tick it in `tasks.md`. Tick an acceptance criterion once a passing test proves it.',
-  '6. Tasks tagged `[P]` share no files with other open tasks. A ready block of them runs in parallel via `vibecheck dispatch` (one git worktree + agent per lane). Lanes only touch their own files, never edit `specs/`, and commit with the task id; the orchestrator merges and ticks.',
+  '6. Tasks tagged `[P]` share no files with other open tasks. A ready block of them runs in parallel via `vibekit dispatch` (one git worktree + agent per lane). Lanes only touch their own files, never edit `specs/`, and commit with the task id; the orchestrator merges and ticks.',
   '7. If the spec or plan is wrong, stop and propose a change. Never silently diverge.',
   '8. Changing stack, architecture or a cross-cutting pattern requires an ADR in `specs/decisions/`.',
-  '9. Done = every acceptance criterion checked and traced to a test, the test, smoke and UI suites pass on a clean commit (`vibecheck verify <id> --run` records this as evidence), docs fresh, `vibecheck check` passes.',
+  '9. Done = every acceptance criterion checked and traced to a test, the test, smoke and UI suites pass on a clean commit (`vibekit verify <id> --run` records this as evidence), docs fresh, `vibekit check` passes.',
 ].join('\n');
 
 export const EVIDENCE = [
@@ -44,9 +44,9 @@ export const EVIDENCE = [
 export const STANDARDS = [
   'Project standards live in `standards/`, one topic per file, grouped into domain folders and indexed by `standards/index.yml`.',
   'Read the index first, then open only the standards that match the task. Loading the whole library wastes context and buries the rules that matter.',
-  '`vibecheck standards inject "<task>"` lists the relevant ones; add `--paths a,b` to match standards scoped by globs to the files you are touching.',
+  '`vibekit standards inject "<task>"` lists the relevant ones; add `--paths a,b` to match standards scoped by globs to the files you are touching.',
   'If nothing matches, say so. Do not invent a convention and do not assume one from another project.',
-  'After adding or editing a standard, run `vibecheck standards index` so the index stays true.',
+  'After adding or editing a standard, run `vibekit standards index` so the index stays true.',
 ].join('\n');
 
 const REVIEW_CHECKLIST = bullets([
@@ -61,22 +61,22 @@ const REVIEW_CHECKLIST = bullets([
 
 const MEMORY_RULES = bullets([
   'Shared memory runs on agentmemory (local server, same store for Claude Code and Cursor).',
-  'Before planning or a non-trivial change, recall related decisions: `vibecheck memory recall "<topic>"` or the `memory_smart_search` tool.',
-  'Save what the code can\'t tell the next agent — a decision and its reason, a gotcha, a convention: `vibecheck memory remember "<fact>"` or `memory_save`.',
+  'Before planning or a non-trivial change, recall related decisions: `vibekit memory recall "<topic>"` or the `memory_smart_search` tool.',
+  'Save what the code can\'t tell the next agent — a decision and its reason, a gotcha, a convention: `vibekit memory remember "<fact>"` or `memory_save`.',
   'Specs, plans and ADRs stay the source of truth. If memory contradicts them, trust the files and flag the conflict.',
   'Never store secrets or personal data in memory.',
 ]);
 
 const knowledgeRules = (project) => bullets([
   'Your curated, cross-project library lives in OpenContext (`~/.opencontext/contexts`), shared by Claude Code and Cursor.',
-  `Starting a project or a big design decision: read your playbook first (\`vibecheck knowledge manifest\`, folder \`${project.knowledge.playbook}\`).`,
-  'Before planning: `vibecheck knowledge search "<topic>"` (or the OpenContext MCP tools) for API contracts, pitfalls and earlier decisions.',
+  `Starting a project or a big design decision: read your playbook first (\`vibekit knowledge manifest\`, folder \`${project.knowledge.playbook}\`).`,
+  'Before planning: `vibekit knowledge search "<topic>"` (or the OpenContext MCP tools) for API contracts, pitfalls and earlier decisions.',
   'Lessons that apply beyond this project belong in the playbook (/opencontext-iterate). This project\'s finished features, ADRs and architecture are published automatically.',
 ]);
 
 const docsRules = (project) => bullets([
   `\`${project.docs.dir}/\` describes how the system works **now**; specs describe intent. Diagrams are Mermaid, drawn from the code.`,
-  'Every document declares its `sources` in front matter. When a source changes, the document is stale until it is updated and stamped (`vibecheck docs stamp <path>`).',
+  'Every document declares its `sources` in front matter. When a source changes, the document is stale until it is updated and stamped (`vibekit docs stamp <path>`).',
   'Re-architecting (specs, ADRs, `project.json`) makes architecture docs stale immediately: update them in the same change. Use the re-architect workflow rather than quiet edits.',
   'A feature is done only when its feature doc (and design doc, when it has UI) plus every touched diagram is fresh.',
   `\`${project.docs.dir}/roadmap.md\` is generated from feature statuses — don't edit it.`,
@@ -89,7 +89,7 @@ const testingRules = (project) => bullets([
   project.commands.smoke && `Smoke: \`${project.commands.smoke}\` — a few fast checks of the critical paths against a real build; tag them (\`@smoke\`, \`Category=Smoke\`, \`pytest.mark.smoke\`).`,
   project.commands.ui && `UI: \`${project.commands.ui}\` — every acceptance criterion a user can see has a UI test (browser, mobile or desktop) that includes an accessibility check.`,
   'Every test name starts with the criterion it proves, e.g. `003:AC-2 rejects a retired laptop`.',
-  'A feature is only done with a passing test, smoke and UI run recorded for the current commit: `vibecheck verify <id> --run`.',
+  'A feature is only done with a passing test, smoke and UI run recorded for the current commit: `vibekit verify <id> --run`.',
 ]);
 
 function renderAgentsMd(project) {
@@ -134,12 +134,12 @@ function renderClaudeMd(project) {
       bullets([
         `You are the orchestrator. ${cmd('run')} advances the workflow to the next human gate.`,
         `Workflow skills: ${skills}.`,
-        project.workflow.enforce && 'Hooks enforce the workflow: code edits need a feature in progress, generated files are read-only, and finishing a turn runs `vibecheck check`.',
-        project.memory.provider === 'agentmemory' && 'Memory: the agentmemory plugin captures sessions; vibecheck adds spec approvals, finished features and lane merges, and injects memories relevant to the next feature at session start.',
-        hasKnowledge(project) && 'Knowledge: `vibecheck context <feature|topic>` merges agentmemory and OpenContext into one brief; session start and every lane brief include it automatically.',
+        project.workflow.enforce && 'Hooks enforce the workflow: code edits need a feature in progress, generated files are read-only, and finishing a turn runs `vibekit check`.',
+        project.memory.provider === 'agentmemory' && 'Memory: the agentmemory plugin captures sessions; vibekit adds spec approvals, finished features and lane merges, and injects memories relevant to the next feature at session start.',
+        hasKnowledge(project) && 'Knowledge: `vibekit context <feature|topic>` merges agentmemory and OpenContext into one brief; session start and every lane brief include it automatically.',
         project.workflow.skills === 'project'
           ? 'Subagents in `.claude/agents/`: **architect** (plans, ADRs), **test-engineer** (tests from acceptance criteria), **implementer** (one task at a time), **reviewer** (read-only audit).'
-          : 'Subagents from the Vibe-check-cli plugin: **architect** (plans, ADRs), **test-engineer** (tests from acceptance criteria), **implementer** (one task at a time), **reviewer** (read-only audit).',
+          : 'Subagents from the VibeKit plugin: **architect** (plans, ADRs), **test-engineer** (tests from acceptance criteria), **implementer** (one task at a time), **reviewer** (read-only audit).',
         'Keep the main thread for coordination; delegate independent `[P]` tasks to parallel implementer subagents.',
       ]),
     ),
@@ -152,7 +152,7 @@ function renderTechStack(project) {
     '# Tech stack',
     `Targets: ${project.targets.join(', ')}`,
     stackTable(project.stack),
-    section('Changing the stack', 'Add an ADR in `specs/decisions/` explaining why, update `specs/project.json`, then run `vibecheck sync`.'),
+    section('Changing the stack', 'Add an ADR in `specs/decisions/` explaining why, update `specs/project.json`, then run `vibekit sync`.'),
   );
 }
 

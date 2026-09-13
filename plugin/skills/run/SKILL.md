@@ -11,11 +11,11 @@ argument-hint: "[feature id or goal]"
 Scope: $ARGUMENTS (empty = whole project)
 
 Loop until you reach a human gate or nothing is left:
-1. Run `vibecheck next --json`. It returns `step`, `feature`, `command`, `gate` and `reason`.
-2. If `gate` is `spec-approval`: complete the spec with /vibe-check-cli:spec-feature if it still has TODOs, summarise it (stories, acceptance criteria, open questions) and ask the user to approve. Stop.
+1. Run `vibekit next --json`. It returns `step`, `feature`, `command`, `gate` and `reason`.
+2. If `gate` is `spec-approval`: complete the spec with /vibekit:spec-feature if it still has TODOs, summarise it (stories, acceptance criteria, open questions) and ask the user to approve. Stop.
 3. If `gate` is `plan-approval`: summarise the plan and task lanes and ask to proceed. Stop — unless the user already approved this plan in this conversation.
-4. Otherwise execute the step by invoking its skill (/vibe-check-cli:plan-feature, /vibe-check-cli:implement-feature, /vibe-check-cli:review-feature) and let it finish.
-7. After each step run `vibecheck check`, fix what it reports, commit with a Conventional Commit message, and post one progress line: feature · step · result.
+4. Otherwise execute the step by invoking its skill (/vibekit:plan-feature, /vibekit:implement-feature, /vibekit:review-feature) and let it finish.
+7. After each step run `vibekit check`, fix what it reports, commit with a Conventional Commit message, and post one progress line: feature · step · result.
 
 Restrict the loop to the scope above when one is given. If verification keeps failing after two focused attempts, stop and report the blocker instead of guessing.
 

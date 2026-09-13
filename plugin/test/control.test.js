@@ -93,7 +93,7 @@ test('a status change goes through the same gates the CLI applies, and is refuse
   const specPath = join(root, SPEC);
   const before = await readFile(specPath, 'utf8');
 
-  // The spec still has TODOs in it, which is exactly what `vibecheck status` refuses to approve.
+  // The spec still has TODOs in it, which is exactly what `vibekit status` refuses to approve.
   const refused = await post(server, { action: 'feature.status', id: '001', status: 'approved' });
   assert.equal(refused.status, 409);
   const body = await refused.json();

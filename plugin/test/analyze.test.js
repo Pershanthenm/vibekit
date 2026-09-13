@@ -99,7 +99,7 @@ test('missing artefacts are reported rather than silently passing', () => {
   assert.ok(kinds(analyzeFeature(feature(TWO_CRITERIA, ''))).includes('empty'));
 });
 
-test('vibecheck analyze exits 1 on contradictions and 0 once they are resolved', async () => {
+test('vibekit analyze exits 1 on contradictions and 0 once they are resolved', async () => {
   const root = await newProject('--yes');
   await run(['feature', '--dir', root, 'Assign laptop']);
   await fillSpec(root, '001-assign-laptop', { tasks: ['- [ ] T-1 [impl] assign (AC-1) — src/assign.ts'] });

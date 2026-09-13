@@ -26,26 +26,26 @@ const WORKFLOW_GATE = bullets([
   'Before editing code, identify the feature in `specs/features/` and confirm its status is `approved`, `planned` or `in-progress`. If there is none, run the `spec-feature` workflow first.',
   'Work one task from `tasks.md` at a time and tick it when lint, typecheck and tests pass.',
   'If the spec is wrong, stop and propose a spec change instead of diverging.',
-  'In a parallel lane (a worktree started by `vibecheck dispatch`): do only the tasks in your brief, touch only their files, never edit `specs/`, and commit with the task id.',
+  'In a parallel lane (a worktree started by `vibekit dispatch`): do only the tasks in your brief, touch only their files, never edit `specs/`, and commit with the task id.',
 ]);
 
 const SPEC_WRITING = bullets([
-  '`specs/project.json` drives every generated file; after editing it run `vibecheck sync`.',
+  '`specs/project.json` drives every generated file; after editing it run `vibekit sync`.',
   'Specs describe what and why; plans describe how. Keep them separate.',
   'Acceptance criteria use `- [ ] AC-n: Given … when … then …` and must each be testable.',
   'Tasks use `- [ ] T-n [test|impl] <what> (AC-n) — <files>`; add `[P]` only if no files overlap with other open tasks.',
-  'Change status with `vibecheck status <id> <status>`, never by hand.',
+  'Change status with `vibekit status <id> <status>`, never by hand.',
 ]);
 
 const DOCS_RULE = bullets([
   'Docs describe the code as built; read every file in the `sources` front matter before editing.',
   'Diagrams are Mermaid: architecture flowchart/C4, data model erDiagram, feature sequence diagram, design user flow.',
-  'After editing run `vibecheck docs stamp <path>`; never edit `stamp`, `body` or `reviewed` by hand. `roadmap.md` is generated.',
+  'After editing run `vibekit docs stamp <path>`; never edit `stamp`, `body` or `reviewed` by hand. `roadmap.md` is generated.',
 ]);
 
 const SECURITY_SCOPE = 'auth, config and data-access code (`**/*auth*`, `**/config/**`, `**/*Controller*`, `**/*Repository*`, `**/*.env*`)';
 const MEMORY_GATE = '- Memory is shared with Claude Code through agentmemory: search it before planning, and save decisions with their reason.';
-const KNOWLEDGE_GATE = '- Before designing, check the OpenContext library (`vibecheck context <topic>`) and record cross-project lessons there.';
+const KNOWLEDGE_GATE = '- Before designing, check the OpenContext library (`vibekit context <topic>`) and record cross-project lessons there.';
 
 function testingRule(project) {
   const { testing } = project.standards;
@@ -59,7 +59,7 @@ function testingRule(project) {
 }
 
 const languageRuleFiles = (project) => languageRules(project).map(({ name, globs, rules }) =>
-  rule(`vibecheck-${slugify(name)}`, `${name} files (\`${globs}\`)`, bullets(rules)));
+  rule(`vibekit-${slugify(name)}`, `${name} files (\`${globs}\`)`, bullets(rules)));
 
 const workflowFile = (skill) => file(
   `${WORKFLOWS_DIR}/${skill.name}.md`,
@@ -75,16 +75,16 @@ export function antigravityFiles(project) {
   ].filter(Boolean).join('\n');
 
   return [
-    rule('vibecheck-workflow', 'every task in this workspace (always on)', gate),
+    rule('vibekit-workflow', 'every task in this workspace (always on)', gate),
     rule(
-      'vibecheck-architecture',
+      'vibekit-architecture',
       'creating modules, moving code between layers or adding dependencies',
       `**${style.label}** — ${style.summary}\n\n${architectureBullets(project)}\n\nSee \`specs/01-architecture.md\` and \`specs/decisions/\`.`,
     ),
-    rule('vibecheck-specs', 'files under `specs/**`', SPEC_WRITING),
-    rule('vibecheck-tests', `test files (\`${TEST_GLOBS}\`)`, testingRule(project)),
-    project.security.controls.length && rule('vibecheck-security', SECURITY_SCOPE, `${bullets(securityRules(project))}\n\nFull baseline: \`specs/security.md\`.`),
-    project.docs.enabled && rule('vibecheck-docs', `files under \`${project.docs.dir}/**\``, DOCS_RULE),
+    rule('vibekit-specs', 'files under `specs/**`', SPEC_WRITING),
+    rule('vibekit-tests', `test files (\`${TEST_GLOBS}\`)`, testingRule(project)),
+    project.security.controls.length && rule('vibekit-security', SECURITY_SCOPE, `${bullets(securityRules(project))}\n\nFull baseline: \`specs/security.md\`.`),
+    project.docs.enabled && rule('vibekit-docs', `files under \`${project.docs.dir}/**\``, DOCS_RULE),
     ...languageRuleFiles(project),
     ...SKILLS.map(workflowFile),
   ].filter(Boolean);

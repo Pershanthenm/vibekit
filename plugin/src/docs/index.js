@@ -33,7 +33,7 @@ export async function allDocStates(root, project) {
 
 export function describe(state) {
   const reasons = {
-    missing: `missing — create it: vibecheck docs new ${state.kind}${state.kind === 'feature' || state.kind === 'design' ? ` ${state.path.split('/').pop().replace(/\.md$/, '')}` : ''}`,
+    missing: `missing — create it: vibekit docs new ${state.kind}${state.kind === 'feature' || state.kind === 'design' ? ` ${state.path.split('/').pop().replace(/\.md$/, '')}` : ''}`,
     todo: 'still has TODOs',
     unstamped: 'written but never stamped',
     stale: 'its sources changed since it was last stamped',

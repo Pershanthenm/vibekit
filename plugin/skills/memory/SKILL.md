@@ -10,10 +10,10 @@ argument-hint: "[what to look for]"
 
 Scope: $ARGUMENTS
 
-1. `vibecheck memory list` shows what is held for this project, newest first, with an id on every row. `vibecheck memory search "<text>"` finds a particular one, also with ids.
+1. `vibekit memory list` shows what is held for this project, newest first, with an id on every row. `vibekit memory search "<text>"` finds a particular one, also with ids.
 2. A wrong memory is repeated into every brief until someone removes it. Read the ones that matter back to the user in their own words and ask whether each is still true.
-3. Correct one with `vibecheck memory correct <id> "<the right version>"` — it deletes the old one and saves the replacement. Delete one outright with `vibecheck memory forget <id>`. **Both are irreversible.** Show exactly what will go and get an explicit yes first; never act on silence or a vague "sure".
+3. Correct one with `vibekit memory correct <id> "<the right version>"` — it deletes the old one and saves the replacement. Delete one outright with `vibekit memory forget <id>`. **Both are irreversible.** Show exactly what will go and get an explicit yes first; never act on silence or a vague "sure".
 4. Report what actually happened. The count that comes back is what was found and removed, which is not always what was asked for.
-5. `vibecheck memory capture` shows what vibecheck records without being asked (spec, done, lanes, health, security); pass the kinds to keep, or `none`. What the user saves themselves is always kept, whatever this is set to.
-6. If nothing comes back at all, check `vibecheck memory status` before concluding the project has no memories.
+5. `vibekit memory capture` shows what vibekit records without being asked (spec, done, lanes, health, security); pass the kinds to keep, or `none`. What the user saves themselves is always kept, whatever this is set to.
+6. If nothing comes back at all, check `vibekit memory status` before concluding the project has no memories.
 

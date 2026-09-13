@@ -40,7 +40,7 @@ canvas themselves, and the version you hand over is rarely the version they appr
 
 ## 4. Record what was approved
 
-Once they choose, create the design doc with `vibecheck docs new design <feature>` and fill in the
+Once they choose, create the design doc with `vibekit docs new design <feature>` and fill in the
 front matter so the decision is recorded rather than remembered:
 
 ```
@@ -50,12 +50,12 @@ approved_by: <who approved it>
 ```
 
 In the body, describe the user flow as a Mermaid `flowchart` or `journey`, and the states each
-acceptance criterion requires. Then run `vibecheck docs stamp <path>`.
+acceptance criterion requires. Then run `vibekit docs stamp <path>`.
 
 ## 5. Resume
 
 A feature targeting web, mobile or desktop cannot move to `in-progress` until its design doc names
-an approved artboard, so recording it is what unblocks the build. Continue with /vibe-check-cli:run.
+an approved artboard, so recording it is what unblocks the build. Continue with /vibekit:run.
 
 Features with no screens — an API, a migration, CI — are not gated and need no design.
 

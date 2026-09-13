@@ -53,7 +53,7 @@ function onlyTheReviewChanged(root, from, to, featureId) {
 
 export async function reviewProblems(root, project, feature) {
   if (!project.workflow.review) return [];
-  const rerun = `run /vibe-check-cli:review-feature on ${feature.id.slice(0, 3)} and record the verdict in specs/features/${feature.id}/review.md`;
+  const rerun = `run /vibekit:review-feature on ${feature.id.slice(0, 3)} and record the verdict in specs/features/${feature.id}/review.md`;
   const review = await loadReview(root, feature.id);
   if (!review) return [`review: no code review recorded — ${rerun}`];
   if (!VERDICTS.includes(review.verdict)) {

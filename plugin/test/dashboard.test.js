@@ -9,7 +9,7 @@ import { loadProject, saveProject } from '../src/project.js';
 import { gitInit, newProject, patchProject, sh } from './helpers.js';
 
 console.log = () => {};
-process.env.VIBECHECK_NO_OPEN = '1';
+process.env.VIBEKIT_NO_OPEN = '1';
 
 const withFeature = async () => {
   const root = await newProject('--yes');
@@ -64,7 +64,7 @@ test('the page is self-contained, and readable before any script runs', () => {
   const html = renderDashboard({
     project: { name: 'device-register', generatedAt: '2026-09-12T14:32:09.000Z', engine: 'cursor', autonomy: 'gated' },
     tests: { ok: 0, flaky: 0, failed: 0, missing: 0, suites: 0, stale: 0, untraced: 0 },
-    next: { step: 'spec', feature: '001-device-register', command: 'vibecheck feature', gate: 'spec-approval', reason: 'needs approval' },
+    next: { step: 'spec', feature: '001-device-register', command: 'vibekit feature', gate: 'spec-approval', reason: 'needs approval' },
     setup: null,
     problems: [],
     features: [],

@@ -212,7 +212,7 @@ function starterSection(result) {
     ? `${picked.label} (${picked.licence.name}) — score ${picked.score}. ${picked.reasons.map((reason) => reason.text).join('; ') || 'No scoring rules applied.'}`
     : chosen?.other
       ? `${chosen.other} (entered by you; not in the catalogue).`
-      : 'From scratch: no boilerplate. The layout and conventions are the ones vibecheck generates.';
+      : 'From scratch: no boilerplate. The layout and conventions are the ones vibekit generates.';
   const alternatives = starters.ranked.filter((item) => item.id !== chosen).slice(0, 3)
     .map((item) => `- ${item.label} (${item.licence.name}) — ${item.summary}`);
   const excluded = starters.excluded.map((item) => `- ${item.label} — excluded: ${item.reason}`);
@@ -227,11 +227,11 @@ export function renderSelectionAdr({ number, date, result, choices }) {
   return [
     `# ${String(number).padStart(4, '0')} — Technology selection`,
     `- Status: accepted\n- Date: ${date}`,
-    `## Context\n\nRequirements gathered with \`vibecheck advise\`:\n\n| Topic | Answer |\n|---|---|\n${requirementRows.join('\n')}`,
+    `## Context\n\nRequirements gathered with \`vibekit advise\`:\n\n| Topic | Answer |\n|---|---|\n${requirementRows.join('\n')}`,
     `## Decision\n\n${summary}`,
     ...Object.entries(choices).map(([layer, item]) => layerSection(layer, result.layers[layer], item)),
     starterSection(result),
     result.warnings.length ? `## Warnings\n\n${result.warnings.map((warning) => `- ${warning}`).join('\n')}` : '',
-    `## Consequences\n\nLicences: ${Object.values(choices).map((item) => `${item.label} (${item.licence.name})`).join(', ')}. Revisit with \`vibecheck advise recommend\`; changing a layer goes through the re-architect workflow.`,
+    `## Consequences\n\nLicences: ${Object.values(choices).map((item) => `${item.label} (${item.licence.name})`).join(', ')}. Revisit with \`vibekit advise recommend\`; changing a layer goes through the re-architect workflow.`,
   ].filter(Boolean).join('\n\n') + '\n';
 }

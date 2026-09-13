@@ -78,7 +78,7 @@ test('a project that cannot be read shows a page, and the server stays up', asyn
   const broken = await get(url);
   assert.equal(broken.status, 503, 'an unreadable project is not a 200');
   assert.match(broken.body, /Waiting for a readable project/);
-  assert.match(broken.body, /vibecheck check/, 'it has to say how to fix it');
+  assert.match(broken.body, /vibekit check/, 'it has to say how to fix it');
 
   // Repair it and the same server recovers without a restart.
   writeFileIn(root, 'specs/project.json', healthy);

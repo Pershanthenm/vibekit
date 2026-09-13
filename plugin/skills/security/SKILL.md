@@ -10,8 +10,8 @@ argument-hint: "[change]"
 
 Change: $ARGUMENTS (empty = review the whole baseline)
 
-1. Run `vibecheck security status` to see current controls, how each is implemented on this stack, accepted risks and test traceability.
-2. Run `vibecheck security questions --json` and ask the relevant rounds with **AskUserQuestion**, marking the current selections and secure defaults " (Recommended)" and keeping "(required)" visible.
-3. Write `specs/security-answers.json` and run `vibecheck security apply`. New controls become acceptance criteria in the foundation or security-baseline feature; existing ones are not duplicated.
-4. Confirm any accepted risks with the user. Update `docs/security/threat-model.md` with /vibe-check-cli:docs if data flows or trust boundaries changed.
+1. Run `vibekit security status` to see current controls, how each is implemented on this stack, accepted risks and test traceability.
+2. Run `vibekit security questions --json` and ask the relevant rounds with **AskUserQuestion**, marking the current selections and secure defaults " (Recommended)" and keeping "(required)" visible.
+3. Write `specs/security-answers.json` and run `vibekit security apply`. New controls become acceptance criteria in the foundation or security-baseline feature; existing ones are not duplicated.
+4. Confirm any accepted risks with the user. Update `docs/security/threat-model.md` with /vibekit:docs if data flows or trust boundaries changed.
 

@@ -205,7 +205,7 @@ export function starterQuestion(starters) {
       {
         id: 'none',
         label: leadWithStarter ? 'From scratch' : 'From scratch (Recommended)',
-        description: 'vibecheck generates the layout and conventions; nothing extra to learn, licence or upgrade',
+        description: 'vibekit generates the layout and conventions; nothing extra to learn, licence or upgrade',
       },
     ],
   };

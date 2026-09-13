@@ -7,7 +7,7 @@ import { normalize, validate } from '../src/schema.js';
 import { gitInit, newProject, patchProject, sh, tempDir } from './helpers.js';
 
 console.log = () => {};
-process.env.VIBECHECK_NO_OPEN = '1';
+process.env.VIBEKIT_NO_OPEN = '1';
 
 const PASSES = 'node -e ""';
 const FAILS = 'node -e "process.exit(1)"';

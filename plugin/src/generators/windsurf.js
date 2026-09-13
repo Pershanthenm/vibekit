@@ -17,21 +17,21 @@ const GATE = bullets([
   'Work one task from `tasks.md` at a time; tick it only when lint, typecheck and tests pass.',
   'Tick an acceptance criterion only when a passing test proves it.',
   'If the spec is wrong, stop and propose a spec change rather than diverging.',
-  'Never hand-edit generated files: change `specs/project.json` and run `vibecheck sync`.',
+  'Never hand-edit generated files: change `specs/project.json` and run `vibekit sync`.',
 ]);
 
 const STANDARDS = bullets([
   'Project standards live in `standards/`, indexed by `standards/index.yml`.',
   'Read the index first, then open only the standards that match the task — not the whole library.',
-  '`vibecheck standards inject "<task>"` lists the relevant ones.',
+  '`vibekit standards inject "<task>"` lists the relevant ones.',
   'If nothing matches, say so rather than inventing a convention.',
 ]);
 
 export function windsurfFiles(project) {
   const style = ARCHITECTURES[project.architecture.style];
   return [
-    rule('vibecheck-workflow', GATE),
-    rule('vibecheck-architecture', `**${style.label}** — ${style.summary}\n\nBoundaries, modules and data flow: \`specs/01-architecture.md\`. Decisions: \`specs/decisions/\`.`),
-    rule('vibecheck-standards', STANDARDS),
+    rule('vibekit-workflow', GATE),
+    rule('vibekit-architecture', `**${style.label}** — ${style.summary}\n\nBoundaries, modules and data flow: \`specs/01-architecture.md\`. Decisions: \`specs/decisions/\`.`),
+    rule('vibekit-standards', STANDARDS),
   ];
 }

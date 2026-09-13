@@ -1,9 +1,9 @@
 {
-  "name": "vibe-check-cli",
-  "description": "Vibe-check-cli: always-on spec-driven workflow, platform-agnostic stack advice, security baseline, and parallel lanes on Cursor or Claude.",
+  "name": "vibekit",
+  "description": "VibeKit: always-on spec-driven workflow, platform-agnostic stack advice, security baseline, and parallel lanes on Cursor or Claude.",
   "version": "0.2.0-beta",
   "license": "MIT",
   "author": {
-    "name": "Vibe-check-cli"
+    "name": "VibeKit"
   }
 }

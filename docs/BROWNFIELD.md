@@ -1,17 +1,17 @@
 # Brownfield — assess, modernize and migrate existing codebases
 
-- **Product:** Vibe-check-cli
+- **Product:** VibeKit
 - **Status:** Part 1 (Adopt) implemented. Parts 2–4 specified, not built.
 - **Date:** 2026-09-11
 
 ## 1. Problem
 
-Vibe-check-cli works well for new projects: it starts from menus and builds forward, spec by
+VibeKit works well for new projects: it starts from menus and builds forward, spec by
 spec. Most real work isn't greenfield. Teams inherit applications on end-of-life frameworks
 (.NET Framework 4.x, Vue 2, AngularJS, Python 2, Java 8), with vulnerable dependencies, missing
 tests, and architecture nobody fully remembers.
 
-There is no way to point Vibe-check-cli at an existing codebase and answer three questions:
+There is no way to point VibeKit at an existing codebase and answer three questions:
 
 1. **What have we got?** Stack, versions, structure, and how healthy it is.
 2. **What's wrong with it?** Security holes, vulnerable or end-of-life dependencies, licence
@@ -36,7 +36,7 @@ There is no way to point Vibe-check-cli at an existing codebase and answer three
 - Fully automatic rewrites merged without review.
 - Migrating production data or deploying to production.
 - Replacing specialist tools. Scanners such as Semgrep, gitleaks and OSV-Scanner do the
-  detecting; Vibe-check-cli runs them, merges results, and turns them into work.
+  detecting; VibeKit runs them, merges results, and turns them into work.
 - Languages with no scanner or parser support. They get inventory and AI review only, labelled
   as such.
 
@@ -64,7 +64,7 @@ flowchart LR
   H --> C
 ```
 
-Brownfield work reuses what Vibe-check-cli already has: the **advisor** for target stack and
+Brownfield work reuses what VibeKit already has: the **advisor** for target stack and
 licences, the **security baseline** for controls to assess against, **verification, evidence and
 living docs** for proof, the **subagents** for analysis, **lanes** for parallel
 migration, and **memory and OpenContext** to keep what was learned.
@@ -73,7 +73,7 @@ migration, and **memory and OpenContext** to keep what was learned.
 
 ## Part 1: Adopt an existing repository — implemented
 
-**Entry point:** `vibecheck adopt [--force] [--json]`.
+**Entry point:** `vibekit adopt [--force] [--json]`.
 
 **Behaviour**
 
@@ -108,7 +108,7 @@ migration, and **memory and OpenContext** to keep what was learned.
 - **AC-5** ✅ Given a repository already containing `specs/project.json`, when adopted, then
   nothing is overwritten and adopt reports what it would have changed.
 
-**Known limitation.** `validate()` requires a non-empty `commands.test`, so `vibecheck check`
+**Known limitation.** `validate()` requires a non-empty `commands.test`, so `vibekit check`
 reports an adopted repository that has no test command. That is deliberate — agents cannot
 verify their work without one — but an adopted project is not "green" until a human supplies it.
 
@@ -116,7 +116,7 @@ verify their work without one — but an adopted project is not "green" until a 
 
 ## Part 2: Assess, and pick up issues — specified, not built
 
-**Entry points:** `/vibe-check-cli:assess [path]`, `vibecheck assess [--scope <path>] [--offline] [--diff]`.
+**Entry points:** `/vibekit:assess [path]`, `vibekit assess [--scope <path>] [--offline] [--diff]`.
 
 **Two layers, in this order**
 
@@ -125,14 +125,14 @@ verify their work without one — but an adopted project is not "green" until a 
 | **1. Facts** (deterministic, reproducible) | Vulnerable dependencies, end-of-life runtimes, leaked secrets, common security flaws, licence conflicts, missing tests and CI, hot spots | Stack-native audits (`npm audit`, `dotnet list package --vulnerable`, `pip-audit`, `composer audit`, `govulncheck`) or OSV-Scanner; gitleaks; Semgrep community rules; endoflife.date with a bundled offline table; git churn combined with file size and complexity |
 | **2. Judgement** (AI subagents, evidence required) | Missing authorization checks, unsafe error handling, N+1 queries, layering violations, risky patterns scanners miss | Subagents review the highest-risk areas first, within a budget. Every finding quotes the code it refers to, with file and line. A second pass by the reviewer subagent confirms or rejects each high or critical AI finding |
 
-Missing scanners are installed through `vibecheck setup`, or reported as skipped. The assessment
+Missing scanners are installed through `vibekit setup`, or reported as skipped. The assessment
 never pretends a check ran when it didn't.
 
 **Output**, in `assessment/`: `report.md` (health score per category, top 10 risks, hot spots),
 `findings.json`, `inventory.json`, `baseline.json` (fingerprints, so later runs report new, fixed
 and unchanged).
 
-`vibecheck findings --to-features` groups related findings into draft features with acceptance
+`vibekit findings --to-features` groups related findings into draft features with acceptance
 criteria written from the findings' evidence. They go through normal spec approval.
 
 **Acceptance criteria**
@@ -154,16 +154,16 @@ criteria written from the findings' evidence. They go through normal spec approv
 - **AC-7** Given a "permissive only" licensing policy, when a dependency is GPL-licensed, then a
   high-severity `licence` finding is raised, citing the policy.
 - **AC-8** Given scanners that aren't installed, when assessed, then the report lists each
-  skipped check and the `vibecheck setup` step that would enable it, and those categories are
+  skipped check and the `vibekit setup` step that would enable it, and those categories are
   marked "not assessed" rather than healthy.
-- **AC-9** Given `vibecheck findings --to-features`, then related findings are grouped into draft
+- **AC-9** Given `vibekit findings --to-features`, then related findings are grouped into draft
   features referencing finding IDs, and none are approved automatically.
 
 ---
 
 ## Part 3: Modernize, and plan the route — specified, not built
 
-**Entry point:** `/vibe-check-cli:modernize`.
+**Entry point:** `/vibekit:modernize`.
 
 1. **Choose the target, by menu.** The advisor runs with the as-is stack as its starting point.
    Each layer offers "keep as is" alongside scored alternatives, with licences. End-of-life and
@@ -199,7 +199,7 @@ criteria written from the findings' evidence. They go through normal spec approv
 
 ## Part 4: Migrate, and keep it from regressing — specified, not built
 
-Migration steps are ordinary features run with `/vibe-check-cli:run`. What's new is the proof.
+Migration steps are ordinary features run with `/vibekit:run`. What's new is the proof.
 
 1. **Characterization tests first.** The test-engineer subagent records current behaviour — API
    responses, rendered screens, database effects. These must pass on the old code and keep
@@ -209,7 +209,7 @@ Migration steps are ordinary features run with `/vibe-check-cli:run`. What's new
 3. **Parity checks** recorded as evidence: API contract diff (OpenAPI before/after), database
    schema diff, performance comparison against a recorded baseline.
 4. **Parallel migration.** Independent slices run per lane on Cursor or Claude.
-5. **The CI gate.** `vibecheck assess --diff --gate high` exits non-zero when a change *adds* a
+5. **The CI gate.** `vibekit assess --diff --gate high` exits non-zero when a change *adds* a
    high or critical finding. The legacy baseline doesn't fail the build; new problems do.
 
 **Acceptance criteria**
@@ -217,7 +217,7 @@ Migration steps are ordinary features run with `/vibe-check-cli:run`. What's new
 - **AC-1** Given a migration feature marked done, then its evidence includes a passing run of the
   characterization tests for the areas it changed, on the migrated code.
 - **AC-2** Given a feature requiring API parity, when the new OpenAPI document removes an
-  operation not mentioned in the spec, then `vibecheck verify` fails and names the operation.
+  operation not mentioned in the spec, then `vibekit verify` fails and names the operation.
 - **AC-3** Given a pull request adding a new high-severity finding, then the gate exits non-zero
   and prints it. Given one that only touches code with existing baseline findings, it exits zero.
 - **AC-4** Given a roadmap step resolving findings F-12 and F-15, when done, then the next
@@ -286,7 +286,7 @@ application.
    AngularJS/Vue 2 → Vue 3. Are there others, such as Java 8 or Python 2?
 2. **Network policy.** May assessments query public vulnerability and end-of-life databases, or
    must everything work offline by default?
-3. **Automatic low-risk fixes.** Should Vibe-check-cli open changes for safe dependency patch
+3. **Automatic low-risk fixes.** Should VibeKit open changes for safe dependency patch
    updates on its own, still through a feature and review, or only report them?
 4. **AI review budget.** Is 50 files per run the right default?
 5. **Where assessments live.** Committed in `assessment/`, as proposed, or kept outside the

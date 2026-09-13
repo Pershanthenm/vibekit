@@ -2,7 +2,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { exists, readText, writeText } from './fsutil.js';
 
-const registryPath = () => join(process.env.VIBECHECK_HOME || join(homedir(), '.vibe-check-cli'), 'projects.json');
+const registryPath = () => join(process.env.VIBEKIT_HOME || join(homedir(), '.vibekit'), 'projects.json');
 
 export async function readRegistry() {
   try {

@@ -13,7 +13,7 @@ Scope: $ARGUMENTS (empty = the feature the workflow is on)
 A spec that reads well can still be undecided. This finds what is not settled **before** a plan
 is written, because an assumption baked into a plan is far more expensive to unpick later.
 
-1. Run `vibecheck analyze [feature] --json`. Anything under `vague` is already flagged: read those criteria first.
+1. Run `vibekit analyze [feature] --json`. Anything under `vague` is already flagged: read those criteria first.
 2. Read the feature's `spec.md` and look for what it does **not** say:
    - acceptance criteria that cannot be turned into a passing test as written (no observable outcome, no threshold, no actor);
    - nouns used but never defined, and states no criterion covers (empty, expired, duplicate, offline, unauthorised);
@@ -26,5 +26,5 @@ is written, because an assumption baked into a plan is far more expensive to unp
 4. Write the answers into `spec.md` as acceptance criteria or explicit non-goals. Do not leave them in chat.
 5. For anything the user cannot answer yet, write `TODO(unknown): <question>` in the spec and say so plainly.
    An open question that is written down is cheap; one that is guessed at is not.
-7. Re-run `vibecheck analyze [feature]` — add `--fix` to append criteria with no task or no test to `tasks.md` as work, then name the files each one touches — and continue with /vibe-check-cli:plan-feature.
+7. Re-run `vibekit analyze [feature]` — add `--fix` to append criteria with no task or no test to `tasks.md` as work, then name the files each one touches — and continue with /vibekit:plan-feature.
 

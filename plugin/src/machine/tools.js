@@ -27,16 +27,16 @@ const localVersion = () => {
   }
 };
 
-const UPDATE_PLUGIN = 'claude plugin marketplace update vibe-check-cli && claude plugin update vibe-check-cli@vibe-check-cli';
+const UPDATE_PLUGIN = 'claude plugin marketplace update vibekit && claude plugin update vibekit@vibekit';
 
 function pluginCurrent() {
   const listed = probe('claude', ['plugin', 'list', '--json']);
   if (!listed.found) return missing('Claude Code not installed');
   let entry;
   try {
-    entry = JSON.parse(listed.output).find((plugin) => plugin.id === 'vibe-check-cli@vibe-check-cli');
+    entry = JSON.parse(listed.output).find((plugin) => plugin.id === 'vibekit@vibekit');
   } catch {
-    return pluginListed('vibe-check-cli');
+    return pluginListed('vibekit');
   }
   if (!entry) return missing('plugin not installed');
   if (!entry.enabled) return status(false, 'installed but disabled', { fix: 'enable' });
@@ -47,7 +47,7 @@ function pluginCurrent() {
 
 export const TOOLS = [
   {
-    id: 'node', name: 'Node.js 20+', why: 'runs vibecheck, hooks and MCP shims', needed: () => true,
+    id: 'node', name: 'Node.js 20+', why: 'runs vibekit, hooks and MCP shims', needed: () => true,
     check: () => { const version = probe('node').firstLine; return majorVersion(version) >= 20 ? status(true, version) : missing(version ? `${version} is too old` : undefined); },
     install: { macos: 'brew install node', linux: 'curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash && . "$HOME/.nvm/nvm.sh" && nvm install 22', wsl: 'curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash && . "$HOME/.nvm/nvm.sh" && nvm install 22', windows: 'winget install OpenJS.NodeJS.LTS' },
   },
@@ -88,22 +88,22 @@ export const TOOLS = [
     },
   },
   {
-    id: 'vibecheck-plugin', name: 'Vibe-check-cli plugin in Claude Code', why: 'hooks, skills and the vibecheck CLI inside Claude Code', needed: () => true,
+    id: 'vibekit-plugin', name: 'VibeKit plugin in Claude Code', why: 'hooks, skills and the vibekit CLI inside Claude Code', needed: () => true,
     check: () => pluginCurrent(),
-    install: { ...UNIX(`claude plugin marketplace add "${MARKETPLACE_DIR}" && claude plugin install vibe-check-cli@vibe-check-cli`), windows: `claude plugin marketplace add "${MARKETPLACE_DIR}"; claude plugin install vibe-check-cli@vibe-check-cli` },
+    install: { ...UNIX(`claude plugin marketplace add "${MARKETPLACE_DIR}" && claude plugin install vibekit@vibekit`), windows: `claude plugin marketplace add "${MARKETPLACE_DIR}"; claude plugin install vibekit@vibekit` },
     update: UPDATE_PLUGIN,
-    enable: 'claude plugin enable vibe-check-cli@vibe-check-cli',
+    enable: 'claude plugin enable vibekit@vibekit',
     after: 'Load it into Claude Code: type /reload-plugins in your session (or restart Claude Code; in Cursor, Developer: Reload Window).',
   },
   {
-    id: 'vibecheck-cli', name: 'vibecheck command in your terminal', why: 'menus and status outside Claude Code', needed: () => true,
-    check: () => { const result = probe('vibecheck', ['version']); return result.ok ? status(true, result.firstLine) : missing(); },
+    id: 'vibekit-cli', name: 'vibekit command in your terminal', why: 'menus and status outside Claude Code', needed: () => true,
+    check: () => { const result = probe('vibekit', ['version']); return result.ok ? status(true, result.firstLine) : missing(); },
     install: { ...UNIX(`npm install -g "${PLUGIN_DIR}"`), windows: `npm install -g "${PLUGIN_DIR}"` },
   },
   {
     id: 'cursor-agents', name: 'Subagents and team skills in Cursor', why: 'the same subagents and skills for Cursor\'s agent', needed: () => true,
     check: async () => ((await userCursorAgentsCurrent()) ? status(true, `installed in ${userCursorAgentsDir()}`) : missing(`not installed (or outdated) in ${userCursorAgentsDir()}`)),
-    install: { ...UNIX(`node "${join(PLUGIN_DIR, 'bin', 'vibecheck')}" cursor-agents`), windows: `node "${join(PLUGIN_DIR, 'bin', 'vibecheck')}" cursor-agents` },
+    install: { ...UNIX(`node "${join(PLUGIN_DIR, 'bin', 'vibekit')}" cursor-agents`), windows: `node "${join(PLUGIN_DIR, 'bin', 'vibekit')}" cursor-agents` },
   },
   {
     id: 'cursor-agent', name: 'Cursor CLI (agent)', why: 'headless Cursor agents for parallel lanes', needed: () => true,

@@ -134,7 +134,7 @@ async function evidenceFindings(root, project, feature, head) {
       feature: feature.id,
       effort: 'S',
       action: 'verify.run',
-      command: `vibecheck verify ${feature.id} --run`,
+      command: `vibekit verify ${feature.id} --run`,
     }));
   }
 
@@ -149,7 +149,7 @@ async function evidenceFindings(root, project, feature, head) {
           ? 'A suite that passes on some runs and not others is not evidence of anything.'
           : 'The last recorded run of this suite failed.',
         feature: feature.id,
-        command: `vibecheck verify ${feature.id} --run`,
+        command: `vibekit verify ${feature.id} --run`,
       }));
     }
   }
@@ -163,7 +163,7 @@ async function evidenceFindings(root, project, feature, head) {
       feature: feature.id,
       effort: 'S',
       action: 'verify.run',
-      command: `vibecheck verify ${feature.id} --run`,
+      command: `vibekit verify ${feature.id} --run`,
     }));
   }
 
@@ -175,7 +175,7 @@ async function evidenceFindings(root, project, feature, head) {
       detail: 'Uncommitted changes were present, so nobody can say which code was tested.',
       feature: feature.id,
       effort: 'S',
-      command: `vibecheck verify ${feature.id} --run`,
+      command: `vibekit verify ${feature.id} --run`,
     }));
   }
   return found;

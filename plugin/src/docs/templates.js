@@ -1,6 +1,6 @@
 import { joinDoc } from './freshness.js';
 
-const LIVING = (path) => `> Living document: describes how the system works **now**. When its sources change, update it and run \`vibecheck docs stamp ${path}\`.`;
+const LIVING = (path) => `> Living document: describes how the system works **now**. When its sources change, update it and run \`vibekit docs stamp ${path}\`.`;
 
 const BODIES = {
   architecture: (project, doc) => `# Architecture — ${project.project.name}

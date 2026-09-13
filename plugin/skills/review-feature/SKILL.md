@@ -11,11 +11,11 @@ argument-hint: "<feature id>"
 Feature: $ARGUMENTS
 
 Delegate to the read-only **reviewer** subagent, and write `specs/features/<id>/review.md`:
-1. **Spec coverage** — run `vibecheck verify <id> --run`: every AC traced to a passing test, or ❌ missing.
+1. **Spec coverage** — run `vibekit verify <id> --run`: every AC traced to a passing test, or ❌ missing.
 2. **Architecture** — dependency direction and module boundaries per `specs/01-architecture.md`.
 3. **Standards** — violations of `specs/03-standards.md` with file:line.
 4. **Security & NFRs** — every control in `specs/security.md` the change touches, plus input validation, authorisation, secrets, accessibility and performance budgets.
-5. **Docs** — do the feature doc, design doc and any touched diagrams match the code? `vibecheck docs status` must be clean for this feature.
+5. **Docs** — do the feature doc, design doc and any touched diagrams match the code? `vibekit docs status` must be clean for this feature.
 7. **Verdict** — blocking issues first, then suggestions.
 
 Record the outcome in `specs/features/<id>/review.md`, which is scaffolded with every feature. The
@@ -29,6 +29,6 @@ done gate reads it, so it has to be accurate rather than tidy:
 
 Present the findings and ask before fixing anything. When nothing blocking remains:
 1. Commit everything (review, docs, ticks) — evidence is tied to a clean commit. A commit that only touches `review.md` does not invalidate evidence or the review itself.
-2. Run `vibecheck verify <id> --run`: tests, smoke and UI suites run, criteria are traced, and the result is recorded as evidence for that commit. Each suite runs `standards.testing.runs` times (`--repeat <n>` to override). A suite that passes on some runs and not others is reported as **flaky** and does not count as evidence — fix the flake rather than re-running until it comes out green.
-3. Run `vibecheck status <id> done`. It refuses while criteria, tasks, docs or evidence fall short. Save any non-obvious lesson from the review with `vibecheck memory remember`; if it applies beyond this project, add it to your playbook with /opencontext-iterate. Finishing publishes the feature record to OpenContext automatically.
+2. Run `vibekit verify <id> --run`: tests, smoke and UI suites run, criteria are traced, and the result is recorded as evidence for that commit. Each suite runs `standards.testing.runs` times (`--repeat <n>` to override). A suite that passes on some runs and not others is reported as **flaky** and does not count as evidence — fix the flake rather than re-running until it comes out green.
+3. Run `vibekit status <id> done`. It refuses while criteria, tasks, docs or evidence fall short. Save any non-obvious lesson from the review with `vibekit memory remember`; if it applies beyond this project, add it to your playbook with /opencontext-iterate. Finishing publishes the feature record to OpenContext automatically.
 

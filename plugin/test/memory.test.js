@@ -74,7 +74,7 @@ const stored = (id, content, extra = {}) => ({
   createdAt: '2026-09-01T10:00:00.000Z',
   version: 1,
   isLatest: true,
-  concepts: ['vibecheck', 'project:shopping'],
+  concepts: ['vibekit', 'project:shopping'],
   ...extra,
 });
 
@@ -101,7 +101,7 @@ test('only current versions are listed, so a fact and its own retraction are not
 test('memories belonging to another project are not shown as this one has them', async () => {
   const fake = await fakeMemory({ memories: [
     stored('mem_mine', 'ours', { project: 'shopping' }),
-    stored('mem_theirs', 'theirs', { project: 'banking', concepts: ['vibecheck', 'project:banking'] }),
+    stored('mem_theirs', 'theirs', { project: 'banking', concepts: ['vibekit', 'project:banking'] }),
   ] });
 
   const memories = await listMemories(projectWith(fake.url));

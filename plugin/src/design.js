@@ -37,7 +37,7 @@ export async function designProblems(root, project, feature) {
   if (!ui.length) return [];
 
   const path = designDocPath(project, feature.id);
-  const next = `run /vibe-check-cli:design on ${feature.id.slice(0, 3)}, settle the layout with the user, and record the approved artboard in ${path}`;
+  const next = `run /vibekit:design on ${feature.id.slice(0, 3)}, settle the layout with the user, and record the approved artboard in ${path}`;
   const design = parseDesign(await readText(join(root, path)));
 
   if (!design) return [`design: ${feature.id} targets ${ui.join(', ')} but has no design doc — ${next}`];

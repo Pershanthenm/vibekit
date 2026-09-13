@@ -20,9 +20,9 @@ const projectWith = (overrides = {}) => normalize({
 test('rules and workflows land in the folders Antigravity reads', () => {
   const paths = antigravityFiles(projectWith()).map((entry) => entry.path);
 
-  assert.ok(paths.includes('.agents/rules/vibecheck-workflow.md'), paths.join('\n'));
-  assert.ok(paths.includes('.agents/rules/vibecheck-specs.md'));
-  assert.ok(paths.includes('.agents/rules/vibecheck-tests.md'));
+  assert.ok(paths.includes('.agents/rules/vibekit-workflow.md'), paths.join('\n'));
+  assert.ok(paths.includes('.agents/rules/vibekit-specs.md'));
+  assert.ok(paths.includes('.agents/rules/vibekit-tests.md'));
   assert.ok(paths.some((path) => path.startsWith('.agents/workflows/')), 'expected workflow commands');
   assert.ok(paths.every((path) => path.startsWith('.agents/')), `unexpected path: ${paths.find((p) => !p.startsWith('.agents/'))}`);
   assert.ok(paths.every((path) => path.endsWith('.md')), 'Antigravity rules and workflows are Markdown files');
@@ -48,19 +48,19 @@ test('workflows carry a description, rules state their scope in prose', () => {
   const workflow = files.find((entry) => entry.path.startsWith('.agents/workflows/'));
   assert.match(workflow.content, /^---\ndescription: "/, workflow.content.slice(0, 120));
 
-  const rule = files.find((entry) => entry.path === '.agents/rules/vibecheck-specs.md');
+  const rule = files.find((entry) => entry.path === '.agents/rules/vibekit-specs.md');
   assert.doesNotMatch(rule.content, /^---/, 'no frontmatter schema is documented for rules, so none is invented');
   assert.match(rule.content, /\*\*Applies to:\*\* files under `specs\/\*\*`/);
 });
 
 test('optional rules appear only when the project uses them', () => {
   const bare = antigravityFiles(projectWith({ security: { controls: [] }, docs: { enabled: false } })).map((f) => f.path);
-  assert.ok(!bare.includes('.agents/rules/vibecheck-security.md'));
-  assert.ok(!bare.includes('.agents/rules/vibecheck-docs.md'));
+  assert.ok(!bare.includes('.agents/rules/vibekit-security.md'));
+  assert.ok(!bare.includes('.agents/rules/vibekit-docs.md'));
 
   const full = antigravityFiles(projectWith({ security: { controls: ['rbac'] }, docs: { enabled: true } })).map((f) => f.path);
-  assert.ok(full.includes('.agents/rules/vibecheck-security.md'));
-  assert.ok(full.includes('.agents/rules/vibecheck-docs.md'));
+  assert.ok(full.includes('.agents/rules/vibekit-security.md'));
+  assert.ok(full.includes('.agents/rules/vibekit-docs.md'));
 });
 
 test('every editor gets its own folder from one project definition', () => {
@@ -92,7 +92,7 @@ test('a new project is scaffolded with every editor folder on disk', async () =>
     assert.ok(existsSync(join(root, path)), `${path} is missing from a new project`);
   }
 
-  const gate = await read(root, '.agents/rules/vibecheck-workflow.md');
+  const gate = await read(root, '.agents/rules/vibekit-workflow.md');
   assert.match(gate, /AGENTS\.md/, 'the Antigravity gate must point back at the neutral spine');
   assert.match(gate, /specs\/features/);
 

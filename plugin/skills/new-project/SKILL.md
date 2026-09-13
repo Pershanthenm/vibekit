@@ -12,10 +12,10 @@ disable-model-invocation: true
 Turn this idea into a complete, reviewable specification before any code exists: $ARGUMENTS
 
 ## 0. Scaffold
-If the folder isn't a git repository yet, run `git init`. If `specs/project.json` doesn't exist, run `vibecheck init --yes` (the menus below fill it in). Code edits stay blocked until a feature is in progress, so nothing gets built before the spec.
+If the folder isn't a git repository yet, run `git init`. If `specs/project.json` doesn't exist, run `vibekit init --yes` (the menus below fill it in). Code edits stay blocked until a feature is in progress, so nothing gets built before the spec.
 
 ## 1. Load your playbook
-If knowledge is on, run `vibecheck knowledge manifest` and read the listed documents: your preferred stacks, standards and known pitfalls from earlier projects. Use them as the recommended defaults below, and say which document each default came from.
+If knowledge is on, run `vibekit knowledge manifest` and read the listed documents: your preferred stacks, standards and known pitfalls from earlier projects. Use them as the recommended defaults below, and say which document each default came from.
 
 ## 2. Pin down what you are actually building
 
@@ -23,7 +23,7 @@ Do this **before** any question about platforms or frameworks. "A stock manageme
 a brief, and neither is "a recipe app": until you know what the thing tracks and how one of
 them behaves, a stack is a guess.
 
-1. Run `vibecheck advise domain "<their exact words>" --json`. It returns the dimensions still to
+1. Run `vibekit advise domain "<their exact words>" --json`. It returns the dimensions still to
    settle — subject, identity, lifecycle, actors, proof — each with `why` it matters and `guidance`
    on how to ask it. These are the same for every app; only the options differ.
 2. **Generate the options yourself, in their words.** The `options` in the response are bland
@@ -47,14 +47,14 @@ their answer, keep asking.
 ## 3. Requirements and stack by menu
  no typing
 Works for any developer: web, mobile, desktop or backend, any stack, any licensing policy.
-1. Run `vibecheck advise next --json`. It returns the next round (up to 4 questions, each with up to 4 options) based on the answers so far, or `{ "complete": true }`. Rounds adapt: platform first, then constraints, architecture and security, then one question per stack layer the app needs (backend, web, mobile, desktop) with scored options and licences, then the starting point (a boilerplate that fits the chosen stack — ABP, ASP.NET Zero, JHipster, Cookiecutter Django and the like — or from scratch), then data and delivery (database; hosting only when there is a server), then the agent workflow.
+1. Run `vibekit advise next --json`. It returns the next round (up to 4 questions, each with up to 4 options) based on the answers so far, or `{ "complete": true }`. Rounds adapt: platform first, then constraints, architecture and security, then one question per stack layer the app needs (backend, web, mobile, desktop) with scored options and licences, then the starting point (a boilerplate that fits the chosen stack — ABP, ASP.NET Zero, JHipster, Cookiecutter Django and the like — or from scratch), then data and delivery (database; hosting only when there is a server), then the agent workflow.
 2. Ask the round with **AskUserQuestion** (question, header, options with label and description, `multiSelect` for multi). Stack-layer options already carry "(Recommended)"; for other questions put the option you'd recommend first with " (Recommended)". Any stack not listed can be typed under Other.
 3. If a round comes back empty (a known glitch right after a skill starts), ask it again.
 4. Merge the answers into `specs/requirements.json` (`{ "<question id>": "<option id>" }`, arrays for multi, `{ "other": "<text>" }` for Other) and go back to step 1 until complete.
-5. Run `vibecheck advise recommend` and summarise the chosen stack per layer with its licence and main reasons, plus exclusions and warnings. If a boilerplate was chosen, say what it brings, what it costs (licence, conventions you inherit) and the exact command that scaffolds it — the user runs that themselves in the terminal before any feature work, because it writes the whole project layout.
-6. Run `vibecheck advise apply`. It writes `specs/project.json`, the final `specs/requirements.json` and a technology-selection ADR with per-layer scores, licences and alternatives. For layers typed under Other, fill in their `commands` in `specs/project.json`, then `vibecheck sync`.
-7. **Security, by menu.** Run `vibecheck security questions --json`: rounds tailored to the chosen stack, targets, sign-in, licensing and hosting (server questions are skipped for device-only apps; client-app protections appear for mobile and desktop). Each question lists `defaults` (the secure choice) and `required` (from the compliance level). Ask each round with **AskUserQuestion**, appending " (Recommended)" to every default and keeping "(required)" visible.
-8. Write `specs/security-answers.json` the same way, then run `vibecheck security apply`. It stores the baseline in `specs/project.json`, generates `specs/security.md` and AGENTS.md rules, adds one acceptance criterion per control to the foundation feature, creates `.github/workflows/security.yml`, and saves a summary to memory and your knowledge library.
+5. Run `vibekit advise recommend` and summarise the chosen stack per layer with its licence and main reasons, plus exclusions and warnings. If a boilerplate was chosen, say what it brings, what it costs (licence, conventions you inherit) and the exact command that scaffolds it — the user runs that themselves in the terminal before any feature work, because it writes the whole project layout.
+6. Run `vibekit advise apply`. It writes `specs/project.json`, the final `specs/requirements.json` and a technology-selection ADR with per-layer scores, licences and alternatives. For layers typed under Other, fill in their `commands` in `specs/project.json`, then `vibekit sync`.
+7. **Security, by menu.** Run `vibekit security questions --json`: rounds tailored to the chosen stack, targets, sign-in, licensing and hosting (server questions are skipped for device-only apps; client-app protections appear for mobile and desktop). Each question lists `defaults` (the secure choice) and `required` (from the compliance level). Ask each round with **AskUserQuestion**, appending " (Recommended)" to every default and keeping "(required)" visible.
+8. Write `specs/security-answers.json` the same way, then run `vibekit security apply`. It stores the baseline in `specs/project.json`, generates `specs/security.md` and AGENTS.md rules, adds one acceptance criterion per control to the foundation feature, creates `.github/workflows/security.yml`, and saves a summary to memory and your knowledge library.
 9. If it reports accepted risks, ask with **AskUserQuestion** whether to keep each risk or add the control back; re-apply if anything changes.
 
 ## 4. What menus can't capture
@@ -64,17 +64,17 @@ In plain conversation, briefly: the problem in the user's words, primary users, 
 Show a compact summary (stack, architecture, targets, sign-in, security and compliance, v1 capabilities) and wait for explicit approval before writing docs.
 
 ## 6. Write the spec
-1. Review `specs/project.json` (written by `vibecheck advise apply`, shaped like [project.example.json](project.example.json)). Adjust only what the menus couldn't express — for example an exact framework the user typed under Other — and keep `commands` runnable.
-2. Run `vibecheck sync` to regenerate AGENTS.md, CLAUDE.md, subagents and Cursor rules.
+1. Review `specs/project.json` (written by `vibekit advise apply`, shaped like [project.example.json](project.example.json)). Adjust only what the menus couldn't express — for example an exact framework the user typed under Other — and keep `commands` runnable.
+2. Run `vibekit sync` to regenerate AGENTS.md, CLAUDE.md, subagents and Cursor rules.
 3. Fill `specs/00-product.md` (vision, users, capabilities, non-goals, success metrics) and `specs/01-architecture.md` (Mermaid component diagram, modules and responsibilities, data flow, cross-cutting concerns).
 4. Record each key choice as an ADR in `specs/decisions/` (context, decision, consequences).
-5. Draw the living docs with /vibe-check-cli:docs: `docs/architecture.md` (context and container diagrams), plus data model, deployment and design system when they apply. Stamp each one — planning is blocked until the architecture doc is fresh.
-6. **Design the screens, then stop.** If any target is web, mobile or desktop, run /vibe-check-cli:design:
+5. Draw the living docs with /vibekit:docs: `docs/architecture.md` (context and container diagrams), plus data model, deployment and design system when they apply. Stamp each one — planning is blocked until the architecture doc is fresh.
+6. **Design the screens, then stop.** If any target is web, mobile or desktop, run /vibekit:design:
    it produces artboards with Claude Design, hands the user the canvas link and **waits**. Do not
    scaffold features while the canvas is open. When the user approves one it is recorded in the
    feature's design doc, and a feature with screens cannot start until that record exists.
-7. Run `vibecheck feature "foundation"` first: repository skeleton matching the architecture, tooling that makes every command in project.json work (including the `smoke` and `ui` suites: Playwright for web, Maestro or integration tests for mobile, UI-category tests for desktop), and CI running those commands plus `vibecheck check`.
-8. Run `vibecheck feature "<name>"` for each v1 capability and fill its `spec.md` the way /vibe-check-cli:spec-feature does. Leave them in `draft`.
-9. Run `vibecheck check`, commit everything (`chore(specs): initial specification`), and show `vibecheck list`. If knowledge is on, run `vibecheck knowledge publish` so the architecture and ADRs are reusable from other projects.
-10. Ask the user to approve the foundation spec, then continue with /vibe-check-cli:run.
+7. Run `vibekit feature "foundation"` first: repository skeleton matching the architecture, tooling that makes every command in project.json work (including the `smoke` and `ui` suites: Playwright for web, Maestro or integration tests for mobile, UI-category tests for desktop), and CI running those commands plus `vibekit check`.
+8. Run `vibekit feature "<name>"` for each v1 capability and fill its `spec.md` the way /vibekit:spec-feature does. Leave them in `draft`.
+9. Run `vibekit check`, commit everything (`chore(specs): initial specification`), and show `vibekit list`. If knowledge is on, run `vibekit knowledge publish` so the architecture and ADRs are reusable from other projects.
+10. Ask the user to approve the foundation spec, then continue with /vibekit:run.
 

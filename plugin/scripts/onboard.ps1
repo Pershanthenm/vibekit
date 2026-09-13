@@ -1,12 +1,12 @@
-# New developer, from scratch (Windows): installs git if needed, gets your team's Vibe-check-cli kit,
+# New developer, from scratch (Windows): installs git if needed, gets your team's VibeKit kit,
 # and installs everything it needs. Run it with:
 #
 #   powershell -ExecutionPolicy Bypass -File onboard.ps1 <team repository URL>
 #
 # -ExecutionPolicy Bypass lets this one script run without changing your system's policy.
 $ErrorActionPreference = 'Continue'
-$repoUrl = if ($args.Count -gt 0) { $args[0] } else { $env:VIBECHECK_TEAM_REPO }
-$target = if ($env:VIBECHECK_TARGET) { $env:VIBECHECK_TARGET } else { [IO.Path]::Combine($HOME, 'tools', 'vibe-check-cli') }
+$repoUrl = if ($args.Count -gt 0) { $args[0] } else { $env:VIBEKIT_TEAM_REPO }
+$target = if ($env:VIBEKIT_TARGET) { $env:VIBEKIT_TARGET } else { [IO.Path]::Combine($HOME, 'tools', 'vibekit') }
 $onWindows = $env:OS -eq 'Windows_NT'
 if (-not $repoUrl) {
   Write-Host 'Usage: powershell -ExecutionPolicy Bypass -File onboard.ps1 <team repository URL>   (ask your team lead for the URL)'
@@ -53,5 +53,5 @@ Write-Step 'Installing Node.js (if needed), Claude Code, the plugin, and the Cur
 Write-Step 'Done'
 Write-Host 'Next, in Cursor:'
 Write-Host '  1. Open the Claude Code panel (Spark icon) and sign in if asked.'
-Write-Host '  2. Type /reload-plugins, then /vibe-check-cli:setup, then /vibe-check-cli:health live'
+Write-Host '  2. Type /reload-plugins, then /vibekit:setup, then /vibekit:health live'
 Write-Host '  If Node.js or Git were installed just now, close Cursor completely and reopen it first.'

@@ -60,7 +60,7 @@ export const isReady = (state) => state.state === 'fresh' && !state.problems.len
 
 export async function stampDoc(root, path, { stillAccurate = false } = {}) {
   const text = await readText(join(root, path));
-  if (text === null) throw new Error(`${path} does not exist. Create it with "vibecheck docs new".`);
+  if (text === null) throw new Error(`${path} does not exist. Create it with "vibekit docs new".`);
   const { meta, body } = splitDoc(text);
   const problems = lintDiagrams(body, meta.kind);
   if (/\bTODO\b/.test(body)) throw new Error(`${path} still contains TODOs.`);

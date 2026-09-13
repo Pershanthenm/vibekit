@@ -10,7 +10,7 @@ argument-hint: "[area]"
 
 Scope: $ARGUMENTS (empty = wherever nothing is written down yet)
 
-1. Run `vibecheck standards discover --json`. It reports each area of the codebase, how many
+1. Run `vibekit standards discover --json`. It reports each area of the codebase, how many
    files are in it, a handful of examples, and which standards already speak for it. It
    deliberately does **not** say what the conventions are: that is the part that needs reading
    and judgement, and a command that guessed would write confident nonsense into a file people
@@ -26,7 +26,7 @@ Scope: $ARGUMENTS (empty = wherever nothing is written down yet)
    user separately.
 4. Quote where you saw each convention, so the user can check you. Say which ones you were unsure
    about rather than dropping them silently.
-5. Run `vibecheck standards index` to rebuild the index, then show the user what you wrote and ask
+5. Run `vibekit standards index` to rebuild the index, then show the user what you wrote and ask
    them to approve, edit or delete each one. These are their rules, not yours.
-6. This pairs with adoption: `vibecheck adopt` describes the stack, this describes the habits.
+6. This pairs with adoption: `vibekit adopt` describes the stack, this describes the habits.
 

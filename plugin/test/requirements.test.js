@@ -71,7 +71,7 @@ test('vague requirements are kept and marked, never dropped', () => {
   assert.doesNotMatch(rendered.split('\n')[0], /TODO\(unknown\)/, 'a testable one carries no marker');
 });
 
-test('vibecheck feature --from seeds the spec from a requirements document', async () => {
+test('vibekit feature --from seeds the spec from a requirements document', async () => {
   const root = await newProject('--yes');
   const doc = join(await mkdtemp(join(tmpdir(), 'vc-reqs-')), 'requirements.md');
   await writeFile(doc, DOC);

@@ -13,7 +13,7 @@ Scope: $ARGUMENTS (empty = the feature the workflow is on)
 Acceptance criteria say what the feature must do. A checklist covers what it must not get wrong:
 the states, limits and failures that criteria routinely miss. Treat it as unit tests for the spec.
 
-1. Run `vibecheck analyze [feature]` and read the feature's `spec.md`, the project's security baseline
+1. Run `vibekit analyze [feature]` and read the feature's `spec.md`, the project's security baseline
    (`specs/security.md`) and its non-functional requirements (`specs/04-nfr.md`).
 2. Generate a checklist under `## Checklist` in the feature's `spec.md`, as `- [ ] CL-n: <check>`,
    drawn from what this feature actually touches:
@@ -27,5 +27,5 @@ the states, limits and failures that criteria routinely miss. Treat it as unit t
    apply to any feature: a checklist nobody reads is worse than none.
 4. Anything that turns out to be a missing requirement belongs in the spec as an acceptance
    criterion instead, so a test can prove it. Say which items you promoted.
-5. Review the checklist with the user before /vibe-check-cli:implement-feature.
+5. Review the checklist with the user before /vibekit:implement-feature.
 

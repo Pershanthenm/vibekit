@@ -16,7 +16,7 @@ const LAPTOP_APP = {
 const ORIGINAL_ENV = { ...process.env };
 
 beforeEach(async () => {
-  process.env.VIBECHECK_HOME = await mkdtemp(join(tmpdir(), 'vibecheck-home-'));
+  process.env.VIBEKIT_HOME = await mkdtemp(join(tmpdir(), 'vibekit-home-'));
   process.env.AGENTMEMORY_URL = 'http://127.0.0.1:9';
   process.env.PATH = TOOL_FREE_PATH;
 });
@@ -75,7 +75,7 @@ test('applying the baseline writes the spec, rules, criteria, CI workflow and th
   const securityDoc = await read(root, 'specs/security.md');
   assert.match(securityDoc, /\| Cookie sessions via the backend \| ASP\.NET Core cookie auth \(BFF pattern\) \+ antiforgery \|/);
   assert.match(await read(root, 'AGENTS.md'), /## Security baseline \(mandatory\)[\s\S]*Browser clients never hold tokens/);
-  assert.match(await read(root, '.cursor/rules/vibecheck-security.mdc'), /globs: .*appsettings/);
+  assert.match(await read(root, '.cursor/rules/vibekit-security.mdc'), /globs: .*appsettings/);
 
   const foundation = await read(root, 'specs/features/001-foundation/spec.md');
   assert.match(foundation, /- \[ \] AC-2: Given a signed-in browser session[\s\S]*\(security: bff-cookie\)/);
@@ -166,7 +166,7 @@ test('session protocol and reviewer know about the baseline', async () => {
   const root = await laptopProject();
   await run(['security', '--dir', root, 'apply']);
   const pluginReviewer = await readFile(new URL('../agents/reviewer.md', import.meta.url), 'utf8');
-  assert.match(pluginReviewer, /read `AGENTS\.md`[\s\S]*specs\/security\.md[\s\S]*vibecheck verify/);
+  assert.match(pluginReviewer, /read `AGENTS\.md`[\s\S]*specs\/security\.md[\s\S]*vibekit verify/);
   assert.match(await read(root, 'AGENTS.md'), /## Agent roles[\s\S]*\*\*reviewer\*\*[\s\S]*## Security baseline|## Security baseline[\s\S]*## Agent roles[\s\S]*\*\*reviewer\*\*/);
   const start = JSON.parse((await runHook(root, 'session-start', {})).stdout).hookSpecificOutput.additionalContext;
   assert.match(start, /Documentation needing attention[\s\S]*threat-model/);

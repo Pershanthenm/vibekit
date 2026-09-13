@@ -1,4 +1,4 @@
-// `vibecheck scan` — everything the checks can say about this project, in one place.
+// `vibekit scan` — everything the checks can say about this project, in one place.
 //
 // The terminal output is the summary; the page is where you work through it. Both come from the
 // same collectScan(), so the numbers cannot differ between them.
@@ -51,6 +51,6 @@ export async function scan({ root, json, open, out }) {
   const path = out ?? scanPath(root);
   await writeText(path, renderDashboard(state, { live: false, scan: result }));
   console.log(`\nWrote ${path}`);
-  console.log('  To choose findings and run their fixes: vibecheck dashboard --serve');
+  console.log('  To choose findings and run their fixes: vibekit dashboard --serve');
   if (open) openInBrowser(path);
 }

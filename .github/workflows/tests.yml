@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   tests:
-    # Vibe-check-cli shells out to git and to CLIs that are .cmd shims on Windows, and its tests
+    # VibeKit shells out to git and to CLIs that are .cmd shims on Windows, and its tests
     # write real temp projects and run real commands. Those differences are exactly where it has
     # broken before, so every supported OS runs the suite rather than one standing in for the rest.
     name: tests (${{ matrix.os }})

@@ -9,21 +9,21 @@ import { planFor } from '../src/commands/setup.js';
 import { TOOL_FREE_PATH, installFakeBin, newProject } from './helpers.js';
 
 const REPO = fileURLToPath(new URL('../../', import.meta.url));
-const KEYS = ['VIBECHECK_REPO_DIR', 'CLAUDE_CONFIG_DIR', 'VIBECHECK_CURSOR_DIR', 'VIBECHECK_HOME', 'PATH', 'AGENTMEMORY_URL'];
+const KEYS = ['VIBEKIT_REPO_DIR', 'CLAUDE_CONFIG_DIR', 'VIBEKIT_CURSOR_DIR', 'VIBEKIT_HOME', 'PATH', 'AGENTMEMORY_URL'];
 const saved = Object.fromEntries(KEYS.map((key) => [key, process.env[key]]));
 let repo;
 let claudeHome;
 
 const FAKE_CLAUDE = `#!/usr/bin/env node
 const args = process.argv.slice(2).join(' ');
-if (args === 'plugin list --json') console.log('[{"id":"draw-io@claude-drawio-skill","version":"1.0.0","enabled":true},{"id":"my-local@my-folder","enabled":true},{"id":"vibe-check-cli@vibe-check-cli","enabled":true}]');
-else if (args === 'plugin marketplace list --json') console.log(process.env.FAKE_TEAMMATE ? '[{"name":"vibe-check-cli","source":"directory","path":"/x"}]' : '[{"name":"claude-drawio-skill","source":"github","repo":"example/claude-drawio-skill"},{"name":"my-folder","source":"directory","path":"/somewhere"},{"name":"vibe-check-cli","source":"directory","path":"/x"}]');
+if (args === 'plugin list --json') console.log('[{"id":"draw-io@claude-drawio-skill","version":"1.0.0","enabled":true},{"id":"my-local@my-folder","enabled":true},{"id":"vibekit@vibekit","enabled":true}]');
+else if (args === 'plugin marketplace list --json') console.log(process.env.FAKE_TEAMMATE ? '[{"name":"vibekit","source":"directory","path":"/x"}]' : '[{"name":"claude-drawio-skill","source":"github","repo":"example/claude-drawio-skill"},{"name":"my-folder","source":"directory","path":"/somewhere"},{"name":"vibekit","source":"directory","path":"/x"}]');
 else if (args === '--version') console.log('2.1.268 (Claude Code)');
 `;
 
 beforeEach(async () => {
   const base = await mkdtemp(join(tmpdir(), 'vc-team-'));
-  repo = join(base, 'vibe-check-cli');
+  repo = join(base, 'vibekit');
   await cp(REPO, repo, { recursive: true, filter: (source) => !source.includes('node_modules') });
   claudeHome = join(base, 'claude');
   await mkdir(join(claudeHome, 'skills', 'enterprise-dotnet-architect', 'references'), { recursive: true });
@@ -37,8 +37,8 @@ beforeEach(async () => {
   await mkdir(bin);
   await installFakeBin(bin, 'claude', FAKE_CLAUDE);
   Object.assign(process.env, {
-    VIBECHECK_REPO_DIR: repo, CLAUDE_CONFIG_DIR: claudeHome, VIBECHECK_CURSOR_DIR: join(base, 'cursor'),
-    VIBECHECK_HOME: join(base, 'home'), PATH: [bin, TOOL_FREE_PATH].join(delimiter), AGENTMEMORY_URL: 'http://127.0.0.1:9',
+    VIBEKIT_REPO_DIR: repo, CLAUDE_CONFIG_DIR: claudeHome, VIBEKIT_CURSOR_DIR: join(base, 'cursor'),
+    VIBEKIT_HOME: join(base, 'home'), PATH: [bin, TOOL_FREE_PATH].join(delimiter), AGENTMEMORY_URL: 'http://127.0.0.1:9',
   });
 });
 
@@ -73,25 +73,25 @@ test('team capture puts your skills, subagents and plugins into the plugin', asy
 test('a teammate\'s setup adds the team marketplaces first, then installs', async () => {
   await run(['team', 'capture', '--repo', repo]);
   process.env.FAKE_TEAMMATE = '1';
-  const { steps } = await planFor(repo, { only: ['team-marketplaces', 'vibecheck-plugin'] });
+  const { steps } = await planFor(repo, { only: ['team-marketplaces', 'vibekit-plugin'] });
   delete process.env.FAKE_TEAMMATE;
-  assert.deepEqual(steps.map((step) => step.tool.id), ['team-marketplaces', 'vibecheck-plugin']);
+  assert.deepEqual(steps.map((step) => step.tool.id), ['team-marketplaces', 'vibekit-plugin']);
   assert.equal(steps[0].command, 'claude plugin marketplace add "example/claude-drawio-skill"');
 });
 
 test('Cursor gets the team subagents and skills too', async () => {
   await run(['team', 'capture', '--repo', repo]);
   await run(['cursor-kit']);
-  const cursor = process.env.VIBECHECK_CURSOR_DIR;
+  const cursor = process.env.VIBEKIT_CURSOR_DIR;
   const expert = await readFile(join(cursor, 'agents', 'db-expert.md'), 'utf8');
   assert.match(expert, /^---\nname: db-expert\ndescription: "PostgreSQL tuning specialist\."\nmodel: inherit\nreadonly: true\nis_background: false\n---/, 'converted to Cursor format; read-only because it has no write tools');
-  assert.equal(await readFile(join(cursor, 'skills', 'vibe-check-cli', 'enterprise-dotnet-architect', 'SKILL.md'), 'utf8'), await readFile(join(claudeHome, 'skills', 'enterprise-dotnet-architect', 'SKILL.md'), 'utf8'));
+  assert.equal(await readFile(join(cursor, 'skills', 'vibekit', 'enterprise-dotnet-architect', 'SKILL.md'), 'utf8'), await readFile(join(claudeHome, 'skills', 'enterprise-dotnet-architect', 'SKILL.md'), 'utf8'));
   await run(['cursor-kit', '--remove']);
   assert.deepEqual(await readdir(join(cursor, 'agents')), []);
-  await assert.rejects(readdir(join(cursor, 'skills', 'vibe-check-cli')));
+  await assert.rejects(readdir(join(cursor, 'skills', 'vibekit')));
 });
 
-test('vibecheck projects lists every project on this machine, and flags missing ones', async () => {
+test('vibekit projects lists every project on this machine, and flags missing ones', async () => {
   const first = await newProject('--yes');
   const second = await newProject('--yes');
   const lines = [];

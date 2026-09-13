@@ -37,10 +37,10 @@ export function toSnippets(payload) {
   return items.map(textOf).filter(Boolean).map((text) => text.replace(/\s+/g, ' ').trim().slice(0, SNIPPET_LENGTH));
 }
 
-export const projectConcepts = (project, ...extra) => ['vibecheck', `project:${project.project.name}`, ...extra];
+export const projectConcepts = (project, ...extra) => ['vibekit', `project:${project.project.name}`, ...extra];
 
 /**
- * The kinds of thing vibecheck writes to memory of its own accord, and therefore the whole list
+ * The kinds of thing vibekit writes to memory of its own accord, and therefore the whole list
  * of what `memory.capture` can switch off. Each is already the concept the writing code tags with,
  * so this is a list of what happens rather than a second vocabulary that has to be kept in step.
  */
@@ -128,9 +128,9 @@ export async function searchMemories(project, query, limit = project.memory.reca
  * agentmemory answers with the number it found and removed, which is not always the number asked
  * for — an id that was already gone is not an error and must not be reported as a deletion.
  */
-export async function forgetMemories(project, ids, reason = 'vibecheck memory forget') {
+export async function forgetMemories(project, ids, reason = 'vibekit memory forget') {
   if (!isMemoryEnabled(project)) throw new Error('Memory is off, so there is nothing to forget.');
-  if (!ids.length) throw new Error('Which memories? Pass the ids that "vibecheck memory list" printed.');
+  if (!ids.length) throw new Error('Which memories? Pass the ids that "vibekit memory list" printed.');
   const payload = await request(project, 'governance/memories', { memoryIds: ids, reason }, { method: 'DELETE', timeoutMs: MANAGE_TIMEOUT_MS });
   return { deleted: Number(payload?.deleted ?? 0), asked: ids.length };
 }

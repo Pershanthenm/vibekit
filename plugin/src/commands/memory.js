@@ -14,14 +14,14 @@ import { CAPTURE_KINDS, forgetMemories, isMemoryEnabled, listMemories, memoryHea
 import { loadProject, saveProject } from '../project.js';
 
 const USAGE = `Usage:
-  vibecheck memory status                        Is agentmemory reachable?
-  vibecheck memory list [--limit <n>]            What it holds for this project, newest first
-  vibecheck memory search "<text>"               Find memories, with their ids
-  vibecheck memory recall "<text>"               What an agent would be told, as it would read it
-  vibecheck memory remember "<fact>"             Save one yourself
-  vibecheck memory correct <id> "<fact>"         Replace a wrong memory with the right one
-  vibecheck memory forget <id> [<id> ...]        Delete outright. There is no undo
-  vibecheck memory capture [<kind> ...]          What vibecheck records by itself (${CAPTURE_KINDS.join(', ')})`;
+  vibekit memory status                        Is agentmemory reachable?
+  vibekit memory list [--limit <n>]            What it holds for this project, newest first
+  vibekit memory search "<text>"               Find memories, with their ids
+  vibekit memory recall "<text>"               What an agent would be told, as it would read it
+  vibekit memory remember "<fact>"             Save one yourself
+  vibekit memory correct <id> "<fact>"         Replace a wrong memory with the right one
+  vibekit memory forget <id> [<id> ...]        Delete outright. There is no undo
+  vibekit memory capture [<kind> ...]          What vibekit records by itself (${CAPTURE_KINDS.join(', ')})`;
 
 const day = (value) => (value ? String(value).slice(0, 10) : '');
 
@@ -42,18 +42,18 @@ async function status(project) {
 async function listCommand(project, _text, options) {
   const memories = await listMemories(project, { limit: Number(options.limit) || 50 });
   if (!memories.length) {
-    console.log('Nothing remembered for this project yet (or agentmemory is not reachable — see "vibecheck memory status").');
+    console.log('Nothing remembered for this project yet (or agentmemory is not reachable — see "vibekit memory status").');
     return;
   }
   console.log(`${memories.length} memor${memories.length === 1 ? 'y' : 'ies'} for ${project.project.name}, newest first:\n`);
   memories.forEach((memory) => console.log(line(memory)));
-  console.log('\nWrong? vibecheck memory correct <id> "<the right version>"   ·   Gone for good: vibecheck memory forget <id>');
+  console.log('\nWrong? vibekit memory correct <id> "<the right version>"   ·   Gone for good: vibekit memory forget <id>');
 }
 
 async function searchCommand(project, text) {
   const memories = await searchMemories(project, text);
   if (!memories.length) {
-    console.log('Nothing matched (or agentmemory is not reachable — see "vibecheck memory status").');
+    console.log('Nothing matched (or agentmemory is not reachable — see "vibekit memory status").');
     return;
   }
   memories.forEach((memory) => console.log(line(memory)));
@@ -62,7 +62,7 @@ async function searchCommand(project, text) {
 async function recallCommand(project, text) {
   const memories = await recall(project, text);
   if (!memories.length) {
-    console.log('No matching memories (or agentmemory is not reachable — see "vibecheck memory status").');
+    console.log('No matching memories (or agentmemory is not reachable — see "vibekit memory status").');
     return;
   }
   memories.forEach((memory) => console.log(`- ${memory}`));
@@ -70,7 +70,7 @@ async function recallCommand(project, text) {
 
 async function rememberCommand(project, text) {
   const saved = await remember(project, text, ['note']);
-  console.log(saved ? '✔ Saved to agentmemory' : '✖ Not saved — see "vibecheck memory status"');
+  console.log(saved ? '✔ Saved to agentmemory' : '✖ Not saved — see "vibekit memory status"');
   if (!saved) process.exitCode = 1;
 }
 
@@ -81,22 +81,22 @@ async function forgetCommand(project, text) {
   // and calling it one would be a quiet lie about what this machine now knows.
   console.log(deleted === asked
     ? `✔ Forgot ${deleted} of ${asked}.`
-    : `✔ Forgot ${deleted} of ${asked}. The rest were not there — check the ids with "vibecheck memory list".`);
+    : `✔ Forgot ${deleted} of ${asked}. The rest were not there — check the ids with "vibekit memory list".`);
 }
 
 async function correctCommand(project, text) {
   const [id, ...rest] = text.split(/\s+/);
   const replacement = rest.join(' ').trim();
-  if (!id || !replacement) throw new Error('Usage: vibecheck memory correct <id> "<the right version>"');
-  const { deleted } = await forgetMemories(project, [id], 'vibecheck memory correct');
-  if (!deleted) throw new Error(`There is no memory ${id}. List them with "vibecheck memory list".`);
+  if (!id || !replacement) throw new Error('Usage: vibekit memory correct <id> "<the right version>"');
+  const { deleted } = await forgetMemories(project, [id], 'vibekit memory correct');
+  if (!deleted) throw new Error(`There is no memory ${id}. List them with "vibekit memory list".`);
   const saved = await remember(project, replacement, ['note']);
   if (!saved) throw new Error(`The old memory is gone, but the replacement was not saved: ${replacement}`);
   console.log(`✔ ${id} replaced.`);
 }
 
 /**
- * What vibecheck may record without being asked. With no arguments it reports; with kinds it sets
+ * What vibekit may record without being asked. With no arguments it reports; with kinds it sets
  * the list, and `none` switches the lot off without turning off memory itself — you can still
  * recall, and still save something deliberately.
  */
@@ -104,7 +104,7 @@ async function captureCommand(project, text, _options, root) {
   if (!text) {
     const capture = project.memory.capture ?? CAPTURE_KINDS;
     console.log(capture.length ? `Recording by itself: ${capture.join(', ')}` : 'Recording nothing by itself.');
-    console.log(`Available: ${CAPTURE_KINDS.join(', ')}   ·   Off: vibecheck memory capture none`);
+    console.log(`Available: ${CAPTURE_KINDS.join(', ')}   ·   Off: vibekit memory capture none`);
     return;
   }
   const wanted = text.split(/[\s,]+/).filter(Boolean);

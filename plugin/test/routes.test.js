@@ -28,7 +28,7 @@ execFileSync('git', ['commit', '-qm', 'lane by ' + name], { stdio: 'ignore' });
 
 beforeEach(async () => {
   process.env.AGENTMEMORY_URL = 'http://127.0.0.1:9';
-  process.env.VIBECHECK_HOME = await mkdtemp(join(tmpdir(), 'vc-home-'));
+  process.env.VIBEKIT_HOME = await mkdtemp(join(tmpdir(), 'vc-home-'));
 });
 
 afterEach(() => {

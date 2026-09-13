@@ -1,4 +1,4 @@
-# Vibe-check-cli — full reference
+# VibeKit — full reference
 
 The complete feature and configuration reference. For an overview, see the [README](../README.md); to set up a machine, see [ONBOARDING.md](../ONBOARDING.md).
 
@@ -11,52 +11,52 @@ An always-on, spec-driven agent workflow. **Claude Code is the orchestrator; Cur
                                  │ reads/writes         │ reads only
  You ── approve gates ──▶  Claude Code (orchestrator)   │
                            hooks: always on             │
-                           /vibe-check-cli:run loop          │
-                                 │ vibecheck dispatch   │
+                           /vibekit:run loop          │
+                                 │ vibekit dispatch   │
                      ┌───────────┼───────────┐          │
                      ▼           ▼           ▼          │
                  lane-1       lane-2      lane-3 ───────┘
                  Cursor agent in its own git worktree + branch
-                                 │ vibecheck merge
+                                 │ vibekit merge
                                  ▼
                  Claude verifies (lint · typecheck · tests), ticks tasks, reviews
 ```
 
 **New developer?** Follow [ONBOARDING.md](../ONBOARDING.md) (Windows, Mac, Linux). **Setting up on your own?** Everything runs inside Cursor with the Claude Code extension. Step by step for [Mac](../SETUP-MAC.md) or [Windows](../SETUP-WINDOWS.md). **Sharing one setup with your team:** [TEAM.md](../TEAM.md).
 
-**Fastest start:** `bash plugin/scripts/bootstrap.sh --minimal` on macOS, Linux or WSL2, or `plugin\scripts\bootstrap.ps1 --minimal` on Windows (either can be run by Claude itself, with `--yes`). It installs Node if needed, then `vibecheck setup` works out what your machine and project need, asks before each install, configures and starts local services, and finishes with `vibecheck health`. Run `vibecheck health --live` any time to prove the whole chain: Claude Code answers with the Vibe-check-cli hooks loaded, Cursor answers headlessly, and memory round-trips.
+**Fastest start:** `bash plugin/scripts/bootstrap.sh --minimal` on macOS, Linux or WSL2, or `plugin\scripts\bootstrap.ps1 --minimal` on Windows (either can be run by Claude itself, with `--yes`). It installs Node if needed, then `vibekit setup` works out what your machine and project need, asks before each install, configures and starts local services, and finishes with `vibekit health`. Run `vibekit health --live` any time to prove the whole chain: Claude Code answers with the VibeKit hooks loaded, Cursor answers headlessly, and memory round-trips.
 
 **New here? Read [GUIDE.md](../GUIDE.md)**: the operating manual for multi-agent scaffolding, testing, validating against the spec, security and frontend design with Claude Code + Cursor.
 
 ## Install (inside Claude Code)
 
 ```text
-/plugin marketplace add /path/to/vibe-check-cli        (or owner/repo once you push it to GitHub)
-/plugin install vibe-check-cli@vibe-check-cli
+/plugin marketplace add /path/to/vibekit        (or owner/repo once you push it to GitHub)
+/plugin install vibekit@vibekit
 /reload-plugins
 ```
 
-The plugin puts the `vibecheck` CLI on Claude Code's PATH, registers the hooks and adds the `/vibe-check-cli:*` skills. No separate terminal needed. Optional: `npm install -g ./plugin` to use `vibecheck` in a normal terminal too.
+The plugin puts the `vibekit` CLI on Claude Code's PATH, registers the hooks and adds the `/vibekit:*` skills. No separate terminal needed. Optional: `npm install -g ./plugin` to use `vibekit` in a normal terminal too.
 
-**Required tools.** `vibecheck setup` installs **Docker**, the **Cursor CLI** (`cursor-agent`) and **agentmemory** on every machine, alongside Node.js, Git and Claude Code. These are requirements rather than per-project extras: a project that picks one engine or memory provider would otherwise never install the others, and the gap only surfaces the day you switch. Run `vibecheck setup --dry-run` to see the plan without changing anything, and `vibecheck health` to see what is still missing.
+**Required tools.** `vibekit setup` installs **Docker**, the **Cursor CLI** (`cursor-agent`) and **agentmemory** on every machine, alongside Node.js, Git and Claude Code. These are requirements rather than per-project extras: a project that picks one engine or memory provider would otherwise never install the others, and the gap only surfaces the day you switch. Run `vibekit setup --dry-run` to see the plan without changing anything, and `vibekit health` to see what is still missing.
 
-Two costs worth knowing up front. Docker Desktop is a heavy install that wants a reboot, and it is now proposed on every machine. And agentmemory has **no automatic install on native Windows**: setup prints it as a manual WSL2 step rather than running it, so `vibecheck health` keeps reporting it until you move to WSL2 or accept a standing red line. Sign-ins are yours to do: `agent login` for the Cursor CLI, and `claude` once for Claude Code.
+Two costs worth knowing up front. Docker Desktop is a heavy install that wants a reboot, and it is now proposed on every machine. And agentmemory has **no automatic install on native Windows**: setup prints it as a manual WSL2 step rather than running it, so `vibekit health` keeps reporting it until you move to WSL2 or accept a standing red line. Sign-ins are yours to do: `agent login` for the Cursor CLI, and `claude` once for Claude Code.
 
-**Memory (agentmemory).** Start the memory server once (`npx -y @agentmemory/agentmemory@latest`, keep it running), then `/plugin install agentmemory@agentmemory` (projects created by Vibe-check-cli already list its marketplace and enable it in `.claude/settings.json`). For Cursor, run `agentmemory connect cursor` or install its Cursor plugin, so Cursor agents read and write the same memory.
+**Memory (agentmemory).** Start the memory server once (`npx -y @agentmemory/agentmemory@latest`, keep it running), then `/plugin install agentmemory@agentmemory` (projects created by VibeKit already list its marketplace and enable it in `.claude/settings.json`). For Cursor, run `agentmemory connect cursor` or install its Cursor plugin, so Cursor agents read and write the same memory.
 
-**Knowledge library (OpenContext).** `npm install -g @aicontextlab/cli`, then run `oc init` **from your home directory**. It sets up OpenContext's MCP server and `/opencontext-*` skills for Claude Code and Cursor at user level. It also rewrites the `AGENTS.md` of whatever repo you run it in; if that happens in a Vibe-check-cli project, `vibecheck sync --force` restores it. Optionally install the OpenContext desktop app to browse and edit the library. See "Three layers of context" below.
+**Knowledge library (OpenContext).** `npm install -g @aicontextlab/cli`, then run `oc init` **from your home directory**. It sets up OpenContext's MCP server and `/opencontext-*` skills for Claude Code and Cursor at user level. It also rewrites the `AGENTS.md` of whatever repo you run it in; if that happens in a VibeKit project, `vibekit sync --force` restores it. Optionally install the OpenContext desktop app to browse and edit the library. See "Three layers of context" below.
 
 ## The process
 
 **Day 1 — specify.** In an empty folder, open Claude Code (in Cursor's Claude Code panel) and run:
 
 ```text
-/vibe-check-cli:new-project a meal-planning app for web, iOS and Android
+/vibekit:new-project a meal-planning app for web, iOS and Android
 ```
 
 Claude scaffolds `specs/`, interviews you (product, targets, stack, architecture, standards, quality bar, autonomy, parallel engine), writes the project spec, ADRs, a `foundation` feature (skeleton, tooling, CI) and one draft spec per v1 capability. It then asks you to approve the foundation spec.
 
-**Every day after — run.** Say "continue" or run `/vibe-check-cli:run`. Claude loops through `vibecheck next`:
+**Every day after — run.** Say "continue" or run `/vibekit:run`. Claude loops through `vibekit next`:
 
 | Feature status | What Claude does | Stops for you? |
 |---|---|---|
@@ -65,15 +65,15 @@ Claude scaffolds `specs/`, interviews you (product, targets, stack, architecture
 | `planned` / `in-progress` | Sequential tasks: test-engineer then implementer subagents. A ready block of `[P]` tasks: dispatched to Cursor agents in worktrees, then merged | No |
 | all tasks ticked | Read-only reviewer writes `review.md`; fixes on your OK; marks `done` | Only if there are blocking findings |
 
-Then it moves to the next feature. Every step ends with verification, `vibecheck check` and a commit.
+Then it moves to the next feature. Every step ends with verification, `vibekit check` and a commit.
 
-**Where Cursor fits.** Plans put shared groundwork (contracts, schema) first, then a block of `[P]` tasks with disjoint files (API · web UI · mobile UI), then integration and e2e. Claude runs `vibecheck dispatch <id>` in the background: one git worktree and branch per lane, dependencies installed, one headless `cursor-agent` per lane with a focused brief. Lanes commit with task ids and never touch `specs/`. When they finish, `vibecheck merge <id>` merges each branch, removes worktrees and hands back to Claude to verify and tick tasks.
+**Where Cursor fits.** Plans put shared groundwork (contracts, schema) first, then a block of `[P]` tasks with disjoint files (API · web UI · mobile UI), then integration and e2e. Claude runs `vibekit dispatch <id>` in the background: one git worktree and branch per lane, dependencies installed, one headless `cursor-agent` per lane with a focused brief. Lanes commit with task ids and never touch `specs/`. When they finish, `vibekit merge <id>` merges each branch, removes worktrees and hands back to Claude to verify and tick tasks.
 
 Prefer watching agents in Cursor's UI? Set `"engine": "manual"`. Dispatch then only prepares the worktrees and prompt files; open each worktree in Cursor, start an agent, paste its prompt, and tell Claude when they're done. `"engine": "claude"` uses headless Claude Code instead.
 
 ## Adopting an existing codebase
 
-Most work isn't greenfield. `vibecheck adopt` points Vibe-check-cli at a repository that already
+Most work isn't greenfield. `vibekit adopt` points VibeKit at a repository that already
 exists and describes it **as it is**, without a rewrite.
 
 It walks the tree once and detects languages by share of files, plus frameworks and versions from
@@ -101,7 +101,7 @@ would have recorded and exits. Use `--force` to overwrite, `--json` for machine-
 
 Existing code needs no specs. New work goes through features as usual.
 
-**One consequence to expect:** `vibecheck check` requires a test command, so an adopted project
+**One consequence to expect:** `vibekit check` requires a test command, so an adopted project
 isn't green until you supply one. That's deliberate — agents have no way to verify their work
 without it.
 
@@ -126,11 +126,11 @@ Route lanes to whichever agent suits the work, by the files a lane touches:
   ]
 }
 ```
-`vibecheck lanes <id>` shows who gets each lane before you dispatch. A lane goes to the route that matches most of its files; ties go to the earlier route.
+`vibekit lanes <id>` shows who gets each lane before you dispatch. A lane goes to the route that matches most of its files; ties go to the earlier route.
 
 ## Any platform, any stack, any licensing policy
 
-Vibe-check-cli doesn't assume you build web apps. The first question is what you're building first (web, mobile, desktop, or an API/backend), and every later round adapts:
+VibeKit doesn't assume you build web apps. The first question is what you're building first (web, mobile, desktop, or an API/backend), and every later round adapts:
 
 | Round | Questions |
 |---|---|
@@ -141,7 +141,7 @@ Vibe-check-cli doesn't assume you build web apps. The first question is what you
 | Data and delivery | database (skipped for backend-as-a-service) · hosting (only when there's a server) · integrations |
 | Agent workflow | autonomy · parallel engine · memory, knowledge and living docs |
 
-Every question has up to four options, picked with arrow keys: Claude Code's menus in `/vibe-check-cli:new-project`, or `vibecheck init` / `vibecheck advise` in a terminal. "Other" is always available.
+Every question has up to four options, picked with arrow keys: Claude Code's menus in `/vibekit:new-project`, or `vibekit init` / `vibekit advise` in a terminal. "Other" is always available.
 
 **36 components across five layers**, each with its real licence:
 
@@ -166,14 +166,14 @@ Every question has up to four options, picked with arrow keys: Claude Code's men
 
 **Bring your own stack:**
 - Type any technology under "Other" on a layer. It's recorded as your choice; set its commands in `specs/project.json`.
-- Or add components permanently in `~/.vibecheck/components.json`. They're scored like built-ins (language and licence rules, preferences):
+- Or add components permanently in `~/.vibekit/components.json`. They're scored like built-ins (language and licence rules, preferences):
   ```json
   [{ "id": "phoenix", "layer": "backend", "label": "Elixir Phoenix", "languages": ["Elixir"],
      "licence": { "name": "MIT", "class": "permissive" }, "summary": "Fault-tolerant realtime framework",
      "testing": "ExUnit", "commands": { "install": "mix deps.get", "test": "mix test", "lint": "mix credo" } }]
   ```
-- Mark favourites: `vibecheck advise prefer aspnetcore vue postgres`, or a whole preset, `vibecheck advise prefer dotnet-vue` (+3 each).
-- Skip the questions with a preset: `vibecheck advise apply flutter-supabase` (see `vibecheck advise presets`: dotnet-vue, dotnet-blazor, php-laravel, node-ts, python-django, java-spring, flutter-supabase, local-desktop).
+- Mark favourites: `vibekit advise prefer aspnetcore vue postgres`, or a whole preset, `vibekit advise prefer dotnet-vue` (+3 each).
+- Skip the questions with a preset: `vibekit advise apply flutter-supabase` (see `vibekit advise presets`: dotnet-vue, dotnet-blazor, php-laravel, node-ts, python-django, java-spring, flutter-supabase, local-desktop).
 
 The result fills in `project.json`: targets, stack per layer, repository layout (one folder per code layer; the .NET house layout keeps `src/<App>.WebApp`), sign-in libraries for the backend, hosting or app-store/installer distribution, and combined install/lint/test/build commands across layers.
 
@@ -181,7 +181,7 @@ The result fills in `project.json`: targets, stack per layer, repository layout 
 
 Straight after the stack choice, security rounds pick controls tailored to that stack and your earlier answers. SSO moves account protection to your identity provider; open-source-only policies remove paid secret managers; SaaS adds tenant isolation; Windows hosting drops container scanning. Device-only apps skip server questions, and mobile and desktop apps get client protections (OS keystore, signed releases, verified updates, certificate pinning). Secure defaults are pre-selected, and your compliance level marks controls as required. Deselecting a required control records it as an accepted risk.
 
-Applying the baseline (`vibecheck security`, or the menus in `/vibe-check-cli:new-project`):
+Applying the baseline (`vibekit security`, or the menus in `/vibekit:new-project`):
 - stores the controls in `specs/project.json` and generates `specs/security.md` (implementation per control for your stack, ASVS references);
 - adds the rules to AGENTS.md and a Cursor rule for auth, config and data-access files;
 - adds one acceptance criterion per control to the foundation feature, so the scaffold is built securely and each control is proven by a test;
@@ -194,13 +194,13 @@ Applying the baseline (`vibecheck security`, or the menus in `/vibe-check-cli:ne
 
 Every stack gets three suites in `project.json`: `test` (unit and integration), `smoke` (a few fast checks of the critical paths against a real build) and `ui` (browser, mobile or desktop UI tests with accessibility checks). Defaults per stack include Playwright for web (smoke = `--grep @smoke`), Flutter integration tests or Maestro for mobile, UI-category tests for .NET desktop, and `pytest -m smoke` for Python.
 
-Plans must give every visible acceptance criterion a UI test and the critical path a tagged smoke test. `vibecheck verify <id> --run` runs all three suites, traces criteria to tests, and records the result as evidence for the exact commit (kept in `.git/vibecheck/`, never committed). A feature can't be done unless that evidence exists, was taken on a clean commit, matches the current commit, and every defined suite passed. Change code afterwards and the evidence is stale.
+Plans must give every visible acceptance criterion a UI test and the critical path a tagged smoke test. `vibekit verify <id> --run` runs all three suites, traces criteria to tests, and records the result as evidence for the exact commit (kept in `.git/vibekit/`, never committed). A feature can't be done unless that evidence exists, was taken on a clean commit, matches the current commit, and every defined suite passed. Change code afterwards and the evidence is stale.
 
 **Repeat runs catch flaky tests.** Set `standards.testing.runs` (default `1`) to the number of times each suite must pass, or pass `--repeat <n>` for a single invocation. A suite that passes on some runs and fails on others is recorded as **flaky**, and a flaky suite does not count as evidence — the gate reports `passed 2 of 3 runs` and blocks, rather than accepting whichever run happened to come out green. A suite that fails every time is a plain failure, not a flake, and is reported as such: the two need different fixes. Evidence recorded with fewer runs than the project now requires is rejected too, so raising `runs` invalidates old evidence instead of silently grandfathering it.
 
 ## Traceability: code validated against the spec
 
-Tests name the criterion they prove: `003:AC-2 rejects assigning a retired laptop`. `vibecheck verify [feature] [--run]` maps every criterion to its tests (flagging untested criteria, and tests pointing at criteria that don't exist) and optionally runs the suite. A feature can't be marked done while any criterion is untested; switch that off with `workflow.traceability: false`.
+Tests name the criterion they prove: `003:AC-2 rejects assigning a retired laptop`. `vibekit verify [feature] [--run]` maps every criterion to its tests (flagging untested criteria, and tests pointing at criteria that don't exist) and optionally runs the suite. A feature can't be marked done while any criterion is untested; switch that off with `workflow.traceability: false`.
 
 ## Living documentation: docs, diagrams and designs that can't go stale
 
@@ -216,34 +216,34 @@ Docs live in `docs/` and describe how the system works **now**; specs describe i
 | `docs/design/<id>.md` | the plan has UI states | user flow | same as the feature doc |
 | `docs/roadmap.md` | generated | features by status | feature statuses |
 
-**How staleness is detected.** Each document declares `sources` in its front matter. `vibecheck docs stamp` fingerprints those files. When any of them changes, the document is stale until someone updates it and stamps it again. Stamping refuses docs with TODOs, invalid Mermaid, a missing required diagram, or an unchanged body after the sources moved. For that last case, `--still-accurate` records a deliberate "I checked, nothing to change".
+**How staleness is detected.** Each document declares `sources` in its front matter. `vibekit docs stamp` fingerprints those files. When any of them changes, the document is stale until someone updates it and stamps it again. Stamping refuses docs with TODOs, invalid Mermaid, a missing required diagram, or an unchanged body after the sources moved. For that last case, `--still-accurate` records a deliberate "I checked, nothing to change".
 
 **How it's enforced:**
-- **Re-architecting** (`project.json`, the architecture spec, ADRs): stamped docs that depend on them become errors immediately. The Stop hook won't let Claude end the turn until the diagrams are updated. `/vibe-check-cli:rearchitect <change>` runs the full flow: ADR for your approval, spec updates, every affected diagram, and a migration feature for code that has to move.
-- **Building:** code changes make feature docs stale. That's a warning mid-feature, but `vibecheck status <id> done` refuses until the feature doc (and design doc for UI) is fresh.
+- **Re-architecting** (`project.json`, the architecture spec, ADRs): stamped docs that depend on them become errors immediately. The Stop hook won't let Claude end the turn until the diagrams are updated. `/vibekit:rearchitect <change>` runs the full flow: ADR for your approval, spec updates, every affected diagram, and a migration feature for code that has to move.
+- **Building:** code changes make feature docs stale. That's a warning mid-feature, but `vibekit status <id> done` refuses until the feature doc (and design doc for UI) is fresh.
 - **Planning:** no feature can be planned until the architecture doc is written and stamped.
 - **Every session** starts with a list of documents needing attention. Plans get a `## Documentation` section and end with a `[docs]` task. The reviewer checks docs against the code, and lane merges prompt a docs check.
 
-Commands: `vibecheck docs status`, `vibecheck docs new <kind> [feature]`, `vibecheck docs stamp <path...> [--still-accurate]`, plus the `/vibe-check-cli:docs` skill that rewrites flagged docs from their sources. With knowledge on, `vibecheck knowledge publish` shares the living docs to OpenContext too. Turn it off with `"docs": { "enabled": false }`.
+Commands: `vibekit docs status`, `vibekit docs new <kind> [feature]`, `vibekit docs stamp <path...> [--still-accurate]`, plus the `/vibekit:docs` skill that rewrites flagged docs from their sources. With knowledge on, `vibekit knowledge publish` shares the living docs to OpenContext too. Turn it off with `"docs": { "enabled": false }`.
 
 ## Three layers of context
 
 | Layer | Holds | Scope | Written by |
 |---|---|---|---|
 | `specs/` in the repo | What this project must do: contract, plans, ADRs | This project, versioned in git | You + Claude, through the gated workflow |
-| [agentmemory](https://github.com/rohitg00/agentmemory) | What happened: decisions, failures, fixes from past sessions | Automatic, searchable | Captured by hooks, plus Vibe-check-cli milestones |
-| [OpenContext](https://github.com/0xranx/OpenContext) | What you know: your playbook, API contracts, pitfalls, finished feature records | Curated, every project | You (/opencontext-iterate), plus Vibe-check-cli publishing |
+| [agentmemory](https://github.com/rohitg00/agentmemory) | What happened: decisions, failures, fixes from past sessions | Automatic, searchable | Captured by hooks, plus VibeKit milestones |
+| [OpenContext](https://github.com/0xranx/OpenContext) | What you know: your playbook, API contracts, pitfalls, finished feature records | Curated, every project | You (/opencontext-iterate), plus VibeKit publishing |
 
 When they disagree, files in `specs/` win and agents flag the conflict.
 
-`vibecheck context <feature|topic>` merges memory and knowledge into one brief. The same brief is injected at session start (for the next feature) and embedded in every Cursor lane brief. Lanes run on your machine, so they can open the OpenContext documents the brief points to.
+`vibekit context <feature|topic>` merges memory and knowledge into one brief. The same brief is injected at session start (for the next feature) and embedded in every Cursor lane brief. Lanes run on your machine, so they can open the OpenContext documents the brief points to.
 
 **OpenContext in the workflow:**
-- **New project:** `/vibe-check-cli:new-project` reads your `playbook` folder first and uses it for its recommended defaults (preferred stacks, standards, known pitfalls), citing the document each default came from. Your standards follow you from project to project.
-- **Planning:** `vibecheck context <id>` surfaces relevant documents alongside memories.
+- **New project:** `/vibekit:new-project` reads your `playbook` folder first and uses it for its recommended defaults (preferred stacks, standards, known pitfalls), citing the document each default came from. Your standards follow you from project to project.
+- **Planning:** `vibekit context <id>` surfaces relevant documents alongside memories.
 - **Feature done:** a feature record (problem, acceptance criteria, approach, review verdict) is published to `projects/<name>/` in your library.
-- **Anytime:** `vibecheck knowledge publish` shares product, architecture, standards and every ADR, so the next project can reuse them.
-- **Commands:** `vibecheck knowledge status | search "<q>" | manifest [folder] | publish`.
+- **Anytime:** `vibekit knowledge publish` shares product, architecture, standards and every ADR, so the next project can reuse them.
+- **Commands:** `vibekit knowledge status | search "<q>" | manifest [folder] | publish`.
 
 Searches use OpenContext's keyword mode, so no embedding costs are triggered. Semantic search stays opt-in through `oc index build`.
 
@@ -254,14 +254,14 @@ Searches use OpenContext's keyword mode, so no embedding costs are triggered. Se
 | Who | Does what |
 |---|---|
 | agentmemory's own plugins | Capture every Claude Code and Cursor session automatically (tool calls, prompts, summaries) and expose `memory_smart_search`, `memory_save` and friends |
-| Vibe-check-cli, automatically | Saves milestones: spec approved (problem, acceptance criteria, out of scope), feature done (review verdict), lane merges (which lanes merged, conflicted or produced nothing) |
-| Vibe-check-cli, at session start | Recalls memories relevant to the *next* feature and injects them with the workflow state |
-| Vibe-check-cli, at dispatch | Embeds relevant memories in every lane brief, so headless Cursor agents get the context even without their own memory setup |
+| VibeKit, automatically | Saves milestones: spec approved (problem, acceptance criteria, out of scope), feature done (review verdict), lane merges (which lanes merged, conflicted or produced nothing) |
+| VibeKit, at session start | Recalls memories relevant to the *next* feature and injects them with the workflow state |
+| VibeKit, at dispatch | Embeds relevant memories in every lane brief, so headless Cursor agents get the context even without their own memory setup |
 | Skills | Plan: recall before designing. Merge and review: save lessons worth keeping |
 
-Manual use: `vibecheck memory status`, `vibecheck memory recall "auth tokens"`, `vibecheck memory remember "Chose jose over jsonwebtoken for Edge runtime support"`.
+Manual use: `vibekit memory status`, `vibekit memory recall "auth tokens"`, `vibekit memory remember "Chose jose over jsonwebtoken for Edge runtime support"`.
 
-Everything memory- and knowledge-related fails open. If the server is down, the workflow runs as before; `vibecheck memory status` tells you why. Files beat memory: when a memory contradicts a spec or ADR, agents are told to trust the files and flag the conflict. Remote or secured server: set `AGENTMEMORY_URL` and `AGENTMEMORY_SECRET` in your environment (never in `project.json`).
+Everything memory- and knowledge-related fails open. If the server is down, the workflow runs as before; `vibekit memory status` tells you why. Files beat memory: when a memory contradicts a spec or ADR, agents are told to trust the files and flag the conflict. Remote or secured server: set `AGENTMEMORY_URL` and `AGENTMEMORY_SECRET` in your environment (never in `project.json`).
 
 ## What's always on
 
@@ -269,7 +269,7 @@ Everything memory- and knowledge-related fails open. If the server is down, the 
 |---|---|
 | `SessionStart` (startup, resume, clear, compact) | Injects the orchestrator protocol, every feature's status and the next step, so each session and each post-compaction context starts in the workflow |
 | `PreToolUse` on Write/Edit | Blocks code edits unless a feature is `in-progress`; blocks hand-edits to generated files. `specs/`, `.claude/`, `.cursor/` and root docs stay editable |
-| `Stop` | Runs `vibecheck check`; if specs are inconsistent, Claude must fix them before finishing (once per turn, loop-safe) |
+| `Stop` | Runs `vibekit check`; if specs are inconsistent, Claude must fix them before finishing (once per turn, loop-safe) |
 
 Hooks are silent in folders without `specs/project.json`, so installing the plugin at user level is safe.
 
@@ -291,7 +291,7 @@ five dimensions are asked for every app, because each one changes what gets buil
 | **Actors** | Roles decide authorisation, the most expensive thing to retrofit |
 | **Proof** | What it must show later decides auditing, retention and how much of the security baseline applies |
 
-`vibecheck advise domain "<idea>" --json` returns those dimensions with `why` each matters and
+`vibekit advise domain "<idea>" --json` returns those dimensions with `why` each matters and
 `guidance` on asking it. The options it ships are bland fallbacks: the agent replaces them with
 concrete choices drawn from the user's own words.
 
@@ -305,9 +305,9 @@ Generating the options is judgement a model does well and a lookup table cannot 
 is why that half is an instruction rather than data. A label like "items" or "records" is
 treated as a failure: one that fits any app tells you nothing.
 
-## Filling the spec in a browser: `vibecheck wizard`
+## Filling the spec in a browser: `vibekit wizard`
 
-Some people would rather not answer twenty questions in a terminal. `vibecheck wizard [--out
+Some people would rather not answer twenty questions in a terminal. `vibekit wizard [--out
 <file>]` writes a self-contained HTML form and opens it: the same questions, the same stack
 catalogue, the same starters, as a page you can scroll, revisit and change your mind in.
 
@@ -315,8 +315,8 @@ It is generated **from the same catalogue the CLI asks from** — `questions.js`
 and `starters.js` — so the two can never offer different stacks. Add a component to the catalogue
 and it appears in the form on the next run; nothing is retyped into the page.
 
-The page decides nothing. It produces one thing: the `requirements.json` that `vibecheck advise
-apply --from` and `vibecheck init --from` already accept. The recommendation, the licence
+The page decides nothing. It produces one thing: the `requirements.json` that `vibekit advise
+apply --from` and `vibekit init --from` already accept. The recommendation, the licence
 exclusions and the validation all still happen in the CLI, where they are tested.
 
 - Questions that do not apply are **hidden rather than ignored** — no mobile question for a
@@ -329,15 +329,15 @@ exclusions and the validation all still happen in the CLI, where they are tested
 - You can hand it over half-finished. It says what is unanswered and Claude Code asks about the
   rest.
 
-It shares its design with `vibecheck dashboard` — one rail, one palette, one set of components —
+It shares its design with `vibekit dashboard` — one rail, one palette, one set of components —
 so setting a project up and then tracking it look like one product rather than two.
 
-Like the dashboard it is written to `.git/vibecheck/` (or `.vibecheck/` outside a git repo), never
+Like the dashboard it is written to `.git/vibekit/` (or `.vibekit/` outside a git repo), never
 into `specs/`, so it cannot dirty the working tree.
 
 ## Boilerplate, when one actually fits
 
-Once a stack is chosen, `vibecheck advise` offers **starters** — ABP, ASP.NET Zero, the Clean
+Once a stack is chosen, `vibekit advise` offers **starters** — ABP, ASP.NET Zero, the Clean
 Architecture solution template, JHipster, Cookiecutter Django, Full Stack FastAPI, a Laravel
 starter kit, Nest CLI, create-t3-app, Refine, Next.js + Supabase, Very Good CLI — or generating
 the structure from scratch.
@@ -355,7 +355,7 @@ Choosing "from scratch" is a first-class answer, not a fallback.
 
 ## Start from requirements you already have
 
-Not every feature starts from a blank menu. `vibecheck feature "<name>" --from <file>` reads a
+Not every feature starts from a blank menu. `vibekit feature "<name>" --from <file>` reads a
 requirements document you already wrote — a bulleted list, a numbered spec, a page of prose —
 and seeds the feature's acceptance criteria from it.
 
@@ -370,15 +370,15 @@ observable outcome, measurable wording and whether it is decided at all. Anythin
 
 It then reports how many are testable as written, lists the gaps with line numbers, and says
 whether the document is a reasonable starting point or too thin — in which case
-`/vibe-check-cli:clarify` asks about the gaps by menu and writes the answers back into the spec.
+`/vibekit:clarify` asks about the gaps by menu and writes the answers back into the spec.
 
-The same applies to an existing feature: run `/vibe-check-cli:clarify` on it and
-`vibecheck analyze` to see which criteria are still undecided.
+The same applies to an existing feature: run `/vibekit:clarify` on it and
+`vibekit analyze` to see which criteria are still undecided.
 
 ## Design before build, with a stop in the middle
 
 A layout settled after the code is written means building the screen twice. `new-project` now
-has a design step, and `/vibe-check-cli:design` can be run on any feature:
+has a design step, and `/vibekit:design` can be run on any feature:
 
 1. Artboards are generated for the screens the acceptance criteria imply — every state they
    require, not only the happy path.
@@ -422,13 +422,13 @@ both the review and the test evidence valid. Anything else means the code moved 
 In a project with no git repository there is no commit to tie a review to, so the verdict alone
 is the gate — the same way the evidence gate steps aside without git.
 
-`/vibe-check-cli:review-feature` delegates to the read-only **reviewer** subagent and writes the
+`/vibekit:review-feature` delegates to the read-only **reviewer** subagent and writes the
 file. Teams that review somewhere else (GitHub PRs, for example) can set
 `workflow.review: false` in `specs/project.json`, alongside `traceability` and `evidence`.
 
-## Watching it happen: `vibecheck dashboard`
+## Watching it happen: `vibekit dashboard`
 
-`vibecheck dashboard [--open] [--out <file>] [--static] [--json]` renders the whole lifecycle to a
+`vibekit dashboard [--open] [--out <file>] [--static] [--json]` renders the whole lifecycle to a
 single self-contained HTML page: every feature's stage, its criteria and task progress, which
 gates pass, block or are switched off (with the reason on hover), any running lanes, and the next
 action. No scripts, no network, no build step.
@@ -443,23 +443,23 @@ Rail navigation is anchors, not click handlers, and there are **no scripts and n
 blocked font request would leave a page opened from `file://` on a locked-down machine rendering
 in Times. It follows your system light or dark theme, and works down to phone width.
 
-`vibecheck setup`, `vibecheck dispatch` and interactive `vibecheck init` open it automatically and
+`vibekit setup`, `vibekit dispatch` and interactive `vibekit init` open it automatically and
 refresh it as they go, so there is something to watch while a project scaffolds itself — during
 setup it rewrites after every tool. The page carries a short meta-refresh; `--static` drops it for
 a copy you intend to share rather than watch.
 
-It is written to `.git/vibecheck/`, never into `specs/`. A generated file inside the working tree
-would leave it dirty, which makes `vibecheck merge` refuse to run and makes the evidence gate
+It is written to `.git/vibekit/`, never into `specs/`. A generated file inside the working tree
+would leave it dirty, which makes `vibekit merge` refuse to run and makes the evidence gate
 record a dirty commit — a page that reports on the lifecycle must not be able to block it. Set
-`VIBECHECK_NO_OPEN=1` (or run in CI) to write the page without launching a browser.
+`VIBEKIT_NO_OPEN=1` (or run in CI) to write the page without launching a browser.
 
-## Do the artefacts agree? `vibecheck analyze`
+## Do the artefacts agree? `vibekit analyze`
 
-`vibecheck check` validates the schema and detects drift. `vibecheck verify` traces acceptance
+`vibekit check` validates the schema and detects drift. `vibekit verify` traces acceptance
 criteria to tests. Neither asks whether the spec, the plan and the tasks **agree with each
 other** — and that is where specs quietly rot.
 
-`vibecheck analyze [feature] [--fix] [--json]` reports, per feature:
+`vibekit analyze [feature] [--fix] [--json]` reports, per feature:
 
 | Problem | Why it matters |
 |---|---|
@@ -471,7 +471,7 @@ other** — and that is where specs quietly rot.
 | A planned feature with an empty or TODO plan | The status claims more than the artefacts support |
 | A criterion with no test naming it | Carried through from `verify` |
 
-It exits 1 when anything is found, so it belongs in CI beside `vibecheck check`. The output
+It exits 1 when anything is found, so it belongs in CI beside `vibekit check`. The output
 names contradictions between artefacts: fix the artefacts, not the report.
 
 ### Appending the missing work: `--fix`
@@ -492,11 +492,11 @@ where planning happens.
 
 Two skills cover the judgement half, which a CLI cannot do:
 
-- **/vibe-check-cli:clarify** — reads a spec for what it does *not* say (undefined nouns, unset
+- **/vibekit:clarify** — reads a spec for what it does *not* say (undefined nouns, unset
   limits, uncovered states, missing error paths) and asks the user through menus **before** a
   plan exists. Answers go into the spec; anything still unknown is written as
   `TODO(unknown): <question>` rather than guessed.
-- **/vibe-check-cli:checklist** — generates per-feature checks for the states, boundaries,
+- **/vibekit:checklist** — generates per-feature checks for the states, boundaries,
   permissions and failures acceptance criteria routinely miss. Anything that turns out to be a
   real requirement is promoted into the spec so a test can prove it.
 
@@ -521,7 +521,7 @@ The ten rules require agents to:
 - treat the code as the evidence when spec, code and expectation disagree;
 - state plainly what was **not** done — skipped parts, unrun checks, unmet criteria.
 
-This is the same rule `vibecheck adopt` enforces in code, extended to work agents do by hand.
+This is the same rule `vibekit adopt` enforces in code, extended to work agents do by hand.
 
 ## Configuration — `specs/project.json` → `workflow`
 
@@ -531,7 +531,7 @@ This is the same rule `vibecheck adopt` enforces in code, extended to work agent
   "autonomy": "gated",      // gated: you approve specs + plans · auto: specs only
   "engine": "cursor",       // cursor | claude | manual — who runs [P] lanes
   "maxLanes": 3,
-  "skills": "plugin"        // plugin: /vibe-check-cli:* · project: copies skills into .claude/skills
+  "skills": "plugin"        // plugin: /vibekit:* · project: copies skills into .claude/skills
 },
 "memory": {
   "provider": "agentmemory", // or "none"
@@ -550,28 +550,28 @@ This is the same rule `vibecheck adopt` enforces in code, extended to work agent
 }
 ```
 
-After editing, Claude runs `vibecheck sync`. `AGENTS.md`, `CLAUDE.md`, the subagents and Cursor rules regenerate. Cursor's own parallel agents get dependency setup from `.cursor/worktrees.json`.
+After editing, Claude runs `vibekit sync`. `AGENTS.md`, `CLAUDE.md`, the subagents and Cursor rules regenerate. Cursor's own parallel agents get dependency setup from `.cursor/worktrees.json`.
 
 ## CLI reference
 
 `init` · `adopt [--force] [--json]` · `analyze [feature] [--json]` · `sync` · `feature "<name>" [--from <requirements file>]` · `status <id> <status>` · `list` · `check` · `next [--json]` · `lanes <id>` · `dispatch <id> [--engine] [--dry-run]` · `merge <id>` · `memory <status|list|search|recall|remember|correct|forget|capture>` · `scan [--json] [--open] [--out <file>]` · `knowledge <status|search|manifest|publish>` · `context <feature|topic>` · `docs <status|new|stamp>` · `advise [domain "<idea>"|next|recommend|apply [preset]|components|presets|prefer]` · `security [questions|apply|status]` · `verify [feature] [--run] [--repeat <n>]` · `wizard [--out <file>]` · `dashboard [--open] [--out <file>] [--static] [--json]` · `projects [--prune] [--json]` · `team <capture|status|import-ecc>` · `standards <list|index|inject>` · `cursor-kit [--remove]` · `setup [--dry-run] [--only]` · `health [--live]` (alias `doctor`) · `version` · `hook <event>`.
 
-Run `vibecheck` on its own for what to do next in the current folder, or `vibecheck --help` for
+Run `vibekit` on its own for what to do next in the current folder, or `vibekit --help` for
 every command.
 
-### `vibecheck` with no command
+### `vibekit` with no command
 
-A bare `vibecheck` used to print the whole manual, and so did a typo — which exited `0`, making a
+A bare `vibekit` used to print the whole manual, and so did a typo — which exited `0`, making a
 mistyped command indistinguishable from a successful one. It now reads the folder and answers a
 single question: *what do I do next here?*
 
 | What is in the folder | What it offers |
 |---|---|
-| Nothing | `vibecheck wizard` or `vibecheck init` |
-| Code, but no vibecheck project | `vibecheck adopt` **first** — suggesting `init` over someone's existing work invites them to scaffold over it |
+| Nothing | `vibekit wizard` or `vibekit init` |
+| Code, but no vibekit project | `vibekit adopt` **first** — suggesting `init` over someone's existing work invites them to scaffold over it |
 | A real project | The stack, how many features and how many are done, the next action with the exact command, and what is waiting on you |
 
-An unknown command prints `vibecheck: no such command "<typed>"`, suggests the nearest real one
+An unknown command prints `vibekit: no such command "<typed>"`, suggests the nearest real one
 when it is close enough to be worth guessing, and **exits 1**. A guess is only offered within a
 third of the word's length: sending someone to read about the wrong command is worse than
 admitting the command is unknown.
@@ -596,9 +596,9 @@ The differences that actually bite, and how they are handled:
 pm` is added to the tool search path alongside the POSIX ones |
 
 agentmemory is the one component with no automatic install on native Windows; it needs WSL2, and
-`vibecheck health` reports it rather than pretending otherwise.
+`vibekit health` reports it rather than pretending otherwise.
 
-## Watching a build happen: `vibecheck dashboard --serve`
+## Watching a build happen: `vibekit dashboard --serve`
 
 Serving renders current state on every request. While work is running, that is not enough — you
 have to keep asking. The served console pushes instead.
@@ -655,7 +655,7 @@ The server stays on loopback. A tunnel dials **out** from your machine to Cloudf
 comes back down that connection, so nothing listens on your network and no router is touched.
 
 ```
-vibecheck dashboard --serve --tunnel
+vibekit dashboard --serve --tunnel
 ```
 
 That starts the console, opens a quick tunnel, and prints the address to open on your phone — the
@@ -664,7 +664,7 @@ and the scan. Ctrl-C closes the tunnel with the console, so a tunnel never outli
 at.
 
 It also prints the address as a **QR code**, because nobody types a random 32-character path into
-a phone twice. The encoder is part of vibecheck rather than a dependency; while it was written its
+a phone twice. The encoder is part of vibekit rather than a dependency; while it was written its
 output was decoded by an independent implementation across every version it supports, which is how
 three real faults in it were found.
 
@@ -715,7 +715,7 @@ The Queue page lists features that are in progress and a **Build it** button on 
 adds the feature to the queue and begins working through it. There is no second button to press,
 because a queue you have to remember to start is a list.
 
-The queue holds an order and nothing else. Draining an entry runs `vibecheck dispatch <feature>` as
+The queue holds an order and nothing else. Draining an entry runs `vibekit dispatch <feature>` as
 its own process — the same command you would run yourself — so the worktrees, the briefs, the
 routing, the clean-tree check and the refusal to dispatch a feature that is not in-progress all
 stay where they already were. The console has no opinion of its own about when work may start: ask
@@ -727,21 +727,21 @@ removed — stopping an agent mid-edit is worse than letting it finish — and *
 everything that has not started.
 
 The agents' output arrives on the page as it is written, exactly like a lane dispatched from the
-terminal, so you can watch a build from a phone. The queue itself lives in `.git/vibecheck/`,
+terminal, so you can watch a build from a phone. The queue itself lives in `.git/vibekit/`,
 outside the working tree, so lining work up never dirties the repository it is about.
 
-### What the agents remember: `vibecheck memory`
+### What the agents remember: `vibekit memory`
 
 Recall answers a question; these answer the other one — what does it think it knows. A memory you
 cannot see is one you cannot correct, and a wrong one is quietly repeated into every brief from
 then on.
 
 ```bash
-vibecheck memory list                      # what it holds for this project, newest first, with ids
-vibecheck memory search "sessions"         # find one, also with ids
-vibecheck memory correct <id> "<the right version>"
-vibecheck memory forget <id> [<id> ...]    # irreversible
-vibecheck memory capture spec security     # what vibecheck records unasked; "none" for nothing
+vibekit memory list                      # what it holds for this project, newest first, with ids
+vibekit memory search "sessions"         # find one, also with ids
+vibekit memory correct <id> "<the right version>"
+vibekit memory forget <id> [<id> ...]    # irreversible
+vibekit memory capture spec security     # what vibekit records unasked; "none" for nothing
 ```
 
 Every row carries its id, because an id is what turns "that is wrong" into something you can act
@@ -755,11 +755,11 @@ this", because a correction that only sometimes replaces what it corrects is wor
 **Forgetting reports what actually went.** The count that comes back is what was found and removed,
 which is not always what was asked for; an id that was already gone is not a deletion.
 
-**`memory.capture`** decides what vibecheck records without being asked, from the five kinds the
+**`memory.capture`** decides what vibekit records without being asked, from the five kinds the
 writing code already tags: `spec`, `done`, `lanes`, `health`, `security`. What you save yourself is
 always kept — capture governs what it records unasked, not what you tell it.
 
-## What is wrong with it: `vibecheck scan`
+## What is wrong with it: `vibekit scan`
 
 `scan` gathers everything the existing checks can prove about a project into one report: generated
 files that no longer match their specs, criteria with no task, tasks naming no criterion, `[P]`
@@ -791,7 +791,7 @@ On the served console the scan has four pages — report, findings, fix plan, ex
 same secret path as everything else, so **one tunnel reaches all of it from a phone**.
 
 Choose findings, and the plan resolves them into the few commands that actually fix them:
-`vibecheck sync`, `vibecheck analyze --fix`, `vibecheck verify --all --run`. Running the plan
+`vibekit sync`, `vibekit analyze --fix`, `vibekit verify --all --run`. Running the plan
 spawns those commands one at a time, and their output streams to the page through the same channel
 as a dispatched agent's. Afterwards the project is rescanned, so the report shows what is true
 rather than what was asked for.
@@ -806,9 +806,9 @@ tasks that overlap — are listed separately as **needing you**, with the comman
 Selecting only those is refused rather than faked.
 
 ```
-vibecheck scan                 # report in the terminal, plus a read-only page
-vibecheck scan --json          # the whole thing, for a script
-vibecheck dashboard --serve    # the version you can select and run from
+vibekit scan                 # report in the terminal, plus a read-only page
+vibekit scan --json          # the whole thing, for a script
+vibekit dashboard --serve    # the version you can select and run from
 ```
 
 The written page is read-only on purpose: opened from a `file://` path it has nothing to send a
@@ -826,14 +826,14 @@ fails:
 - It runs only when a task was ticked in an **in-progress** feature since the suite last passed, so
   an ordinary turn costs nothing.
 - It runs **once** however many tasks were ticked — it is the whole project's suite, not one task's.
-- Only a green run is recorded, in `<git dir>/vibecheck/task-gate.json`. A failure re-gates every
+- Only a green run is recorded, in `<git dir>/vibekit/task-gate.json`. A failure re-gates every
   turn until it is fixed or the task is unticked.
 - A suite slower than two minutes has stopped being a per-task check: the gate reports that it could
   not run rather than holding the turn open, and records nothing.
 - It needs a git repository (that is where the record lives) and `workflow.enforce: true`. With
   enforcement off, nothing runs.
 
-This is narrower than `vibecheck verify --run`, deliberately. Verify traces criteria to tests,
+This is narrower than `vibekit verify --run`, deliberately. Verify traces criteria to tests,
 repeats each suite to catch flakes, and records evidence against a commit — that is the gate for
 *done*. This one is the gate for *the next task*.
 
@@ -841,7 +841,7 @@ repeats each suite to catch flakes, and records evidence against a commit — th
 
 - The edit gate covers Claude's file-editing tools. Writes done through shell commands bypass it, which is why the Stop hook re-checks consistency at the end of every turn.
 - Cursor lanes aren't under Claude's hooks. They're constrained by `AGENTS.md`, the always-on Cursor rule and their brief, and nothing lands without the merge-and-verify step.
-- Lanes can run for many minutes. The dispatch skill runs them as a background command; check progress with `vibecheck lanes <id>` or the `.log` files next to each worktree.
+- Lanes can run for many minutes. The dispatch skill runs them as a background command; check progress with `vibekit lanes <id>` or the `.log` files next to each worktree.
 - The agentmemory REST calls (`remember`, `search`, `memories`, `governance/memories`) have been round-tripped against a running agentmemory 0.9.29: saved, listed, searched, deleted, and asked to delete an id that was already gone. Note that `smart-search` — what `recall` uses — searches *session observations* rather than memories, so a recall can surface something that happened in a past session and not a fact anyone recorded; `search` is what returns memories with the id that `correct` and `forget` need. Result parsing is defensive, but if a future release changes shapes, listing or search may come back empty until `src/memory.js` is adjusted.
 - The event stream does not survive a Cloudflare quick tunnel — measured, not assumed — so over a tunnel the console polls every two seconds instead. It stays current; it is not a push.
 - Queued work runs one feature at a time. A second dispatch would race over the same HEAD and worktree base, so there is no parallelism above the lane level.
@@ -851,28 +851,28 @@ repeats each suite to catch flakes, and records evidence against a commit — th
 - Stack scores come from explicit, editable rules in `src/advisor/recommend.js`, not a model. Licence classes reflect each project's main licence; check the licences of your full dependency tree for a real product. They encode common trade-offs, not a guarantee; the ADR records the reasoning so it can be challenged.
 - Mermaid is checked for a known diagram type and the required kind per document, not fully parsed. A syntax error inside a diagram shows up when it renders; the reviewer step covers that.
 - Stamping is an honest-effort check, not proof: `--still-accurate` exists because some source changes don't affect a document. The reviewer verifies docs against code before a feature is done.
-- `vibecheck setup` runs official installers (some via `curl | sh` or `irm | iex`, as their vendors document). It shows every command and asks first; `--dry-run` shows the plan without changing anything.
+- `vibekit setup` runs official installers (some via `curl | sh` or `irm | iex`, as their vendors document). It shows every command and asks first; `--dry-run` shows the plan without changing anything.
 - Escape hatches: `--force` on `status`/`sync`, or `"enforce": false`. Debug hooks with `claude --debug` and the `/plugin` Errors tab.
 
 ## What the plugin gives Claude Code
 
-The workflow skills (`/vibe-check-cli:new-project`, `run`, `spec-feature`, `plan-feature`, `implement-feature`, `dispatch`, `merge-lanes`, `review-feature`, `docs`, `rearchitect`, `security`, `scan`, `memory`, `setup`, `health`, `spec-check`), 4 subagents (**architect**, **test-engineer**, **implementer**, **reviewer**, each reading the project's `AGENTS.md` first) and 3 hooks (session start, before edits, end of turn).
+The workflow skills (`/vibekit:new-project`, `run`, `spec-feature`, `plan-feature`, `implement-feature`, `dispatch`, `merge-lanes`, `review-feature`, `docs`, `rearchitect`, `security`, `scan`, `memory`, `setup`, `health`, `spec-check`), 4 subagents (**architect**, **test-engineer**, **implementer**, **reviewer**, each reading the project's `AGENTS.md` first) and 3 hooks (session start, before edits, end of turn).
 
-**Cursor gets the same four subagents** in its own format (`model: inherit`; the reviewer is `readonly`): in every project's `.cursor/agents/` (kept current by `vibecheck sync`) and in `~/.cursor/agents/` for use anywhere (`vibecheck cursor-agents`; installed by the bootstrap and checked by the health check). They work in Cursor's editor, its CLI lanes and Cloud Agents. Files of your own with the same names are never overwritten. Check with `claude plugin details vibe-check-cli@vibe-check-cli`. To start over completely, see "Starting over" in the setup guides (`plugin/scripts/reset.ps1` or `reset.sh`).
+**Cursor gets the same four subagents** in its own format (`model: inherit`; the reviewer is `readonly`): in every project's `.cursor/agents/` (kept current by `vibekit sync`) and in `~/.cursor/agents/` for use anywhere (`vibekit cursor-agents`; installed by the bootstrap and checked by the health check). They work in Cursor's editor, its CLI lanes and Cloud Agents. Files of your own with the same names are never overwritten. Check with `claude plugin details vibekit@vibekit`. To start over completely, see "Starting over" in the setup guides (`plugin/scripts/reset.ps1` or `reset.sh`).
 
-## Updating Vibe-check-cli
+## Updating VibeKit
 
-Claude Code runs the plugin from its own cached copy, so unzipping a newer version isn't enough. After replacing `~/tools/vibe-check-cli`:
+Claude Code runs the plugin from its own cached copy, so unzipping a newer version isn't enough. After replacing `~/tools/vibekit`:
 
 ```bash
-claude plugin marketplace update vibe-check-cli
-claude plugin update vibe-check-cli@vibe-check-cli
-npm install -g ~/tools/vibe-check-cli/plugin
+claude plugin marketplace update vibekit
+claude plugin update vibekit@vibekit
+npm install -g ~/tools/vibekit/plugin
 ```
 
-Then restart Claude Code. `vibecheck health` tells you when the installed plugin is older than your folder, and `/vibe-check-cli:setup` can run the update for you.
+Then restart Claude Code. `vibekit health` tells you when the installed plugin is older than your folder, and `/vibekit:setup` can run the update for you.
 
-## Developing Vibe-check-cli
+## Developing VibeKit
 
 ```bash
 cd plugin

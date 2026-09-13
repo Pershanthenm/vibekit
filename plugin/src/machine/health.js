@@ -9,7 +9,7 @@ import { toolEnv } from './platform.js';
 import { firstAvailable, probe } from './probe.js';
 import { toolsFor } from './tools.js';
 
-const BIN = fileURLToPath(new URL('../../bin/vibecheck', import.meta.url));
+const BIN = fileURLToPath(new URL('../../bin/vibekit', import.meta.url));
 const LIVE_TIMEOUT_MS = 180000;
 const item = (group, name, ok, detail, fix) => ({ group, name, ok, detail, fix });
 
@@ -43,12 +43,12 @@ function gitState(root) {
 }
 
 export async function projectChecks(root, project) {
-  if (!project) return [item('Project', 'vibecheck project', true, 'not in a project (machine checks only)')];
+  if (!project) return [item('Project', 'vibekit project', true, 'not in a project (machine checks only)')];
   const problems = await collectProblems(root, project);
   const git = gitState(root);
   return [
-    item('Project', 'specs consistent', !problems.length, problems.length ? `${problems.length} problem(s): ${problems[0]}` : 'vibecheck check passes', problems.length ? 'vibecheck check' : undefined),
-    item('Project', 'hooks run on this machine', hookSelfTest(root), 'session-start hook executed with this Node and PATH', 'reinstall the plugin: vibecheck setup'),
+    item('Project', 'specs consistent', !problems.length, problems.length ? `${problems.length} problem(s): ${problems[0]}` : 'vibekit check passes', problems.length ? 'vibekit check' : undefined),
+    item('Project', 'hooks run on this machine', hookSelfTest(root), 'session-start hook executed with this Node and PATH', 'reinstall the plugin: vibekit setup'),
     item('Project', 'git repository', git.inRepo, git.inRepo ? `remotes: ${git.remotes.join(', ') || 'none'}` : 'not a git repository', git.inRepo ? undefined : 'git init && git add -A && git commit -m "chore: initial specification"'),
   ].filter(Boolean);
 }
@@ -61,24 +61,24 @@ function askAgent(command, args, cwd) {
 export async function liveChecks(root, project) {
   const results = [];
   const claudePrompt = project
-    ? "Reply with exactly VIBECHECK_OK if your context contains a section titled 'Vibe-check-cli orchestrator protocol'; otherwise reply exactly MISSING."
-    : 'Reply with exactly VIBECHECK_OK.';
+    ? "Reply with exactly VIBEKIT_OK if your context contains a section titled 'VibeKit orchestrator protocol'; otherwise reply exactly MISSING."
+    : 'Reply with exactly VIBEKIT_OK.';
   const claude = askAgent('claude', ['-p', claudePrompt, '--output-format', 'text'], project ? root : undefined);
-  results.push(item('Live', 'Claude Code answers' + (project ? ' with Vibe-check-cli hooks loaded' : ''), claude.output.includes('VIBECHECK_OK'), claude.output.split('\n').pop()?.slice(0, 100) || 'no answer', claude.output.includes('MISSING') ? 'claude plugin install vibe-check-cli@vibe-check-cli (then restart Claude Code)' : 'run `claude` once and sign in'));
+  results.push(item('Live', 'Claude Code answers' + (project ? ' with VibeKit hooks loaded' : ''), claude.output.includes('VIBEKIT_OK'), claude.output.split('\n').pop()?.slice(0, 100) || 'no answer', claude.output.includes('MISSING') ? 'claude plugin install vibekit@vibekit (then restart Claude Code)' : 'run `claude` once and sign in'));
   if (!project || project.workflow.engine === 'cursor') {
     const cursorCommand = firstAvailable(['cursor-agent', 'agent'])?.command;
     const cursor = cursorCommand ? askAgent(cursorCommand, ['-p', '--output-format', 'text', 'Reply with exactly CURSOR_OK'], root) : { ok: false, output: 'Cursor CLI not installed' };
     results.push(item('Live', 'Cursor agent answers headlessly', cursor.output.includes('CURSOR_OK'), cursor.output.split('\n').pop()?.slice(0, 100) || 'no answer', 'run `agent` once and sign in, or set CURSOR_API_KEY'));
   }
   if (project?.memory.provider === 'agentmemory') {
-    const probeText = `vibecheck health probe ${Date.now()}`;
+    const probeText = `vibekit health probe ${Date.now()}`;
     const health = await memoryHealth(project);
     const saved = health.ok && (await remember(project, probeText, ['health']));
     const found = saved && (await recall(project, probeText)).some((memory) => memory.includes('health probe'));
-    results.push(item('Live', 'agentmemory saves and recalls', Boolean(found), found ? 'round trip ok' : health.detail, 'agentmemory (then re-run vibecheck health --live)'));
+    results.push(item('Live', 'agentmemory saves and recalls', Boolean(found), found ? 'round trip ok' : health.detail, 'agentmemory (then re-run vibekit health --live)'));
   }
   if (project?.knowledge.provider === 'opencontext') {
-    const search = probe('oc', ['search', 'vibecheck', '--mode', 'keyword', '--format', 'json']);
+    const search = probe('oc', ['search', 'vibekit', '--mode', 'keyword', '--format', 'json']);
     results.push(item('Live', 'OpenContext search works', search.ok, search.firstLine || 'no output', `cd ~ && oc init --tools cursor,claude`));
   }
   return results;

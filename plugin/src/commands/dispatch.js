@@ -89,12 +89,12 @@ function printManualSteps(manifest, lanes = manifest.lanes) {
     console.log(`    Cursor window: open ${lane.path}, start an agent, paste ${lane.promptPath}`);
     console.log(`    or CLI:        cd "${lane.path}" && cursor-agent "$(cat "${lane.promptPath}")"`);
   });
-  console.log(`\nWhen the lanes have committed their work: vibecheck merge ${manifest.feature}`);
+  console.log(`\nWhen the lanes have committed their work: vibekit merge ${manifest.feature}`);
 }
 
 async function assertDispatchable(root, feature) {
-  if (feature.status !== 'in-progress') throw new Error(`${feature.id} must be in-progress (vibecheck status ${feature.id} in-progress).`);
-  if (await loadManifest(root, feature.id)) throw new Error(`Lanes for ${feature.id} are already dispatched. Run "vibecheck merge ${feature.id}" first.`);
+  if (feature.status !== 'in-progress') throw new Error(`${feature.id} must be in-progress (vibekit status ${feature.id} in-progress).`);
+  if (await loadManifest(root, feature.id)) throw new Error(`Lanes for ${feature.id} are already dispatched. Run "vibekit merge ${feature.id}" first.`);
   assertCleanTree(root, 'commit first so the lanes start from your latest specs and code');
 }
 
@@ -125,5 +125,5 @@ export async function dispatch({ root, args, engine, 'dry-run': dryRun }) {
   headless.forEach((lane) => console.log(`▶ ${lane.name} → ${agents[lane.engine].binary}`));
   await Promise.all(headless.map((lane) => runLane({ project, manifest, lane, agent: agents[lane.engine], save })));
   await openDashboard(root, project);
-  console.log(`\nNext: vibecheck merge ${feature.id}`);
+  console.log(`\nNext: vibekit merge ${feature.id}`);
 }

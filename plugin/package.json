@@ -1,11 +1,10 @@
 {
-  "name": "vibe-check-cli",
+  "name": "vibekit",
   "version": "0.2.0-beta",
-  "description": "Vibe-check-cli: spec-driven, multi-agent development for Claude Code and Cursor",
+  "description": "VibeKit: spec-driven, multi-agent development for Claude Code and Cursor",
   "type": "module",
   "bin": {
-    "vibecheck": "bin/vibecheck",
-    "vibe-check-cli": "bin/vibecheck"
+    "vibekit": "bin/vibekit"
   },
   "files": [
     "bin",

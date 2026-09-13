@@ -15,7 +15,7 @@ const BUILT_IN_SKILLS = SKILLS.map((skill) => skill.name);
 const BUILT_IN_AGENTS = AGENT_ROLES.map((role) => role.name);
 
 export async function fetchEcc(version = 'latest') {
-  const dir = await mkdtemp(join(tmpdir(), 'vibecheck-ecc-'));
+  const dir = await mkdtemp(join(tmpdir(), 'vibekit-ecc-'));
   const result = spawnSync('npm', ['install', '--no-save', '--ignore-scripts', '--prefix', dir, `${PACKAGE}@${version}`], { env: toolEnv(), encoding: 'utf8', shell: process.platform === 'win32' });
   if (result.status !== 0) throw new Error(`Could not download ${PACKAGE}@${version} from npm: ${(result.stderr || result.stdout).trim().split('\n').pop()}`);
   return join(dir, 'node_modules', PACKAGE);
@@ -56,16 +56,16 @@ async function assess(pkg, name, found, requested, all) {
     const text = await readText(join(found.path, 'SKILL.md'));
     if (/\[DEPRECATED/i.test(frontMatterOf(text).meta.description ?? '')) return 'deprecated by ECC';
     if (RUNTIME.test(text) || (await exists(join(found.path, 'hooks')))) return 'needs ECC\'s hook runtime (keep the ECC plugin for this one)';
-    if (BUILT_IN_SKILLS.includes(name)) return `name clashes with Vibe-check-cli's /${name}`;
+    if (BUILT_IN_SKILLS.includes(name)) return `name clashes with VibeKit's /${name}`;
     return null;
   }
   const text = await readText(found.path);
-  if (found.kind === 'agent') return BUILT_IN_AGENTS.includes(name) ? `name clashes with Vibe-check-cli's ${name} subagent` : null;
+  if (found.kind === 'agent') return BUILT_IN_AGENTS.includes(name) ? `name clashes with VibeKit's ${name} subagent` : null;
   if (RUNTIME.test(text) || SCRIPT_CALL.test(text)) return 'needs ECC\'s scripts (keep the ECC plugin for this one)';
-  if (BUILT_IN_SKILLS.includes(name)) return `name clashes with Vibe-check-cli's /${name}`;
+  if (BUILT_IN_SKILLS.includes(name)) return `name clashes with VibeKit's /${name}`;
   const agents = all.agents.filter((agent) => new RegExp(`\\b${agent}\\b`).test(text) && !requested.includes(agent));
   const clashing = agents.filter((agent) => BUILT_IN_AGENTS.includes(agent));
-  if (clashing.length) return `uses ECC's ${clashing.join(', ')} agent, which differs from Vibe-check-cli's own`;
+  if (clashing.length) return `uses ECC's ${clashing.join(', ')} agent, which differs from VibeKit's own`;
   if (agents.length) return `needs ECC agent(s) ${agents.join(', ')}; add them to the list to import them too`;
   return null;
 }

@@ -30,7 +30,7 @@ export const STARTERS = [
     ],
     caveats: [
       'LGPL-3.0 — fine to build a closed-source product on, but read the terms if you intend to fork the framework itself.',
-      'Large surface area: your architecture becomes ABP conventions, not the ones vibecheck would generate.',
+      'Large surface area: your architecture becomes ABP conventions, not the ones vibekit would generate.',
     ],
     scaffold: 'dotnet tool install -g Volo.Abp.Studio.Cli && abp new <Name>',
     docs: 'https://abp.io/docs',

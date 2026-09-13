@@ -3,7 +3,7 @@
 // nothing about whether they pass reliably, and an intermittent failure that slips through here
 // becomes a red CI someone else has to chase.
 //
-// This is the rule the evidence gate applies to projects vibecheck builds, applied to vibecheck
+// This is the rule the evidence gate applies to projects vibekit builds, applied to vibekit
 // itself: a suite that passes sometimes is not a passing suite.
 
 import { spawnSync } from 'node:child_process';

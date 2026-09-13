@@ -159,7 +159,7 @@ export function readIssue(text) {
 export function issuesOf(state) {
   const rows = state.problems.map((text, index) => {
     const read = readIssue(text);
-    return { id: `p${index}`, ...read, detail: 'A generated file and its source disagree', command: read.command ?? 'vibecheck sync', feature: null };
+    return { id: `p${index}`, ...read, detail: 'A generated file and its source disagree', command: read.command ?? 'vibekit sync', feature: null };
   });
   for (const feature of state.features) {
     for (const gate of feature.gates) {
@@ -229,7 +229,7 @@ export const featuresTable = (features) => (features.length
   ? `<div class="table-wrap"><table class="table">
           <thead><tr><th>Feature</th><th>Stage</th><th class="num">Tasks</th><th>Tests</th><th>Gates</th><th class="num">Blocking</th><th style="width:48px"></th></tr></thead>
           <tbody class="rows-anim">${features.map(featureRow).join('')}</tbody></table></div>`
-  : empty('No features yet', 'Run vibecheck feature "<name>" to add the first one.'));
+  : empty('No features yet', 'Run vibekit feature "<name>" to add the first one.'));
 
 // ── Pages ───────────────────────────────────────────────────────────────────────────────────
 // `ctx.writable` is true only where a change can actually be written back — the served page with
@@ -319,7 +319,7 @@ export function pageTests(state, ctx) {
   return `
       <div class="page-head seq">
         <div style="--i:0"><h2>Tests</h2><p>${plural(suites.length, 'suite')} across all features${state.tests.stale ? ` · ${state.tests.stale} recorded against an older commit` : ''}</p></div>
-        <div class="cluster" style="--i:1">${cmd('vibecheck verify --all --run')}</div>
+        <div class="cluster" style="--i:1">${cmd('vibekit verify --all --run')}</div>
       </div>
       <div class="tests-summary seq" style="--seq-base:60ms">${['ok', 'flaky', 'failed', 'missing'].map((key, index) => `
         <div class="card" style="--i:${index + 2}">${badge(STATE_TONE[key], STATE_WORDS[key])}<div class="value">${counted(key)}<small>suites</small></div></div>`).join('')}
@@ -450,7 +450,7 @@ export function pageFeature(state, ctx, id) {
         </div>
         <div class="card span-7" style="--i:8">
           <div class="card-head"><div class="card-title">Tests<small>${feature.tests.trace.covered} of ${feature.criteria.total} criteria proven by a test</small></div>
-            <div class="card-actions">${cmd(`vibecheck verify ${feature.id} --run`)}</div></div>
+            <div class="card-actions">${cmd(`vibekit verify ${feature.id} --run`)}</div></div>
           ${feature.tests.suites.length ? `<div class="table-wrap"><table class="table">
             <thead><tr><th>Suite</th><th>Result</th><th class="num">Runs</th><th class="num">Time</th></tr></thead>
             <tbody>${feature.tests.suites.map((suite) => `<tr><td><b>${escape(SUITE_WORDS[suite.suite] ?? suite.suite)}</b></td>
@@ -501,7 +501,7 @@ export function tunnelCard(state, ctx, step = 10) {
     return `<div class="card span-12" style="--i:${step}">
           <div class="card-head"><div class="card-title">Reach this from a phone<small>Only while the console is served</small></div></div>
           ${empty('Not being served', 'This page was written to a file. Run the command below to serve it live.')}
-          <div class="mt-3">${cmd('vibecheck dashboard --serve --tunnel')}</div>
+          <div class="mt-3">${cmd('vibekit dashboard --serve --tunnel')}</div>
         </div>`;
   }
   const on = tunnel.open;
@@ -515,7 +515,7 @@ export function tunnelCard(state, ctx, step = 10) {
           ${ctx.writable ? `<div class="cluster mt-3">
             <button type="button" class="btn ${on ? 'btn-ghost' : 'btn-primary'} btn-sm" data-tunnel="${on ? 'stop' : 'start'}">${on ? 'Turn it off' : 'Turn one on'}</button>
             ${on ? '<span class="t-caption">Closing it drops anyone reading over it, including you if you came that way.</span>' : ''}
-          </div>` : `<div class="mt-3">${cmd('vibecheck dashboard --serve --tunnel')}</div>`}
+          </div>` : `<div class="mt-3">${cmd('vibekit dashboard --serve --tunnel')}</div>`}
         </div>`;
 }
 
@@ -546,7 +546,7 @@ export function pageQueue(state, ctx) {
             <div><b>${escape(feature.title)}</b><span>${escape(feature.id)}</span></div>
             ${queueButton(feature, state, ctx)}
           </div>`).join('')}</div>` : empty('Nothing in progress', 'Move a feature to In progress on the board first.')}
-          <p class="t-caption mt-3">An agent gets its own git worktree and only the tasks in its lane. Its output appears in the console at the foot of the page, and <b>vibecheck merge</b> brings the work back.</p>
+          <p class="t-caption mt-3">An agent gets its own git worktree and only the tasks in its lane. Its output appears in the console at the foot of the page, and <b>vibekit merge</b> brings the work back.</p>
         </div>
       </div>`;
 }
@@ -554,7 +554,7 @@ export function pageQueue(state, ctx) {
 /** The one control that starts work. Read-only pages get the command instead of a dead button. */
 export function queueButton(feature, state, ctx) {
   const already = (state.queue?.entries ?? []).find((entry) => entry.feature === feature.id && (entry.state === 'queued' || entry.state === 'running'));
-  if (!ctx.writable) return cmd(`vibecheck dispatch ${feature.id}`);
+  if (!ctx.writable) return cmd(`vibekit dispatch ${feature.id}`);
   if (already) return `<span class="t-caption nowrap">${escape(QUEUE_WORDS[already.state] ?? already.state)}</span>`;
   return `<button type="button" class="btn btn-primary btn-sm" data-queue="${escape(feature.id)}">Build it</button>`;
 }

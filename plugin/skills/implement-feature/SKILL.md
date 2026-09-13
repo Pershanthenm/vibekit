@@ -10,13 +10,13 @@ argument-hint: "<feature id>"
 
 Feature: $ARGUMENTS
 
-1. Read the feature's `spec.md`, `plan.md` and `tasks.md`. Its status must be `planned` or `in-progress`; run `vibecheck status <id> in-progress` and commit `specs/`.
+1. Read the feature's `spec.md`, `plan.md` and `tasks.md`. Its status must be `planned` or `in-progress`; run `vibekit status <id> in-progress` and commit `specs/`.
 2. Work through open tasks in order:
    - `[test]` tasks → **test-engineer** agent: unit, UI and smoke tests from the acceptance criteria that fail for the right reason, each named `<feature number>:AC-<n> …` (e.g. `003:AC-2 rejects a retired laptop`); smoke tests also carry the smoke tag.
    - `[impl]` tasks → **implementer** agent: the smallest change that makes those tests pass, following AGENTS.md.
-   - `[docs]` tasks → /vibe-check-cli:docs: update documents and diagrams from the code as built, then stamp them.
-   - When the next open tasks form a block of `[P]` tasks, hand them to /vibe-check-cli:dispatch (parallel agents in git worktrees). For a block of two small tasks, parallel implementer subagents in this session are fine.
-3. After each task run the lint, typecheck and test commands from AGENTS.md and fix failures before moving on. The Stop hook runs the test command itself once a task is ticked, so a failure ends the turn either way. Then tick the task, tick any AC now proven by a passing test (`vibecheck verify <id>` shows which are traced), and commit. Code touching auth, data access or configuration must follow `specs/security.md`.
+   - `[docs]` tasks → /vibekit:docs: update documents and diagrams from the code as built, then stamp them.
+   - When the next open tasks form a block of `[P]` tasks, hand them to /vibekit:dispatch (parallel agents in git worktrees). For a block of two small tasks, parallel implementer subagents in this session are fine.
+3. After each task run the lint, typecheck and test commands from AGENTS.md and fix failures before moving on. The Stop hook runs the test command itself once a task is ticked, so a failure ends the turn either way. Then tick the task, tick any AC now proven by a passing test (`vibekit verify <id>` shows which are traced), and commit. Code touching auth, data access or configuration must follow `specs/security.md`.
 4. If a task shows the spec or plan is wrong, stop and propose the change instead of improvising.
-5. When every task is ticked, run /vibe-check-cli:review-feature.
+5. When every task is ticked, run /vibekit:review-feature.
 

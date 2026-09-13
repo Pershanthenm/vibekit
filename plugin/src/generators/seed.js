@@ -55,7 +55,7 @@ const AGENTMEMORY_MARKETPLACE = { agentmemory: { source: { source: 'github', rep
 function pluginSettings(project) {
   const hasMemory = project.memory.provider === 'agentmemory';
   const enabledPlugins = {
-    ...(project.workflow.skills === 'plugin' && { 'vibe-check-cli@vibe-check-cli': true }),
+    ...(project.workflow.skills === 'plugin' && { 'vibekit@vibekit': true }),
     ...(hasMemory && { 'agentmemory@agentmemory': true }),
   };
   return {
@@ -68,7 +68,7 @@ function renderClaudeSettings(project) {
   const commandRules = Object.values(project.commands).filter(Boolean).map((command) => `Bash(${command}:*)`);
   const settings = {
     permissions: {
-      allow: [...new Set(['Bash(vibecheck:*)', ...GIT_RULES, ...commandRules])],
+      allow: [...new Set(['Bash(vibekit:*)', ...GIT_RULES, ...commandRules])],
       deny: ['Read(./.env)', 'Read(./.env.*)', 'Read(./secrets/**)'],
     },
     ...pluginSettings(project),

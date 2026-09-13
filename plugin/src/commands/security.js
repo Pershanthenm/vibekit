@@ -7,7 +7,7 @@ import { securityRounds } from '../security/questions.js';
 import { traceFeature } from '../verify.js';
 import { sync } from './sync.js';
 
-const USAGE = 'Usage: vibecheck security [questions [--json] | apply [--from <answers.json>] | status]';
+const USAGE = 'Usage: vibekit security [questions [--json] | apply [--from <answers.json>] | status]';
 
 async function finish(root, raw, force) {
   const { project, criteria, workflowCreated, saved } = await applySecurity(root, raw);
@@ -43,14 +43,14 @@ async function questions(root, { json }) {
 async function status(root) {
   const project = await loadProject(root);
   const family = stackFamily(project);
-  if (!project.security.controls.length) return console.log('No security baseline yet. Run: vibecheck security');
+  if (!project.security.controls.length) return console.log('No security baseline yet. Run: vibekit security');
   project.security.controls.map(findControl).forEach((item) => console.log(`✔ ${item.title} — ${implementationFor(item, family)}`));
   project.security.acceptedRisks.forEach((risk) => console.log(`! Accepted risk: ${findControl(risk.id).title}`));
   const features = await listFeatures(root);
   const target = features.find((feature) => feature.spec.includes('(security: '));
   if (!target) return;
   const trace = await traceFeature(root, findFeature(features, target.id));
-  console.log(`\n${target.id}: ${trace.covered.length} of ${trace.covered.length + trace.missing.length} criteria traced to tests (vibecheck verify ${target.id.slice(0, 3)})`);
+  console.log(`\n${target.id}: ${trace.covered.length} of ${trace.covered.length + trace.missing.length} criteria traced to tests (vibekit verify ${target.id.slice(0, 3)})`);
 }
 
 async function withAsker(work) {

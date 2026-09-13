@@ -18,7 +18,7 @@ async function put(path, content) {
 
 beforeEach(async () => {
   const base = await mkdtemp(join(tmpdir(), 'vc-ecc-'));
-  repo = join(base, 'vibe-check-cli');
+  repo = join(base, 'vibekit');
   await cp(REPO, repo, { recursive: true });
   await rm(join(repo, 'team'), { recursive: true, force: true });
   ecc = join(base, 'ecc-universal');
@@ -45,7 +45,7 @@ test('imports what works on its own and explains everything it skips', async () 
   const reasons = Object.fromEntries(report.skipped.map((item) => [item.name, item.reason]));
   assert.match(reasons['learning-v2'], /hook runtime/);
   assert.match(reasons['old-learning'], /deprecated/);
-  assert.match(reasons.run, /clashes with Vibe-check-cli's \/run/);
+  assert.match(reasons.run, /clashes with VibeKit's \/run/);
   assert.match(reasons.sessions, /ECC's scripts/);
   assert.match(reasons.plan, /needs ECC agent\(s\) planner/);
   assert.deepEqual(report.unknown.map((item) => item.name), ['verify']);

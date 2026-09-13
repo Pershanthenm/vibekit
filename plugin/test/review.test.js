@@ -13,7 +13,7 @@ console.log = () => {};
 
 const ORIGINAL_ENV = { ...process.env };
 beforeEach(async () => {
-  process.env.VIBECHECK_HOME = await mkdtemp(join(tmpdir(), 'vc-home-'));
+  process.env.VIBEKIT_HOME = await mkdtemp(join(tmpdir(), 'vc-home-'));
   process.env.AGENTMEMORY_URL = 'http://127.0.0.1:9';
   process.env.PATH = TOOL_FREE_PATH;
 });

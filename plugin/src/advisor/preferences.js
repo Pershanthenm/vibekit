@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { readText, writeText } from '../fsutil.js';
 import { PRESETS } from './components.js';
 
-const preferencesPath = () => join(process.env.VIBECHECK_HOME || join(homedir(), '.vibe-check-cli'), 'preferences.json');
+const preferencesPath = () => join(process.env.VIBEKIT_HOME || join(homedir(), '.vibekit'), 'preferences.json');
 
 export const expandPreferred = (ids) => [...new Set(ids.flatMap((id) => (PRESETS[id] ? Object.values(PRESETS[id]) : [id])))];
 

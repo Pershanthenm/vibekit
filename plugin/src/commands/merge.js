@@ -41,7 +41,7 @@ const MESSAGES = {
   running: (lane) => `… ${lane.name} is still running`,
   waiting: (lane) => `… ${lane.name} has no commits yet (${lane.path})`,
   uncommitted: (lane) => `✖ ${lane.name} has uncommitted changes — commit them in ${lane.path} and re-run`,
-  conflict: (lane) => `✖ ${lane.name} conflicts — resolve, commit, then re-run "vibecheck merge"`,
+  conflict: (lane) => `✖ ${lane.name} conflicts — resolve, commit, then re-run "vibekit merge"`,
 };
 const FINAL = ['merged', 'empty'];
 

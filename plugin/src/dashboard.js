@@ -19,14 +19,14 @@ export { renderDashboard } from './dashboard-view.js';
 /**
  * A generated page must never dirty the working tree: `merge` refuses to run on a dirty tree and
  * the evidence gate records one, so an untracked status.html in specs/ would quietly block the
- * very lifecycle it reports on. .git/vibecheck/ is outside the tree and shared across worktrees,
+ * very lifecycle it reports on. .git/vibekit/ is outside the tree and shared across worktrees,
  * which is also what the evidence records use.
  */
 export function dashboardPath(root) {
   try {
     return stateDir(root, 'status.html');
   } catch {
-    return join(root, '.vibecheck', 'status.html');
+    return join(root, '.vibekit', 'status.html');
   }
 }
 

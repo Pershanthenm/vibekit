@@ -15,7 +15,7 @@ const MANUAL = /^(Use|Install|Start|Create) /;
 const VERBS = { install: 'Install', configure: 'Configure', start: 'Start', update: 'Update', enable: 'Enable' };
 const SERVICE_WAIT_MS = 90000;
 const POLL_MS = 2000;
-const logDir = () => join(process.env.VIBECHECK_HOME || join(homedir(), '.vibe-check-cli'), 'logs');
+const logDir = () => join(process.env.VIBEKIT_HOME || join(homedir(), '.vibekit'), 'logs');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const step = (tool, kind, command) => ({ tool, kind, command, manual: !command || MANUAL.test(command), interactive: (tool.interactive ?? []).includes(kind) });
@@ -78,7 +78,7 @@ export async function runSetup({ root, platform = detectPlatform(), tools, only 
   const report = () => (project && onProgress
     ? onProgress(project, { results, steps: steps.filter((step) => !attempted.has(step.tool.id)) })
     : Promise.resolve());
-  console.log(`vibecheck setup · ${PLATFORM_NAMES[platform]}${project ? ` · for project ${project.project.name}` : ' · machine-wide'}`);
+  console.log(`vibekit setup · ${PLATFORM_NAMES[platform]}${project ? ` · for project ${project.project.name}` : ' · machine-wide'}`);
   results.filter((result) => result.ok).forEach((result) => console.log(`  ✔ ${result.name} — ${result.detail}`));
   if (only.length && !results.length) {
     console.log(`Nothing selected: ${only.join(', ')} ${only.length === 1 ? 'is' : 'are'} not needed for this ${project ? 'project' : 'machine'}.`);
@@ -133,12 +133,12 @@ export async function setup({ root, yes, 'dry-run': dryRun, only, json }) {
       root, yes, dryRun, asker, only: ids,
       onProgress: (project, snapshot) => openDashboard(root, project, { setup: snapshot }),
     });
-    if (dryRun) return console.log('\nDry run: nothing was changed. Run "vibecheck setup" to go ahead.');
+    if (dryRun) return console.log('\nDry run: nothing was changed. Run "vibekit setup" to go ahead.');
     if (outcomes.failed.length) console.log(`\n✖ Failed: ${outcomes.failed.join(', ')} — see the output above.`);
-    if (outcomes.done.length) console.log('\nOpen a new terminal so PATH changes apply, then run "vibecheck health --live".');
+    if (outcomes.done.length) console.log('\nOpen a new terminal so PATH changes apply, then run "vibekit health --live".');
     const { groups } = await runHealthCheck(root);
     const remaining = Object.values(groups).flat().filter((result) => !result.ok && !result.unknown);
-    console.log(remaining.length ? `\n${remaining.length} item(s) still need attention: vibecheck health` : '\n✔ All set on this machine.');
+    console.log(remaining.length ? `\n${remaining.length} item(s) still need attention: vibekit health` : '\n✔ All set on this machine.');
   } finally {
     asker?.close();
   }
@@ -146,5 +146,5 @@ export async function setup({ root, yes, 'dry-run': dryRun, only, json }) {
 
 export async function version() {
   const pkg = JSON.parse(await readFile(new URL('../../package.json', import.meta.url), 'utf8'));
-  console.log(`Vibe-check-cli ${pkg.version}`);
+  console.log(`VibeKit ${pkg.version}`);
 }

@@ -43,7 +43,7 @@ function subagents(project) {
       body: markdown(
         `You write tests for ${name} using ${standards.testing.framework}.`,
         bullets([
-          'One test per behaviour. Its name starts with the feature number and criterion it proves, e.g. `003:AC-2 rejects assigning a retired laptop` — `vibecheck verify` traces criteria to tests by that prefix.',
+          'One test per behaviour. Its name starts with the feature number and criterion it proves, e.g. `003:AC-2 rejects assigning a retired laptop` — `vibekit verify` traces criteria to tests by that prefix.',
           'Arrange / act / assert. No logic, sleeps or shared mutable state in tests; deterministic data only.',
           'Test through public interfaces; mock only at architecture boundaries (ports, network, clock).',
           `Run \`${commands.test}\` and confirm new tests fail for the expected reason before handing back.`,
@@ -74,7 +74,7 @@ function subagents(project) {
         `You review changes for ${name}. You never edit files.`,
         bullets([
           'Check against the feature\'s `spec.md`, `specs/01-architecture.md`, `specs/03-standards.md`, `specs/04-nfr.md` and every control in `specs/security.md` that the change touches.',
-          'Run `vibecheck verify <feature> --run`: every acceptance criterion must be traced to a passing test.',
+          'Run `vibekit verify <feature> --run`: every acceptance criterion must be traced to a passing test.',
           'Cite file:line for every finding and label it **blocking** or **suggestion**.',
           `Run ${verify} to confirm claims instead of assuming.`,
           'Be specific and brief.',

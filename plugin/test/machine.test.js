@@ -32,23 +32,23 @@ if (value !== undefined) console.log(value);
 
 // Docker is required of every project now, so a machine that is meant to be healthy has to
 // answer for it too.
-const HEALTHY = (claudeAnswer = 'VIBECHECK_OK') => ({
+const HEALTHY = (claudeAnswer = 'VIBEKIT_OK') => ({
   claude: replies({
     '--version': '2.1.300 (Claude Code)',
-    plugin: 'vibe-check-cli@vibe-check-cli enabled\nagentmemory@agentmemory enabled',
+    plugin: 'vibekit@vibekit enabled\nagentmemory@agentmemory enabled',
     '-p': claudeAnswer,
   }),
   agent: replies({ '--version': 'cursor-agent 2026.09', '-p': 'CURSOR_OK' }),
   oc: replies({ '--version': 'oc 1.4.0', search: '[]' }),
   agentmemory: replies({ '*': 'agentmemory 0.9' }),
   docker: replies({ info: 'Server Version: 27.0.3', '*': 'Docker version 27.0.3' }),
-  vibecheck: `#!/usr/bin/env node
+  vibekit: `#!/usr/bin/env node
 require('child_process').spawnSync(process.execPath, [${JSON.stringify(BIN)}, ...process.argv.slice(2)], { stdio: 'inherit' });
 `,
 });
 
 beforeEach(async () => {
-  process.env.VIBECHECK_HOME = await mkdtemp(join(tmpdir(), 'sf-home-'));
+  process.env.VIBEKIT_HOME = await mkdtemp(join(tmpdir(), 'sf-home-'));
 });
 
 afterEach(() => {
@@ -57,7 +57,7 @@ afterEach(() => {
 });
 
 async function projectOnHealthyMachine(claudeAnswer) {
-  process.env.VIBECHECK_CURSOR_DIR = join(await mkdtemp(join(tmpdir(), 'vc-cursor-')), '.cursor');
+  process.env.VIBEKIT_CURSOR_DIR = join(await mkdtemp(join(tmpdir(), 'vc-cursor-')), '.cursor');
   await run(['cursor-agents']);
   const memory = await startFakeAgentmemory();
   process.env.PATH = [await fakeBin(HEALTHY(claudeAnswer)), TOOL_FREE_PATH].join(delimiter);
@@ -82,13 +82,13 @@ test('health --live passes when every piece works, end to end', async () => {
   }
 });
 
-test('the live check catches a Claude Code without the vibecheck hooks', async () => {
+test('the live check catches a Claude Code without the vibekit hooks', async () => {
   const { root, close } = await projectOnHealthyMachine('MISSING');
   try {
     const live = (await runHealthCheck(root, { live: true })).groups.Live;
     const claude = live.find((result) => result.name.startsWith('Claude Code'));
     assert.equal(claude.ok, false);
-    assert.match(claude.fix, /claude plugin install vibe-check-cli@vibe-check-cli/);
+    assert.match(claude.fix, /claude plugin install vibekit@vibekit/);
   } finally {
     await close();
   }
@@ -117,7 +117,7 @@ test('the checklist follows the project configuration', async () => {
   // Docker, the Cursor CLI and agentmemory are required of every project, so they are not
   // engine-dependent any more. What still follows the configuration is the rest.
   const lean = ids({ workflow: { engine: 'claude' }, memory: { ...base.memory, provider: 'none' }, knowledge: { ...base.knowledge, provider: 'none' } });
-  assert.ok(['node', 'git', 'claude', 'vibecheck-plugin', 'vibecheck-cli'].every((id) => lean.includes(id)), lean.join(', '));
+  assert.ok(['node', 'git', 'claude', 'vibekit-plugin', 'vibekit-cli'].every((id) => lean.includes(id)), lean.join(', '));
   assert.ok(!lean.includes('opencontext'), 'a project with no knowledge provider does not need OpenContext');
 
   for (const engine of ['claude', 'cursor']) {
@@ -182,7 +182,7 @@ test('setup --json gives Claude a plan to turn into a menu', async () => {
   // This goes through the CLI, which detects the real platform. Pin it: on native Windows the
   // agentmemory install is manual (it needs WSL2), so no start step follows it — correct, but
   // it would make this assertion about step ordering pass or fail depending on who ran it.
-  process.env.VIBECHECK_PLATFORM = 'linux';
+  process.env.VIBEKIT_PLATFORM = 'linux';
   process.env.AGENTMEMORY_URL = 'http://127.0.0.1:9';
   const root = await mkdtemp(join(tmpdir(), 'vc-json-'));
   const lines = [];

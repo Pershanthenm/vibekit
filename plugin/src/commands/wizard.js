@@ -13,7 +13,7 @@ function wizardPath(root, out) {
   try {
     return stateDir(root, 'wizard.html');
   } catch {
-    return join(root, '.vibecheck', 'wizard.html');
+    return join(root, '.vibekit', 'wizard.html');
   }
 }
 
@@ -26,5 +26,5 @@ export async function wizard({ root, out, open }) {
   console.log(`Wrote ${path}`);
   if (open !== false) openInBrowser(path);
   console.log('  Fill it in, save requirements.json into this project as specs/requirements.json,');
-  console.log('  then run: vibecheck advise apply');
+  console.log('  then run: vibekit advise apply');
 }

@@ -15,7 +15,7 @@ export async function readRequirements(root, from, { optional = false } = {}) {
   const path = from ?? join(root, REQUIREMENTS_FILE);
   const text = await readText(path);
   if (text === null && optional) return {};
-  if (text === null) throw new Error(`No requirements at ${path}. Answer the questions first (vibecheck advise).`);
+  if (text === null) throw new Error(`No requirements at ${path}. Answer the questions first (vibekit advise).`);
   return JSON.parse(text);
 }
 

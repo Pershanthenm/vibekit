@@ -63,7 +63,7 @@ export async function publishKnowledge(project, { name, description, content }) 
   if (!available(project)) return false;
   const folder = knowledgeFolder(project);
   try {
-    await oc('folder', 'create', folder, '-d', `vibecheck project: ${project.project.name}`).catch(() => {});
+    await oc('folder', 'create', folder, '-d', `vibekit project: ${project.project.name}`).catch(() => {});
     await oc('doc', 'create', folder, `${name}.md`, '-d', description).catch(() => {});
     await writeText(join(contextsRoot(), folder, `${name}.md`), content);
     return true;

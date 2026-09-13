@@ -4,11 +4,11 @@ Everything to paste into GitHub when you publish the team kit, and the settings 
 
 ## 1. Create the repository
 
-- **Name:** `vibe-check-cli`
+- **Name:** `vibekit`
 - **Visibility:** **Private** is the safe default. The kit holds your team's skills and runs on every developer's machine.
 - Push the folder:
   ```text
-  Make ~/tools/vibe-check-cli a git repository on branch main, commit everything, add https://github.com/YOUR-ORG/vibe-check-cli as origin, and push.
+  Make ~/tools/vibekit a git repository on branch main, commit everything, add https://github.com/YOUR-ORG/vibekit as origin, and push.
   ```
 - Then replace `TEAM-REPO-URL` in `README.md` and `ONBOARDING.md` with the repository's address, and push again.
 
@@ -24,7 +24,7 @@ Shorter alternative:
 
 > A Claude Code plugin and team kit: specs first, parallel Claude and Cursor subagents, and proof-before-done quality gates.
 
-**Website:** the onboarding guide, `https://github.com/YOUR-ORG/vibe-check-cli/blob/main/ONBOARDING.md`
+**Website:** the onboarding guide, `https://github.com/YOUR-ORG/vibekit/blob/main/ONBOARDING.md`
 
 **Topics:**
 
@@ -33,7 +33,7 @@ claude-code  claude-code-plugin  cursor  ai-agents  multi-agent  subagents  agen
 spec-driven-development  developer-tools  developer-experience  tdd  code-quality  devsecops
 ```
 
-**Social preview** (Settings → General → Social preview, 1280 × 640): a plain card with the name **Vibe-check-cli** and the line "Specs first. Agents in parallel. Proof before done."
+**Social preview** (Settings → General → Social preview, 1280 × 640): a plain card with the name **VibeKit** and the line "Specs first. Agents in parallel. Proof before done."
 
 ## 3. Settings worth turning on
 
@@ -60,7 +60,7 @@ Every change to this repository reaches every developer's machine on their next 
 
 Releases → **Draft a new release**, tag `v0.2.0-beta`, target `main`, and tick **Set as a pre-release**.
 
-**Title:** Vibe-check-cli 0.2.0-beta
+**Title:** VibeKit 0.2.0-beta
 
 **Notes:**
 
@@ -71,7 +71,7 @@ First team release.
 - Four built-in subagents (architect, test-engineer, implementer, reviewer) for Claude Code and Cursor, plus the team's own.
 - Team kit with a curated Everything Claude Code selection (17 skills, 2 agents, 4 commands as skills); about 2,200 tokens of always-on context.
 - Quality gates: acceptance criteria traced to tests; tests, smoke and UI evidence per commit; living docs; security baseline.
-- One-command onboarding for Windows (PowerShell), macOS and Linux; `/vibe-check-cli:setup` and `/vibe-check-cli:health`.
+- One-command onboarding for Windows (PowerShell), macOS and Linux; `/vibekit:setup` and `/vibekit:health`.
 
 Setup: see ONBOARDING.md.
 ```
@@ -88,6 +88,6 @@ Whatever you choose, keep `team/THIRD_PARTY_NOTICES.md`: the Everything Claude C
 
 ## Azure DevOps instead of GitHub
 
-- The repository address looks like `https://dev.azure.com/YOUR-ORG/YOUR-PROJECT/_git/vibe-check-cli` (no `.git` at the end). Use that for `TEAM-REPO-URL`.
+- The repository address looks like `https://dev.azure.com/YOUR-ORG/YOUR-PROJECT/_git/vibekit` (no `.git` at the end). Use that for `TEAM-REPO-URL`.
 - Protect `main` with **branch policies**: minimum reviewers 1, a build validation that runs `cd plugin && npm test`, and required reviewers for `/team` and `/plugin` paths.
 - Git for Windows includes Git Credential Manager, so developers sign in through the browser on first clone.

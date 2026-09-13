@@ -86,7 +86,7 @@ test('a selection resolves to commands, and says which findings no command can f
 
   const plan = fixPlanFor(scan, [fixable.id, ...(manual ? [manual.id] : [])]);
   assert.ok(plan.steps.some((step) => step.action === fixable.action));
-  assert.ok(plan.steps.every((step) => step.command.startsWith('vibecheck ')), 'every step is a real command');
+  assert.ok(plan.steps.every((step) => step.command.startsWith('vibekit ')), 'every step is a real command');
   if (manual) assert.ok(plan.manual.some((entry) => entry.id === manual.id), 'and the rest are handed back, not silently dropped');
 });
 

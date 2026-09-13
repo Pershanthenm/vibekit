@@ -21,7 +21,7 @@ import { openTunnel } from '../tunnel.js';
  */
 export function openInBrowser(path) {
   // Tests, CI and headless sessions still write the page; they must never launch a window.
-  if (process.env.VIBECHECK_NO_OPEN === '1' || process.env.CI) return false;
+  if (process.env.VIBEKIT_NO_OPEN === '1' || process.env.CI) return false;
   const [command, args] = process.platform === 'win32'
     // cmd's `start` takes an empty title first, or it treats a quoted path as the window title.
     ? [process.env.ComSpec || 'cmd', ['/c', 'start', '', path]]
@@ -87,7 +87,7 @@ div{max-width:38rem;padding:24px}h1{font-size:17px;margin:0 0 8px}
 p{color:#9ea19a;margin:0 0 6px}code{color:#b6f24a}</style></head>
 <body><div><h1>Waiting for a readable project</h1>
 <p>${message.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])}</p>
-<p>This page retries every 5 seconds. Fix it with <code>vibecheck check</code>.</p></div></body></html>`;
+<p>This page retries every 5 seconds. Fix it with <code>vibekit check</code>.</p></div></body></html>`;
 
 /**
  * Serve the dashboard, rendering current state on every request. Returns the server so a caller —
@@ -468,7 +468,7 @@ export async function dashboard({ root, out, json, open, static: isStatic, serve
         console.log('    running, and turning it back on gets a fresh address.');
       }
     } else {
-      console.log('\n  To reach it from a phone: vibecheck dashboard --serve --tunnel');
+      console.log('\n  To reach it from a phone: vibekit dashboard --serve --tunnel');
       console.log('  Or turn one on from the Overview page once the console is open.');
     }
     if (open) openInBrowser(server.url);

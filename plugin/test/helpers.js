@@ -11,22 +11,22 @@ import { run } from '../src/cli.js';
 
 console.log = () => {};
 
-// Never launch a browser from a test. `vibecheck dashboard` opens one on purpose, and `setup`,
+// Never launch a browser from a test. `vibekit dashboard` opens one on purpose, and `setup`,
 // `init` and `dispatch` open it for you — so a suite that exercises any of them spawns real tabs
 // on the developer's machine. Four test files used to set this themselves and eight others did
 // not, which is the kind of rule that only holds until someone writes the ninth file. Every test
 // imports this module, so the guard belongs here rather than in each of them.
-process.env.VIBECHECK_NO_OPEN = '1';
+process.env.VIBEKIT_NO_OPEN = '1';
 
 // Keep the test suite out of the developer's real home. Every scaffolded project registers itself
-// in `$VIBECHECK_HOME/projects.json`, so without this a test run fills the user's own project list
+// in `$VIBEKIT_HOME/projects.json`, so without this a test run fills the user's own project list
 // with throwaway temp folders — 47 of them, in one afternoon, before this was noticed. Seven test
 // files set this themselves and the rest did not, which is the same per-file discipline that
 // failed for the browser guard above. A test that wants its own home still sets it in beforeEach.
-process.env.VIBECHECK_HOME = mkdtempSync(join(tmpdir(), 'vc-test-home-'));
+process.env.VIBEKIT_HOME = mkdtempSync(join(tmpdir(), 'vc-test-home-'));
 
 export const EXAMPLE = fileURLToPath(new URL('../examples/project.example.json', import.meta.url));
-export const BIN = fileURLToPath(new URL('../bin/vibecheck', import.meta.url));
+export const BIN = fileURLToPath(new URL('../bin/vibekit', import.meta.url));
 export const read = (root, path) => readFile(join(root, path), 'utf8');
 // Tests scrub process.env.PATH so the code under test cannot find real tools. The harness
 // itself still has to run git and node, so it never relies on the scrubbed PATH: setup
@@ -68,14 +68,14 @@ export function isolateHome() {
   // Redirecting HOME is not enough on macOS or Linux: /usr/local/bin and /opt/homebrew/bin are
   // searched too, and that is exactly where `npm install -g` puts agentmemory and the OpenContext
   // CLI. Without this the same test passes on a bare CI runner and fails on a real developer Mac.
-  process.env.VIBECHECK_TOOL_DIRS = '';
+  process.env.VIBEKIT_TOOL_DIRS = '';
   return home;
 }
 export const sh = (cwd, command, ...args) => execFileSync(command, args, { cwd, encoding: 'utf8', env: withRealPath() });
 
 // Cross-platform stand-ins for the POSIX utilities the tests used to shell out to
 // (mktemp -d, mkdir -p, echo > file, sh -c '… && …'). Windows has none of them.
-export const tempDir = (prefix = 'vibecheck-') => mkdtempSync(join(tmpdir(), prefix));
+export const tempDir = (prefix = 'vibekit-') => mkdtempSync(join(tmpdir(), prefix));
 
 export function writeFileIn(root, relativePath, content) {
   const target = join(root, relativePath);
@@ -100,7 +100,7 @@ export function commitAll(root, message) {
 }
 
 export async function newProject(...initArgs) {
-  const root = await mkdtemp(join(tmpdir(), 'vibecheck-'));
+  const root = await mkdtemp(join(tmpdir(), 'vibekit-'));
   await run(['init', '--dir', root, ...initArgs]);
   return root;
 }

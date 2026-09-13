@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # New developer, from scratch (macOS, Linux, WSL2): installs git if needed, gets your team's
-# Vibe-check-cli kit, and installs everything it needs.
+# VibeKit kit, and installs everything it needs.
 #
 #   bash onboard.sh <team repository URL>
 #   or: curl -fsSL <raw URL of this file> | bash -s -- <team repository URL>
 if [ -z "${BASH_VERSION:-}" ]; then exec bash "$0" "$@"; fi
 set -eo pipefail
 
-REPO_URL="${1:-${VIBECHECK_TEAM_REPO:-}}"
-TARGET="${VIBECHECK_TARGET:-$HOME/tools/vibe-check-cli}"
+REPO_URL="${1:-${VIBEKIT_TEAM_REPO:-}}"
+TARGET="${VIBEKIT_TARGET:-$HOME/tools/vibekit}"
 if [ -z "$REPO_URL" ]; then
   echo "Usage: bash onboard.sh <team repository URL>   (ask your team lead for the URL)"
   exit 1
@@ -47,4 +47,4 @@ bash "$TARGET/plugin/scripts/bootstrap.sh" --minimal --yes
 step 'Done'
 echo 'Next, in Cursor:'
 echo '  1. Open the Claude Code panel (Spark icon) and sign in if asked.'
-echo '  2. Type /reload-plugins, then /vibe-check-cli:setup, then /vibe-check-cli:health live'
+echo '  2. Type /reload-plugins, then /vibekit:setup, then /vibekit:health live'

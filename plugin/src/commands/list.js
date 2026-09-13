@@ -8,7 +8,7 @@ function printTable(rows) {
 export async function list({ root }) {
   const features = await listFeatures(root);
   if (!features.length) {
-    console.log('No features yet. Create one with: vibecheck feature "<name>"');
+    console.log('No features yet. Create one with: vibekit feature "<name>"');
     return;
   }
   const rows = features.map((feature) => {

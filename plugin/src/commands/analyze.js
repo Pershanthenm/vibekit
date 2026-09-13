@@ -61,7 +61,7 @@ export async function analyze({ root, args, json, fix }) {
   const features = await listFeatures(root);
   if (!features.length) {
     if (json) return console.log(JSON.stringify({ features: [], problems: [] }, null, 2));
-    return console.log('No features yet. Create one with "vibecheck feature \'<name>\'".');
+    return console.log('No features yet. Create one with "vibekit feature \'<name>\'".');
   }
 
   const chosen = args[0] ? [findFeature(features, args[0])] : features;

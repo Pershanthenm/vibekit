@@ -22,7 +22,7 @@ async function writeAndSync(root, project, force) {
 
 export async function init({ root, force, from, yes }) {
   if ((await exists(join(root, PROJECT_FILE))) && !force) {
-    throw new Error(`${PROJECT_FILE} already exists. Edit it and run "vibecheck sync", re-run "vibecheck advise", or pass --force.`);
+    throw new Error(`${PROJECT_FILE} already exists. Edit it and run "vibekit sync", re-run "vibekit advise", or pass --force.`);
   }
   if (from) return writeAndSync(root, normalize(await readProjectFile(resolve(from))), force);
   if (yes) return writeAndSync(root, normalize({ project: { name: basename(root) } }), force);
@@ -34,5 +34,5 @@ export async function init({ root, force, from, yes }) {
     asker.close();
   }
   await openDashboard(root, await loadProject(root));
-  console.log('\nNext: open this folder in Cursor, start Claude Code and run /vibe-check-cli:new-project (or /vibe-check-cli:run).');
+  console.log('\nNext: open this folder in Cursor, start Claude Code and run /vibekit:new-project (or /vibekit:run).');
 }

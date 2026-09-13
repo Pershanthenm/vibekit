@@ -15,7 +15,7 @@ function parseJson(text, source) {
 
 export async function loadProject(root) {
   const raw = await readText(join(root, PROJECT_FILE));
-  if (raw === null) throw new Error(`No ${PROJECT_FILE} found. Run "vibecheck init" first.`);
+  if (raw === null) throw new Error(`No ${PROJECT_FILE} found. Run "vibekit init" first.`);
   return normalize(parseJson(raw, PROJECT_FILE));
 }
 

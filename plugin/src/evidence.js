@@ -24,7 +24,7 @@ const commonDirs = new Map();
 export function stateDir(root, ...parts) {
   if (!commonDirs.has(root)) commonDirs.set(root, git(root, 'rev-parse', '--git-common-dir'));
   const common = commonDirs.get(root);
-  return join(isAbsolute(common) ? common : join(root, common), 'vibecheck', ...parts);
+  return join(isAbsolute(common) ? common : join(root, common), 'vibekit', ...parts);
 }
 
 const evidencePath = (root, featureId) => join(stateDir(root, 'evidence'), `${featureId}.json`);
@@ -100,7 +100,7 @@ function onlyReviewChanged(root, from, to, featureId) {
  */
 export async function evidenceProblems(root, project, feature, state = repoState(root)) {
   if (!project.workflow.evidence) return [];
-  const rerun = `run "vibecheck verify ${feature.id.slice(0, 3)} --run" on a clean commit`;
+  const rerun = `run "vibekit verify ${feature.id.slice(0, 3)} --run" on a clean commit`;
   if (!state) return [`evidence: the project needs a git repository so results can be tied to a commit (git init), then ${rerun}`];
   const evidence = await loadEvidence(root, feature.id);
   if (!evidence) return [`evidence: no recorded test, smoke and UI run — ${rerun}`];
@@ -130,7 +130,7 @@ export function evidenceChecklist(project, feature, evidence, trace) {
     return `- ${flaky ? '⚠️' : result.ok ? '✅' : '❌'} ${SUITE_NAMES[result.suite]}: \`${result.command}\`${tally} (${result.seconds}s)`;
   });
   return [
-    `**${feature.id} — ${feature.title} is ready for your sign-off.** Move this issue to Done to mark it done; Vibe-check-cli re-checks everything and records it in the specs.`,
+    `**${feature.id} — ${feature.title} is ready for your sign-off.** Move this issue to Done to mark it done; VibeKit re-checks everything and records it in the specs.`,
     `Commit ${evidence.commit.slice(0, 8)} · verified ${evidence.at.slice(0, 16).replace('T', ' ')}`,
     `- ✅ Acceptance criteria traced to tests: ${trace.covered.length}/${trace.covered.length + trace.missing.length}`,
     ...suites,

@@ -17,7 +17,7 @@ function diagram(features) {
 
 function table(features) {
   const rows = features.map((feature) => `| ${feature.id} | ${feature.title} | ${feature.status} |`);
-  return ['| Feature | Title | Status |', '|---|---|---|', ...rows, '', 'Live progress per feature: `vibecheck list`.'].join('\n');
+  return ['| Feature | Title | Status |', '|---|---|---|', ...rows, '', 'Live progress per feature: `vibekit list`.'].join('\n');
 }
 
 export function renderRoadmap(project, features) {

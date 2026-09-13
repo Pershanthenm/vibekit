@@ -11,7 +11,7 @@ console.log = () => {};
 const standard = (description, globs) => `---\ndescription: "${description}"\n${globs ? `globs: "${globs}"\n` : ''}---\n\n# Standard\n\n- A rule.\n`;
 
 async function library() {
-  const root = await mkdtemp(join(tmpdir(), 'vibecheck-standards-'));
+  const root = await mkdtemp(join(tmpdir(), 'vibekit-standards-'));
   await mkdir(join(root, 'standards', 'api'), { recursive: true });
   await mkdir(join(root, 'standards', 'database'), { recursive: true });
   await writeFile(join(root, 'standards/api/response-format.md'), standard('API response envelope structure, status codes'));
@@ -65,7 +65,7 @@ test('no match returns nothing rather than injecting the whole library', async (
   assert.deepEqual(selectStandards(entries, { query: 'kubernetes autoscaling' }), []);
 });
 
-test('vibecheck standards index writes the index, and inject reads it', async () => {
+test('vibekit standards index writes the index, and inject reads it', async () => {
   const root = await library();
   await run(['standards', 'index', '--dir', root]);
 
@@ -87,7 +87,7 @@ test('the --paths flag reaches the command', async () => {
 });
 
 test('indexing an empty library says so instead of writing a misleading index', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'vibecheck-standards-'));
+  const root = await mkdtemp(join(tmpdir(), 'vibekit-standards-'));
   await mkdir(join(root, 'standards'), { recursive: true });
   await run(['standards', 'index', '--dir', root]);
 

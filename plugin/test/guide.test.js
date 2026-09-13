@@ -6,7 +6,7 @@ import { run } from '../src/cli.js';
 import { closestCommand, startScreen, unknownCommand } from '../src/guide.js';
 import { exitCodeOf, newProject, tempDir } from './helpers.js';
 
-process.env.VIBECHECK_NO_OPEN = '1';
+process.env.VIBEKIT_NO_OPEN = '1';
 
 const COMMANDS = ['init', 'adopt', 'dashboard', 'wizard', 'check', 'verify', 'list', 'health', 'merge'];
 
@@ -45,10 +45,10 @@ test('an empty folder is told where to start, not handed every command', async (
   const screen = await startScreen(tempDir('vc-empty-'));
 
   assert.match(screen, /No project here yet/);
-  assert.match(screen, /vibecheck wizard/);
-  assert.match(screen, /vibecheck init/);
-  assert.doesNotMatch(screen, /vibecheck dispatch/, 'dispatch is meaningless before a project exists');
-  assert.doesNotMatch(screen, /vibecheck merge/);
+  assert.match(screen, /vibekit wizard/);
+  assert.match(screen, /vibekit init/);
+  assert.doesNotMatch(screen, /vibekit dispatch/, 'dispatch is meaningless before a project exists');
+  assert.doesNotMatch(screen, /vibekit merge/);
 });
 
 // Suggesting `init` over a real codebase invites someone to scaffold on top of their own work.
@@ -58,8 +58,8 @@ test('a folder that already has code is offered adopt first', async () => {
 
   const screen = await startScreen(root);
   assert.match(screen, /There is code here/);
-  assert.ok(screen.indexOf('vibecheck adopt') < screen.indexOf('vibecheck init'), 'adopt must come first');
-  assert.match(screen, /Not sure\? Run vibecheck adopt/);
+  assert.ok(screen.indexOf('vibekit adopt') < screen.indexOf('vibekit init'), 'adopt must come first');
+  assert.match(screen, /Not sure\? Run vibekit adopt/);
 });
 
 test('a real project is told what to do next, with the command to run', async () => {
@@ -69,7 +69,7 @@ test('a real project is told what to do next, with the command to run', async ()
   assert.match(screen, /0 features · 0 done/);
   assert.match(screen, /Do this next/);
   assert.match(screen, /Also useful/);
-  assert.match(screen, /vibecheck dashboard/);
+  assert.match(screen, /vibekit dashboard/);
 });
 
 test('a project with features reports how many, and how many are done', async () => {
@@ -92,5 +92,5 @@ test('an unreadable project says so rather than crashing', async () => {
 
   const screen = await startScreen(root);
   assert.match(screen, /could not be read/);
-  assert.match(screen, /vibecheck check/);
+  assert.match(screen, /vibekit check/);
 });

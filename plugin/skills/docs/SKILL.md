@@ -10,12 +10,12 @@ argument-hint: "[doc path, feature id or \"all\"]"
 
 Scope: $ARGUMENTS (empty = everything flagged)
 
-1. Run `vibecheck docs status`. Create missing required docs with `vibecheck docs new <kind> [feature]` (kinds: architecture, data-model, deployment, design-system, feature, design).
+1. Run `vibekit docs status`. Create missing required docs with `vibekit docs new <kind> [feature]` (kinds: architecture, data-model, deployment, design-system, feature, design).
 2. For each flagged doc, read every file in its `sources` front matter — specs, plans and code — and rewrite it to describe how the system works **now**. Specs describe intent, docs describe reality; where they differ, flag it to the user.
 3. Diagrams are Mermaid, drawn from the code rather than from memory, small and labelled:
    - architecture → context + container flowcharts (or C4); data model → `erDiagram` from the actual schema; deployment → flowchart of environments and services;
    - feature → sequence diagram of the main flow (state diagram when lifecycle matters); design → user-flow flowchart plus screen and state tables per target.
 4. Keep `sources` honest: add files the doc now covers, drop ones it no longer describes.
-5. Run `vibecheck docs stamp <path>`. It refuses TODOs, invalid Mermaid and unchanged docs whose sources moved; use `--still-accurate` only after checking the doc against every changed source.
-7. Repeat until `vibecheck docs status` is clean for the scope, then commit (`docs: …`).
+5. Run `vibekit docs stamp <path>`. It refuses TODOs, invalid Mermaid and unchanged docs whose sources moved; use `--still-accurate` only after checking the doc against every changed source.
+7. Repeat until `vibekit docs status` is clean for the scope, then commit (`docs: …`).
 

@@ -2,7 +2,7 @@
 //
 // The server stays on loopback either way. A tunnel dials out from here to Cloudflare and traffic
 // comes back down that connection, so nothing is listening on your network and no router is
-// touched. vibecheck does not bundle cloudflared and does not depend on it: without `--tunnel`
+// touched. vibekit does not bundle cloudflared and does not depend on it: without `--tunnel`
 // nothing here runs, and the console is exactly as local as it was.
 //
 // What a quick tunnel is, stated plainly because it decides whether you should use one: the

@@ -14,7 +14,7 @@ import { BROWSER_MODULES, browserSource } from '../src/page-chrome.js';
 const STATE = {
   project: { name: 'demo', generatedAt: '2026-09-13T08:00:00.000Z', engine: 'claude', autonomy: 'gated' },
   tests: { ok: 1, flaky: 1, failed: 0, missing: 2, suites: 4, stale: 1, untraced: 2 },
-  next: { step: 'implement', feature: '001-thing', command: 'vibecheck implement', gate: null, reason: '2 tasks open' },
+  next: { step: 'implement', feature: '001-thing', command: 'vibekit implement', gate: null, reason: '2 tasks open' },
   setup: null,
   problems: ['docs/roadmap.md is out of date'],
   features: [{
@@ -41,7 +41,7 @@ const SCAN = {
   counts: { critical: 1, high: 1, medium: 2, low: 1 },
   categories: { security: 0, evidence: 2, traceability: 1, planning: 1, generated: 1, docs: 0 },
   findings: [
-    { id: 'S-01', severity: 'critical', category: 'evidence', title: 'nothing proves AC-1', detail: 'x', file: 'specs/features/001-thing/tasks.md', feature: '001-thing', effort: 'S', action: 'analyze.fix', command: 'vibecheck analyze --fix' },
+    { id: 'S-01', severity: 'critical', category: 'evidence', title: 'nothing proves AC-1', detail: 'x', file: 'specs/features/001-thing/tasks.md', feature: '001-thing', effort: 'S', action: 'analyze.fix', command: 'vibekit analyze --fix' },
     { id: 'S-02', severity: 'medium', category: 'planning', title: 'AC-2 is not decided yet', detail: 'y', file: 'specs/features/001-thing/spec.md', feature: '001-thing', effort: 'M', action: null, command: null },
   ],
 };
@@ -96,7 +96,7 @@ test('every scan page renders from a real scan without throwing', () => {
   const ctx = "{ writable: true }, ['S-01', 'S-02']";
   assert.match(evaluate(`pageScan(SCAN, ${ctx})`), /was not scanned/);
   assert.match(evaluate(`pageFindings(SCAN, ${ctx})`), /S-01/);
-  assert.match(evaluate(`pagePlan(SCAN, ${ctx}, fixPlanFor(SCAN, ['S-01', 'S-02']))`), /vibecheck analyze --fix/);
+  assert.match(evaluate(`pagePlan(SCAN, ${ctx}, fixPlanFor(SCAN, ['S-01', 'S-02']))`), /vibekit analyze --fix/);
   assert.match(evaluate(`pageExecute(SCAN, ${ctx}, null)`), /Nothing has run/);
 });
 

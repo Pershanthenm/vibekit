@@ -76,7 +76,7 @@ export function summarise(requirements, source) {
     if (report.gaps.length > 12) lines.push(`  … and ${report.gaps.length - 12} more`);
   }
   lines.push('', report.detailed
-    ? 'Enough to start from. Run /vibe-check-cli:clarify to settle what is left.'
-    : 'Thin as a starting point — run /vibe-check-cli:clarify, which asks about the gaps by menu.');
+    ? 'Enough to start from. Run /vibekit:clarify to settle what is left.'
+    : 'Thin as a starting point — run /vibekit:clarify, which asks about the gaps by menu.');
   return lines.join('\n');
 }

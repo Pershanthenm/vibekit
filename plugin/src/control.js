@@ -59,7 +59,7 @@ async function tickTask(root, project, { id, task }, ticked) {
 export const REQUIREMENTS_PATH = 'specs/requirements.json';
 
 /**
- * The answers the wizard collected, saved where `vibecheck advise apply` already looks for them.
+ * The answers the wizard collected, saved where `vibekit advise apply` already looks for them.
  * The page is a form and nothing more: it decides no stack, applies no licence policy and writes
  * no project.json. That all stays in the advisor, where it is tested.
  */
@@ -111,7 +111,7 @@ const STEP_TIMEOUT = { 'verify.run': 900_000, sync: 120_000, 'analyze.fix': 120_
  */
 const STEP_OK = { sync: [0], 'analyze.fix': [0, 1], 'verify.run': [0, 1] };
 
-const BIN = fileURLToPath(new URL('../bin/vibecheck', import.meta.url));
+const BIN = fileURLToPath(new URL('../bin/vibekit', import.meta.url));
 
 /**
  * Where a run's transcript goes. Outside the working tree wherever there is a git directory to
@@ -122,7 +122,7 @@ export function runLogPath(root) {
   try {
     return join(stateDir(root), 'scan-run.log');
   } catch {
-    return join(root, '.vibecheck', 'scan-run.log');
+    return join(root, '.vibekit', 'scan-run.log');
   }
 }
 
@@ -135,7 +135,7 @@ function runStep(root, action, log) {
   return new Promise((done) => {
     const child = spawn(process.execPath, [BIN, ...STEP_ARGS[action], '--dir', root], {
       cwd: root,
-      env: { ...process.env, VIBECHECK_NO_OPEN: '1' },
+      env: { ...process.env, VIBEKIT_NO_OPEN: '1' },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     const timer = setTimeout(() => child.kill(), STEP_TIMEOUT[action] ?? 120_000);
@@ -223,7 +223,7 @@ async function tunnelStop(root, project, body, { tunnel } = {}) {
  * press: queueing something is the instruction to build it.
  *
  * The refusals that matter — a feature that is not in-progress, a dirty tree, lanes already
- * dispatched, no ready parallel tasks — all live in `vibecheck dispatch`, which the drain runs as
+ * dispatched, no ready parallel tasks — all live in `vibekit dispatch`, which the drain runs as
  * its own process. Duplicating them here would give the console its own opinion about when work
  * may start, and the two would drift. What this does check is that the feature exists and the
  * engine is one the schema knows, because those decide what gets spawned.

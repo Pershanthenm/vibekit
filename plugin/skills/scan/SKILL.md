@@ -10,10 +10,10 @@ argument-hint: "[area]"
 
 Scope: $ARGUMENTS (empty = the whole project)
 
-1. Run `vibecheck scan --json`. It reports `score`, `findings` (each with `id`, `severity`, `category`, `title`, `why`, `action`) and `notScanned`.
+1. Run `vibekit scan --json`. It reports `score`, `findings` (each with `id`, `severity`, `category`, `title`, `why`, `action`) and `notScanned`.
 2. Lead with what is worst. **critical** means a feature claims to be finished with nothing supporting the claim; that is the one to say out loud first.
 3. Say what was **not** scanned, in the same breath and with the same weight as what was. `notScanned` carries the reason for each. There is no vulnerability, dependency or secret scanner wired up, so a clean scan is not a statement about security and must never be reported as one.
 4. Findings with an `action` can be fixed by a command; the rest need a person and a decision. Offer the fixable ones as a batch, say what each command will do, and get a yes before running anything.
-5. Run agreed fixes with the command the finding names (`vibecheck sync`, `vibecheck analyze --fix`, `vibecheck verify --all --run`), then rescan and report what actually changed — not what was supposed to change.
-6. To pick and run fixes in a browser, or to watch them from a phone: `vibecheck dashboard --serve --tunnel`, then the Scan pages.
+5. Run agreed fixes with the command the finding names (`vibekit sync`, `vibekit analyze --fix`, `vibekit verify --all --run`), then rescan and report what actually changed — not what was supposed to change.
+6. To pick and run fixes in a browser, or to watch them from a phone: `vibekit dashboard --serve --tunnel`, then the Scan pages.
 

@@ -18,9 +18,9 @@ export async function projects({ json, prune }) {
   if (prune) console.log(`✔ Removed ${await forgetMissing()} missing project(s) from the list`);
   const entries = await Promise.all((await readRegistry()).map(describe));
   if (json) return console.log(JSON.stringify(entries, null, 2));
-  if (!entries.length) return console.log(`No projects yet. Create one in a folder under ${join(homedir(), 'projects')} and run /vibe-check-cli:new-project.`);
+  if (!entries.length) return console.log(`No projects yet. Create one in a folder under ${join(homedir(), 'projects')} and run /vibekit:new-project.`);
   entries.forEach((entry) => {
     console.log(`${entry.name}\n  ${entry.path}`);
-    console.log(entry.missing ? '  ! folder no longer exists (vibecheck projects --prune removes it)' : `  ${entry.done}/${entry.total} features done${entry.next ? ` · next: ${entry.next}` : ''}`);
+    console.log(entry.missing ? '  ! folder no longer exists (vibekit projects --prune removes it)' : `  ${entry.done}/${entry.total} features done${entry.next ? ` · next: ${entry.next}` : ''}`);
   });
 }

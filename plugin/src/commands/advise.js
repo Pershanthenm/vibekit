@@ -7,12 +7,12 @@ import { createAsker } from '../menu.js';
 import { interactiveSecurity } from './security.js';
 import { sync } from './sync.js';
 
-const USAGE = 'Usage: vibecheck advise [next | recommend | apply [preset] | components [layer] | presets | prefer <component or preset...>] [--json] [--from <answers.json>]';
+const USAGE = 'Usage: vibekit advise [next | recommend | apply [preset] | components [layer] | presets | prefer <component or preset...>] [--json] [--from <answers.json>]';
 
 async function next(root, { json, from }) {
   const round = await nextRoundFor(await readRequirements(root, from, { optional: true }));
   if (json) return console.log(JSON.stringify(round, null, 2));
-  if (round.complete) return console.log('✔ All questions answered. Next: vibecheck advise apply');
+  if (round.complete) return console.log('✔ All questions answered. Next: vibekit advise apply');
   console.log(round.title);
   round.questions.forEach((question) => console.log(`  ${question.id}${question.multi ? ' (multi)' : ''}: ${question.options.map((option) => option.id).join(' | ')}`));
 }
@@ -24,12 +24,12 @@ async function next(root, { json, from }) {
  */
 async function domain(root, { json, args }) {
   const idea = args.join(' ').trim();
-  if (!idea) throw new Error('Usage: vibecheck advise domain "<what you are building>" [--json]');
+  if (!idea) throw new Error('Usage: vibekit advise domain "<what you are building>" [--json]');
   const answers = await readRequirements(root, undefined, { optional: true });
   const round = nextDomainRound(idea, answers);
 
   if (json) return console.log(JSON.stringify(round ?? { complete: true }, null, 2));
-  if (!round) return console.log('✔ Subject pinned down. Next: vibecheck advise next');
+  if (!round) return console.log('✔ Subject pinned down. Next: vibekit advise next');
   console.log(`${round.title} — ${round.idea}`);
   round.questions.forEach((question) => {
     console.log(`  ${question.id}${question.multi ? ' (multi)' : ''}: ${question.question}`);
@@ -69,7 +69,7 @@ function presets() {
 
 async function prefer(_root, { args }) {
   const unknown = args.filter((id) => !PRESETS[id] && !findComponent(id));
-  if (!args.length || unknown.length) throw new Error(`Unknown: ${unknown.join(', ') || '(none given)'}. Use component ids (vibecheck advise components) or presets (vibecheck advise presets).`);
+  if (!args.length || unknown.length) throw new Error(`Unknown: ${unknown.join(', ') || '(none given)'}. Use component ids (vibekit advise components) or presets (vibekit advise presets).`);
   console.log(`✔ Preferred saved to ${await savePreferred(args)}: ${expandPreferred(args).join(', ')} (+3 in every recommendation)`);
 }
 

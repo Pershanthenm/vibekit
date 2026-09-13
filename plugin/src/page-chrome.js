@@ -99,7 +99,7 @@ ${FONT_LINK}${head}<title>${escape(title)}</title>
   <aside class="sidebar" id="sidebar">
     <div class="brand">
       <div class="brand-mark">V</div>
-      <div class="brand-name">Vibe-check<small>${escape(brand || sub)}</small></div>
+      <div class="brand-name">VibeKit<small>${escape(brand || sub)}</small></div>
       <button type="button" class="collapse-btn" id="collapseBtn" aria-label="Collapse navigation">${icon('chevron')}</button>
     </div>
     ${sidebar}
@@ -109,7 +109,7 @@ ${foot}
     <header class="topbar">
       <button type="button" class="icon-btn lg menu-btn" id="menuBtn" aria-label="Show navigation">${icon('menu')}</button>
       <div>
-        <div class="crumb" id="crumb"><span>Vibe-check</span><span>/</span><b>${escape(crumb || name)}</b></div>
+        <div class="crumb" id="crumb"><span>VibeKit</span><span>/</span><b>${escape(crumb || name)}</b></div>
         <h1>${escape(name)}<small>${escape(sub)}</small></h1>
       </div>
       <div class="grow"></div>
@@ -167,12 +167,12 @@ function toast(message) {
   toastTimer = setTimeout(() => box.classList.remove('on'), 2800);
 }
 
-applyTheme(stored('vibecheck-theme') === 'dark' ? 'dark' : 'light');
-if (stored('vibecheck-rail') === 'collapsed') document.body.classList.add('collapsed');
+applyTheme(stored('vibekit-theme') === 'dark' ? 'dark' : 'light');
+if (stored('vibekit-rail') === 'collapsed') document.body.classList.add('collapsed');
 
 $('#themeBtn').addEventListener('click', () => {
   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-  store('vibecheck-theme', next);
+  store('vibekit-theme', next);
   if (reduced) return applyTheme(next);
   // The fade hides the repaint: swapping every surface at once reads as a glitch without it.
   const fade = $('#themeFade');
@@ -181,7 +181,7 @@ $('#themeBtn').addEventListener('click', () => {
 });
 $('#collapseBtn').addEventListener('click', () => {
   document.body.classList.toggle('collapsed');
-  store('vibecheck-rail', document.body.classList.contains('collapsed') ? 'collapsed' : 'open');
+  store('vibekit-rail', document.body.classList.contains('collapsed') ? 'collapsed' : 'open');
 });
 $('#menuBtn').addEventListener('click', () => document.body.classList.toggle('nav-open'));
 $('#navOverlay').addEventListener('click', () => document.body.classList.remove('nav-open'));

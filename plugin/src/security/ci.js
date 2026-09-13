@@ -27,5 +27,5 @@ export function renderSecurityWorkflow(project) {
   const family = stackFamily(project);
   const jobs = Object.entries(JOBS).filter(([id]) => project.security.controls.includes(id)).map(([, render]) => render(family));
   if (!jobs.length) return null;
-  return `# Generated once by Vibe-check-cli from the security baseline. Yours to edit.\nname: security\non:\n  push:\n  pull_request:\npermissions:\n  contents: read\njobs:\n${jobs.join('\n\n')}\n`;
+  return `# Generated once by VibeKit from the security baseline. Yours to edit.\nname: security\non:\n  push:\n  pull_request:\npermissions:\n  contents: read\njobs:\n${jobs.join('\n\n')}\n`;
 }
