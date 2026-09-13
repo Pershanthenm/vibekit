@@ -10,6 +10,7 @@ import { collectProblems } from './check.js';
 import { PING, POLL_MS, PREAMBLE, RETRY, fingerprint, laneLogs, readSince, secret, sse } from '../live.js';
 import { renderWizard } from '../wizard-page.js';
 import { collectScan } from '../scan.js';
+import { MAX_BYTES, render as renderQr } from '../qr.js';
 import { openTunnel } from '../tunnel.js';
 
 /**
@@ -455,6 +456,12 @@ export async function dashboard({ root, out, json, open, static: isStatic, serve
       } else {
         console.log(`\n  On your phone: ${state.reach}`);
         console.log(`  Spec wizard:   ${state.reach}wizard`);
+        // Nobody types a random 32-character path into a phone twice. Point a camera at this
+        // instead. Too long to encode is not worth an error: the address above still works.
+        if (state.reach.length <= MAX_BYTES) {
+          console.log('');
+          console.log(renderQr(state.reach));
+        }
         console.log('\n  ! That hostname is public while it is open. The random path is what keeps the page');
         console.log('    private, and the write token is what stops a reader changing anything.');
         console.log('    Done for now? Turn the tunnel off on the Overview page — the console keeps');

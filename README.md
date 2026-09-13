@@ -134,13 +134,13 @@ caches the installed plugin per version, and skills are generated rather than ha
 
 ## Status
 
-**Beta.** The plugin passes Claude Code's own validator and 314 integration tests, and each setup path has been rehearsed end to end against real Claude Code, including the Windows scripts under PowerShell. It hasn't yet been run by a wide group of developers on real Windows PCs and Macs, so please report anything that doesn't match the guides.
+**Beta.** The plugin passes Claude Code's own validator and 323 integration tests, and each setup path has been rehearsed end to end against real Claude Code, including the Windows scripts under PowerShell. It hasn't yet been run by a wide group of developers on real Windows PCs and Macs, so please report anything that doesn't match the guides.
 
 ## Development
 
 ```bash
 cd plugin
-npm test          # 314 integration tests
+npm test          # 323 integration tests
 npm run build     # regenerate plugin skills and subagents (including the team kit)
 ```
 

@@ -663,6 +663,11 @@ Cloudflare hostname with the console's random path already on the end, and the s
 and the scan. Ctrl-C closes the tunnel with the console, so a tunnel never outlives what it points
 at.
 
+It also prints the address as a **QR code**, because nobody types a random 32-character path into
+a phone twice. The encoder is part of vibecheck rather than a dependency; while it was written its
+output was decoded by an independent implementation across every version it supports, which is how
+three real faults in it were found.
+
 **Turning it off without stopping the console.** The server owns the tunnel, not the command that
 started it, so the Overview page has a switch. Closing it leaves everything on this machine
 running and only takes away the way in from outside — which is what "I am done for now" usually
