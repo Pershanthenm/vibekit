@@ -8,6 +8,10 @@ export const FEATURE_STATUSES = ['draft', 'approved', 'planned', 'in-progress', 
 export const ENGINES = ['cursor', 'claude', 'manual'];
 export const AUTONOMY_LEVELS = ['gated', 'auto'];
 export const SKILL_MODES = ['plugin', 'project'];
+// The editor adapters a project can have written for it. Every supported editor by default: a
+// project stays portable, and a developer who opens it in an editor nobody planned for still gets
+// the workflow. Listing fewer is how a single-editor team stops carrying the others' clutter.
+export const EDITORS = ['claude', 'cursor', 'antigravity', 'windsurf'];
 export const MEMORY_PROVIDERS = ['agentmemory', 'none'];
 // What vibecheck may record without being asked. Re-exported so project.json has one vocabulary.
 export { CAPTURE_KINDS };
@@ -24,6 +28,7 @@ export const DEFAULT_PROJECT = {
   version: 1,
   project: { name: 'my-app', description: '', problem: '', users: [] },
   targets: ['web'],
+  editors: [...EDITORS],
   stack: {
     languages: ['TypeScript'],
     frontend: 'Next.js',
@@ -129,6 +134,10 @@ export function validate(project) {
     errors.push(`architecture.style must be one of: ${Object.keys(ARCHITECTURES).join(', ')}`);
   }
   if (!project.commands.test) errors.push('commands.test is required — agents need a way to verify their work');
+  const unknownEditors = (Array.isArray(project.editors) ? project.editors : []).filter((editor) => !EDITORS.includes(editor));
+  if (!Array.isArray(project.editors)) errors.push(`editors must be a list of: ${EDITORS.join(', ')}`);
+  else if (!project.editors.length) errors.push('editors must name at least one editor, or be left out to get all of them');
+  else if (unknownEditors.length) errors.push(`unknown editors: ${unknownEditors.join(', ')} (allowed: ${EDITORS.join(', ')})`);
   errors.push(...validateWorkflow(project.workflow), ...validateMemory(project.memory), ...validateKnowledge(project.knowledge), ...validateDocs(project.docs), ...validateSecurity(project.security));
   return errors;
 }

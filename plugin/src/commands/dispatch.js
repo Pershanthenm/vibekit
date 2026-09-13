@@ -67,8 +67,14 @@ async function runLane({ project, manifest, lane, agent, save }) {
   const { install } = project.commands;
   const installCode = install ? await runLogged(install, [], { cwd: lane.path, logPath: lane.logPath }) : 0;
   const prompt = await readFile(lane.promptPath, 'utf8');
-  const exitCode = installCode === 0 ? await runLogged(agent.binary, agent.args(prompt), { cwd: lane.path, logPath: lane.logPath }) : installCode;
+  // The pid is written down as the agent starts, so anything reading the manifest afterwards can
+  // tell a lane that is working from one whose agent is no longer there.
+  const onStart = (pid) => { lane.pid = pid; save(manifest); };
+  const exitCode = installCode === 0
+    ? await runLogged(agent.binary, agent.args(prompt), { cwd: lane.path, logPath: lane.logPath, onStart })
+    : installCode;
   lane.state = exitCode === 0 ? 'finished' : 'failed';
+  lane.pid = null;
   lane.exitCode = exitCode;
   lane.commits = Number(git(lane.path, 'rev-list', '--count', `${manifest.baseCommit}..HEAD`));
   await save(manifest);

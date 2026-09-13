@@ -14,7 +14,10 @@ import { collectProblems } from './check.js';
 
 class BlockError extends Error {}
 
-const WORKFLOW_PATHS = /^(specs\/|\.claude\/|\.cursor\/|[^/]+\.md$)/;
+// What may be written without a feature in progress: the specification itself, the editor
+// adapters, the top-level markdown, and `assessment/` — which adopt and assess write, and which
+// changes no code. Blocking those would block the very work that decides what the features are.
+const WORKFLOW_PATHS = /^(specs\/|assessment\/|\.claude\/|\.cursor\/|\.agents\/|[^/]+\.md$)/;
 
 async function findProjectRoot(start) {
   let dir = resolve(start);

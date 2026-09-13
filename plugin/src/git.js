@@ -21,12 +21,18 @@ export function assertCleanTree(root, reason) {
   if (changes) throw new Error(`Uncommitted changes — ${reason}:\n${changes}`);
 }
 
-export function runLogged(command, args, { cwd, logPath }) {
+/**
+ * `onStart` receives the process id once it exists. A lane's state is written to a manifest that
+ * outlives this process, and "running" in a file is a claim about the world that nothing can check
+ * unless the id of the thing supposedly running is recorded beside it.
+ */
+export function runLogged(command, args, { cwd, logPath, onStart }) {
   return new Promise((resolvePromise) => {
     const log = createWriteStream(logPath, { flags: 'a' });
     log.write(`\n$ ${command} ${args.map((arg) => (arg.length > 60 ? '<prompt>' : arg)).join(' ')}\n`);
     const lane = runnable(command, args);
     const child = spawn(lane.command, lane.args, { cwd, shell: lane.shell || args.length === 0, stdio: ['ignore', 'pipe', 'pipe'] });
+    if (child.pid && onStart) onStart(child.pid);
     child.stdout.pipe(log, { end: false });
     child.stderr.pipe(log, { end: false });
     child.on('error', (error) => log.write(`${error.message}\n`));

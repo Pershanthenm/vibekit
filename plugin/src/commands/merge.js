@@ -4,7 +4,10 @@ import { recordMerge } from '../journal.js';
 import { createManifestWriter, deleteManifest, loadManifest } from '../manifest.js';
 import { loadProject } from '../project.js';
 
-const DONE_STATES = ['finished', 'failed'];
+// States that mean nothing more is coming from this lane. `stopped` is here because an agent that
+// is gone is not going to produce commits by waiting longer, and telling someone to wait for it
+// would be telling them to wait forever.
+const DONE_STATES = ['finished', 'failed', 'stopped'];
 const count = (root, range) => Number(git(root, 'rev-list', '--count', range));
 
 function removeLane(root, lane, { force = false } = {}) {

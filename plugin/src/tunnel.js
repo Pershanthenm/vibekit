@@ -12,9 +12,32 @@
 // watch a build. It is not something to leave running, and the caller is expected to say so.
 
 import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
 
 /** Cloudflare prints the hostname it assigned; this is the only thing taken from its output. */
 export const TUNNEL_URL = /https:\/\/[a-z0-9][a-z0-9-]*\.trycloudflare\.com/i;
+
+/**
+ * Where each platform's installer puts cloudflared, for when it is installed but not on PATH.
+ *
+ * This is not a guess at where it might be: an installer adds its folder to the *machine* PATH,
+ * and a shell that was already open when it ran never sees it. So "cloudflared is not installed"
+ * is wrong in the one case people hit most — they just installed it, in the terminal they are
+ * still sitting in. Looking in the installer's own folder turns that into a working tunnel.
+ *
+ * The Windows path is winget's, confirmed on a machine that had just installed it. The Unix paths
+ * are Homebrew's two prefixes (Apple Silicon and Intel) and the system package directory.
+ */
+const KNOWN_PATHS = {
+  win32: ['C:\\Program Files (x86)\\cloudflared\\cloudflared.exe', 'C:\\Program Files\\cloudflared\\cloudflared.exe'],
+  darwin: ['/opt/homebrew/bin/cloudflared', '/usr/local/bin/cloudflared'],
+  linux: ['/usr/local/bin/cloudflared', '/usr/bin/cloudflared'],
+};
+
+export const DEFAULT_COMMAND = 'cloudflared';
+
+export const installedAt = (platform = process.platform) =>
+  (KNOWN_PATHS[platform] ?? KNOWN_PATHS.linux).find((path) => existsSync(path)) ?? null;
 
 // Long enough for a cold start on a slow connection, short enough that a wedged process is not
 // mistaken for a slow one.
@@ -35,7 +58,7 @@ export const installHint = (platform = process.platform) => INSTALL[platform] ??
  * it exits before naming a tunnel (usually a network or DNS problem, where its own message is the
  * useful part), or it says nothing at all within the timeout.
  */
-export function openTunnel(port, { command = 'cloudflared', timeoutMs = TUNNEL_TIMEOUT_MS, args = null } = {}) {
+export function openTunnel(port, { command = DEFAULT_COMMAND, timeoutMs = TUNNEL_TIMEOUT_MS, args = null } = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args ?? ['tunnel', '--no-autoupdate', '--url', `http://127.0.0.1:${port}`], {
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -75,9 +98,15 @@ export function openTunnel(port, { command = 'cloudflared', timeoutMs = TUNNEL_T
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      reject(error.code === 'ENOENT'
-        ? new Error(`cloudflared is not installed, or not on PATH. Install it with:\n  ${installHint()}`)
-        : error);
+      if (error.code !== 'ENOENT') return reject(error);
+      // Installed, but this shell's PATH predates the install: use it where the installer put it.
+      // Only ever for the default command — a caller that named its own has named it for a reason,
+      // and quietly running something else instead would be worse than failing.
+      const found = command === DEFAULT_COMMAND ? installedAt() : null;
+      if (found && found !== command) {
+        return resolve(openTunnel(port, { command: found, timeoutMs, args }));
+      }
+      reject(new Error(`cloudflared is not installed, or not on PATH. Install it with:\n  ${installHint()}`));
     });
 
     child.on('exit', (code) => {

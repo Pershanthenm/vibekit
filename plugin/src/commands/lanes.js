@@ -10,7 +10,7 @@ export async function lanes({ root, args }) {
   const manifest = await loadManifest(root, feature.id);
   if (manifest) {
     console.log(`Dispatched lanes for ${feature.id}:`);
-    manifest.lanes.forEach((lane) => console.log(`  ${lane.name}  ${lane.state.padEnd(8)}  ${lane.tasks.join(', ')}  (${lane.engine ?? 'agent'} · ${lane.commits ?? 0} commits · log: ${lane.logPath})`));
+    manifest.lanes.forEach((lane) => console.log(`  ${lane.name}  ${lane.state.padEnd(9)}  ${lane.tasks.join(', ')}  (${lane.engine ?? 'agent'} · ${lane.commits ?? 0} commits · log: ${lane.logPath})`));
     return;
   }
   const planned = planLanes(readyParallelTasks(parseTasks(feature.tasks)), project.workflow.maxLanes);

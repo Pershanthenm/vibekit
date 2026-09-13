@@ -231,7 +231,10 @@ export async function patchProject(root, patch) {
   const path = join(root, 'specs/project.json');
   const project = JSON.parse(await readRaw(path, 'utf8'));
   const merged = { ...project };
-  for (const [key, value] of Object.entries(patch)) merged[key] = { ...project[key], ...value };
+  // Arrays are replaced, objects merged: spreading a list would turn ["claude"] into {0:"claude"}.
+  for (const [key, value] of Object.entries(patch)) {
+    merged[key] = Array.isArray(value) ? value : { ...project[key], ...value };
+  }
   await write(path, JSON.stringify(merged, null, 2));
   await run(['sync', '--dir', root]);
 }

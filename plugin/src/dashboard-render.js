@@ -62,6 +62,10 @@ export const TASK_KINDS = { test: 'Write the test first', impl: 'Build it', docs
 export const STATE_WORDS = { ok: 'Passing', flaky: 'Flaky', failed: 'Failing', missing: 'Not run' };
 export const STATE_TONE = { ok: 'ok', flaky: 'warn', failed: 'danger', missing: 'neutral' };
 // A gate switched off in project.json is not passing — it is not in play.
+// A lane whose agent is gone. Not finished and not failed by its own account: nobody is working
+// on it, which is the one thing a board must never show as work in progress.
+export const LANE_WORDS = { ready: 'Ready', running: 'Building', finished: 'Finished', failed: 'Failed', stopped: 'Stopped — its agent is gone' };
+
 export const QUEUE_WORDS = { queued: 'Waiting', running: 'Building', done: 'Finished', failed: 'Failed' };
 export const QUEUE_TONE = { queued: 'info', running: 'accent', done: 'ok', failed: 'danger' };
 
@@ -359,6 +363,49 @@ export function pageIssues(state, ctx) {
       </div>`;
 }
 
+/**
+ * Where this feature stands, as one sentence someone could read out.
+ *
+ * Every part of it is already on the page somewhere — the stage, the task count, the blocked
+ * gates. Saying it in a sentence is not decoration: a column of badges tells you what is true and
+ * leaves you to work out what it means, and this is the working out.
+ */
+export function standing(feature) {
+  const left = feature.tasks.total - feature.tasks.done;
+  const blocked = feature.gates.filter((gate) => gate.state === 'blocked');
+  const where = {
+    draft: 'Being written. Nothing is being built yet.',
+    approved: 'Agreed, and waiting for a plan.',
+    planned: 'Planned and ready to build.',
+    'in-progress': left
+      ? `Being built — ${plural(left, 'task')} still open of ${feature.tasks.total}.`
+      : 'Being built — every task is ticked.',
+    done: 'Finished, with the evidence to say so.',
+  }[feature.status] ?? 'Status unknown.';
+  if (!blocked.length) return where;
+  const names = blocked.map((gate) => gate.label.toLowerCase());
+  const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
+  return `${where} It cannot be marked done until the ${list} ${plural(blocked.length, 'gate').replace(/^\d+ /, '')} ${blocked.length === 1 ? 'clears' : 'clear'}.`;
+}
+
+/** The feature in its own words, or an honest note that nobody has written them. */
+export function aboutCard(feature, step) {
+  const about = feature.about ?? { problem: '', stories: [] };
+  const told = about.problem || about.stories.length;
+  return `<div class="card span-12" style="--i:${step}">
+          <div class="card-head"><div class="card-title">What this is<small>From the spec, in the words it was written in</small></div>
+            ${badge(STAGE_TONE[feature.status] ?? 'neutral', standing(feature).split('.')[0])}</div>
+          ${told ? `${about.problem ? `<p>${escape(about.problem)}</p>` : ''}
+          ${about.stories.length ? `<ul class="t-body" style="margin:var(--sp-3) 0 0;padding-left:1.1rem;display:grid;gap:6px">
+            ${about.stories.map((story) => `<li>${escape(story)}</li>`).join('')}</ul>` : ''}`
+    : alertBox('warn', 'Nobody has written down what this is for', [
+      'The spec still has the template in it — no problem statement, no user stories.',
+      'Everything below describes progress against a plan whose purpose was never recorded.',
+    ])}
+          <p class="t-caption mt-3">${escape(standing(feature))}</p>
+        </div>`;
+}
+
 export function pageFeature(state, ctx, id) {
   const feature = state.features.find((entry) => entry.id === id);
   if (!feature) return `<div class="card">${empty('Feature not found', `Nothing here is called ${id ?? ''}.`)}</div>`;
@@ -379,12 +426,21 @@ export function pageFeature(state, ctx, id) {
       </div>
       <div class="card seq" style="--i:2"><div class="stage-track">${track}</div></div>
       <div class="grid seq" style="--seq-base:60ms">
+        ${aboutCard(feature, 25)}
         ${kpi('check', 'Criteria proven', `${feature.tests.trace.covered}/${feature.criteria.total}`,
     feature.tests.trace.missing.length ? `untested: ${feature.tests.trace.missing.map((n) => `AC-${n}`).join(', ')}` : 'all proven by a test', '', 3)}
         ${kpi('features', 'Tasks ticked', `${feature.tasks.done}/${feature.tasks.total}`, `${pct(feature.tasks.done, feature.tasks.total)}% of the plan`, '', 4)}
         ${kpi('tests', 'Suites healthy', `${healthy}/${feature.tests.suites.length}`, feature.tests.stale ? 'recorded against an older commit' : feature.tests.at ? 'on a clean commit' : 'never run', '', 5)}
         ${kpi('issues', 'Gates blocking', String(blocking(feature)), blocking(feature) ? 'must clear before done' : 'clear',
       blocking(feature) ? '<span class="delta down">Blocked</span>' : '<span class="delta up">Clear</span>', 6)}
+        ${(feature.taskList ?? []).length ? `<div class="card span-12" style="--i:65">
+          <div class="card-head"><div class="card-title">Tasks<small>${feature.tasks.done} of ${feature.tasks.total} done, in order</small></div></div>
+          <div class="todo">${feature.taskList.map((task) => `<div class="item" data-key="task-${escape(feature.id)}-${escape(task.id)}">
+            ${badge(task.done ? 'ok' : 'neutral', task.done ? 'Done' : 'To do', false)}
+            <div><b>${escape(task.what)}</b><span>${escape(TASK_KINDS[task.kind] ?? task.kind)}${task.criteria.length ? ` · proves ${task.criteria.map((number) => `AC-${escape(number)}`).join(', ')}` : ' · not tied to a criterion'}${task.files.length ? ` · ${escape(task.files.join(', '))}` : ''}</span></div>
+            <span class="t-caption nowrap">${escape(task.id)}${task.parallel ? ' · can run in parallel' : ''}</span>
+          </div>`).join('')}</div>
+        </div>` : ''}
         <div class="card span-5" style="--i:7">
           <div class="card-head"><div class="card-title">Gates<small>Every gate in play must pass to reach Done</small></div></div>
           ${feature.gates.map((gate) => `<div class="gate">
@@ -405,18 +461,10 @@ export function pageFeature(state, ctx, id) {
           ${feature.tests.stale ? `<div class="mt-3">${alertBox('warn', 'Stale evidence', [STALE_NOTE])}</div>` : ''}
           ${feature.tests.trace.missing.length ? `<div class="mt-3">${alertBox('warn', 'One thing to fix', [`Untested criteria: ${feature.tests.trace.missing.map((n) => `AC-${n}`).join(', ')}`])}</div>` : ''}
         </div>
-        ${(feature.taskList ?? []).length ? `<div class="card span-12" style="--i:85">
-          <div class="card-head"><div class="card-title">Tasks<small>${feature.tasks.done} of ${feature.tasks.total} done, in order</small></div></div>
-          <div class="todo">${feature.taskList.map((task) => `<div class="item" data-key="task-${escape(feature.id)}-${escape(task.id)}">
-            ${badge(task.done ? 'ok' : 'neutral', task.done ? 'Done' : 'To do', false)}
-            <div><b>${escape(task.what)}</b><span>${escape(TASK_KINDS[task.kind] ?? task.kind)}${task.criteria.length ? ` · proves ${task.criteria.map((number) => `AC-${escape(number)}`).join(', ')}` : ' · not tied to a criterion'}${task.files.length ? ` · ${escape(task.files.join(', '))}` : ''}</span></div>
-            <span class="t-caption nowrap">${escape(task.id)}${task.parallel ? ' · can run in parallel' : ''}</span>
-          </div>`).join('')}</div>
-        </div>` : ''}
         ${feature.lanes.length ? `<div class="card span-12" style="--i:9">
           <div class="card-head"><div class="card-title">Lanes<small>Work that can run in parallel</small></div></div>
           <div class="col-body">${feature.lanes.map((lane) => `<div class="task">
-            <div class="top"><span class="repo">${escape(lane.name)}</span><span class="id">${escape(lane.state)}</span></div>
+            <div class="top"><span class="repo">${escape(lane.name)}</span><span class="id">${escape(LANE_WORDS[lane.state] ?? lane.state)}</span></div>
             <div class="meta">${escape(lane.detail)} · ${plural(lane.tasks.length, 'task')}</div>
           </div>`).join('')}</div>
         </div>` : ''}

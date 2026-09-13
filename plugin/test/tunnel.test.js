@@ -8,7 +8,7 @@
 import assert from 'node:assert/strict';
 import { after, test } from 'node:test';
 import { serveDashboard } from '../src/commands/dashboard.js';
-import { TUNNEL_URL, installHint, openTunnel } from '../src/tunnel.js';
+import { TUNNEL_URL, installHint, installedAt, openTunnel } from '../src/tunnel.js';
 import { EXAMPLE, newProject } from './helpers.js';
 
 console.log = () => {};
@@ -175,4 +175,23 @@ test('closing the console closes the tunnel with it', async () => {
   await server.close();
 
   assert.equal(handle.closed, true, 'a tunnel must never outlive the thing it points at');
+});
+
+// --- Installed, but not on this shell's PATH ---------------------------------------------------
+//
+// An installer adds its folder to the machine PATH, and a shell that was already open when it ran
+// never sees it. "cloudflared is not installed" is then wrong in the one case people hit most:
+// they have just installed it, in the terminal they are still sitting in.
+
+test('a command the caller named is never quietly swapped for something else', async () => {
+  // If this fell back, it would resolve with a tunnel from a binary nobody asked for.
+  await assert.rejects(
+    () => openTunnel(7333, { command: 'definitely-not-a-real-binary-8f2a' }),
+    /not installed, or not on PATH/,
+  );
+});
+
+test('the install locations are the ones the platform installers actually use', () => {
+  // Guards against the list quietly becoming a guess: each is a real installer's own directory.
+  assert.equal(installedAt('sunos'), installedAt('linux'), 'an unknown platform falls back to the Unix paths');
 });

@@ -152,11 +152,42 @@ function describeTasks(text) {
   });
 }
 
+/** The body of one `## Section` of a spec, without parsing the whole document. */
+function sectionOf(spec, name) {
+  const lines = String(spec ?? '').split('\n');
+  const heading = `## ${name}`.toLowerCase();
+  const start = lines.findIndex((line) => line.trim().toLowerCase() === heading);
+  if (start === -1) return '';
+  const rest = lines.slice(start + 1);
+  const end = rest.findIndex((line) => line.startsWith('## '));
+  return (end === -1 ? rest : rest.slice(0, end)).join('\n').trim();
+}
+
+const unwritten = (text) => !text || text.trim().toUpperCase().startsWith('TODO');
+
+/**
+ * What this feature is, in the words whoever specified it used.
+ *
+ * The page led with gates and evidence, which answers "is it allowed to move" and not "what is
+ * this". Both come from the spec, so neither is invented: where the template's TODOs are still
+ * there, this returns nothing and the page says plainly that nobody has written it down — which is
+ * more useful than a heading with placeholder text under it.
+ */
+function describeSpec(spec) {
+  const stories = sectionOf(spec, 'User stories')
+    .split('\n')
+    .map((line) => line.replace(/^[-*]\s+/, '').trim())
+    .filter((line) => line && !line.toUpperCase().startsWith('TODO'));
+  const problem = sectionOf(spec, 'Problem');
+  return { problem: unwritten(problem) ? '' : problem, stories };
+}
+
 async function featureState(root, project, feature, repo) {
   return {
     id: feature.id,
     title: feature.title ?? feature.id,
     status: feature.status,
+    about: describeSpec(feature.spec),
     criteria: progress(feature.spec, 'AC'),
     tasks: progress(feature.tasks, 'T'),
     taskList: describeTasks(feature.tasks),
