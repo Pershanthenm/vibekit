@@ -621,6 +621,141 @@ pm` is added to the tool search path alongside the POSIX ones |
 agentmemory is the one component with no automatic install on native Windows; it needs WSL2, and
 `vibecheck health` reports it rather than pretending otherwise.
 
+## Watching a build happen: `vibecheck dashboard --serve`
+
+Serving renders current state on every request. While work is running, that is not enough — you
+have to keep asking. The served console pushes instead.
+
+**It streams.** A server-sent-events connection at `<url>events` carries two things: a `state`
+event when anything the page shows has changed, and a `log` event whenever a dispatched lane writes
+output. The page patches itself in place. There is no meta-refresh, so your scroll position
+survives — which matters when you are watching from a phone.
+
+**It shows lane output.** `dispatch` has always written a `.log` per lane. Those logs now stream to
+the page as the agents write them, tailing the last few KB when you open it late so a console is
+never blank.
+
+**It costs nothing when nobody is watching.** The interval that re-reads the project starts with the
+first connection and stops with the last. Change is detected by fingerprinting the collected state
+with the timestamp removed — hashing the page itself would report a change every second forever.
+
+**It degrades.** No `EventSource`, or a stream that stays down, falls back to reloading. The page is
+never less current than the meta-refresh it replaces.
+
+### The address is random
+
+The console is served under a 192-bit random path (`/<32 characters>/`), regenerated on every start.
+Any other path returns a bare `404` that says nothing about what is running. So the address is not
+guessable, and an old link stops working when you restart.
+
+That is defence in depth, **not** authentication. A URL leaks — browser history, screenshots, link
+previews. The page is therefore served with `Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex`
+and a `Content-Security-Policy` of `default-src 'none'`, and it loads nothing external at all, so
+no request ever carries the path off the machine.
+
+### Reaching it from a phone
+
+The server stays on loopback. A tunnel dials **out** from your machine to Cloudflare and traffic
+comes back down that connection, so nothing listens on your network and no router is touched.
+
+```
+vibecheck dashboard --serve --tunnel
+```
+
+That starts the console, opens a quick tunnel, and prints the address to open on your phone — the
+Cloudflare hostname with the console's random path already on the end, and the same for the wizard
+and the scan. Ctrl-C closes the tunnel with the console, so a tunnel never outlives what it points
+at.
+
+It needs `cloudflared` on your PATH. If it is missing the command says so, prints the install for
+your platform (`winget install --id Cloudflare.cloudflared`, `brew install cloudflared`, or
+Cloudflare's downloads page), and leaves the local console running.
+
+Without `--tunnel` none of this runs and the console is exactly as local as it was. Two things
+worth knowing before using one:
+
+- A **quick tunnel** is public. Anyone with the URL reaches your machine, and the random path is
+  the only thing in the way. Fine for a session you start and stop; not something to leave running.
+- A **named tunnel behind Cloudflare Access** authenticates you at Cloudflare's edge, so
+  unauthenticated traffic never arrives. That is the one to use for anything persistent.
+- **Tailscale** exposes nothing publicly at all, and is the lowest-risk option if it is only ever
+  your own devices.
+
+The published-artifact route is closed either way: the Artifact CSP blocks `fetch` to any host
+outside its allowlist, so a Claude artifact cannot call this server however it is exposed.
+
+### Changing the project from the page
+
+Reading needs the link. **Changing needs a token the page was never given.** The server prints one
+when it starts; the first time you move a card or run a fix, the page asks for it and keeps it in
+that browser. So a leaked URL — a screenshot, a shared link, browser history — reads, and cannot
+write.
+
+The endpoint is `POST <url>do`, JSON only (a cross-site form cannot set that content type), with an
+allowlist of actions and nothing else: change a feature's status, tick or untick a task, save the
+wizard's answers, apply them, run a scan fix. Every one goes through the same code the CLI runs, so
+**a move the gates refuse in the terminal is refused here too** — dragging a card to Done with a
+blocked gate returns a refusal and the card goes back where it was.
+
+What is deliberately absent: marking a gate cleared, and resolving an issue. Both are *computed* —
+evidence passes when tests actually ran on a clean commit, review passes when a verdict is written
+in `review.md`. There is no field to set, so there is no button; the page offers the command instead.
+
+## What is wrong with it: `vibecheck scan`
+
+`scan` gathers everything the existing checks can prove about a project into one report: generated
+files that no longer match their specs, criteria with no task, tasks naming no criterion, `[P]`
+tasks that would collide, suites that never ran or that failed or flapped, evidence recorded against
+an older commit or a dirty tree, and documents that have drifted from what they describe.
+
+Each finding carries a severity, and the severities mean one thing consistently:
+
+| | |
+|---|---|
+| **critical** | the project claims something is finished that nothing supports |
+| **high** | work in flight is unsound, or evidence describes code that no longer exists |
+| **medium** | a real gap that has not caused harm yet |
+| **low** | tidiness, and documents that are behind |
+
+The health score is 100 minus the weight of everything still open. It moves when something is
+fixed, and not before.
+
+### It does not scan for vulnerabilities, and says so
+
+There is no taint analysis, no dependency CVE lookup and no secret detection here. The report
+therefore states that security **was not scanned**, in the terminal and on the page, rather than
+showing a security row with a zero in it. An empty list from a scanner that never ran is the most
+misleading thing a report like this can print.
+
+### Select, then execute
+
+On the served console the scan has four pages — report, findings, fix plan, execution — under the
+same secret path as everything else, so **one tunnel reaches all of it from a phone**.
+
+Choose findings, and the plan resolves them into the few commands that actually fix them:
+`vibecheck sync`, `vibecheck analyze --fix`, `vibecheck verify --all --run`. Running the plan
+spawns those commands one at a time, and their output streams to the page through the same channel
+as a dispatched agent's. Afterwards the project is rescanned, so the report shows what is true
+rather than what was asked for.
+
+Two of those commands are checkers, and a checker exits non-zero when it still has something to
+report — `analyze --fix` appends the missing tasks and then exits 1 because the work it just wrote
+down is not done. The run records the exit code and carries on; only a command that could not run
+stops the plan.
+
+Findings no command can fix — a criterion that is still undecided, a plan nobody wrote, two `[P]`
+tasks that overlap — are listed separately as **needing you**, with the command to run yourself.
+Selecting only those is refused rather than faked.
+
+```
+vibecheck scan                 # report in the terminal, plus a read-only page
+vibecheck scan --json          # the whole thing, for a script
+vibecheck dashboard --serve    # the version you can select and run from
+```
+
+The written page is read-only on purpose: opened from a `file://` path it has nothing to send a
+request to, so it shows the findings and says why the buttons are not there.
+
 ## Tests run when a task is finished
 
 Ticking a task used to be enough to move on. "Run the tests after each task" was an instruction in

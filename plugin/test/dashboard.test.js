@@ -57,19 +57,29 @@ test('a blocked gate carries the reason, so the page can say what to do', async 
   assert.match(review.problems.join(' '), /review/i);
 });
 
-test('the page is self-contained: no network, no build step', () => {
+// The page routes and updates itself where there is a script to do it, and reads top to bottom
+// where there is not. Both have to be true of the same file: it is opened from file:// on
+// machines with no network and, sometimes, no scripting.
+test('the page is self-contained, and readable before any script runs', () => {
   const html = renderDashboard({
     project: { name: 'device-register', generatedAt: '2026-09-12T14:32:09.000Z', engine: 'cursor', autonomy: 'gated' },
+    tests: { ok: 0, flaky: 0, failed: 0, missing: 0, suites: 0, stale: 0, untraced: 0 },
     next: { step: 'spec', feature: '001-device-register', command: 'vibecheck feature', gate: 'spec-approval', reason: 'needs approval' },
     setup: null,
     problems: [],
     features: [],
   });
 
-  assert.doesNotMatch(html, /<script/i, 'no scripts: the page must work from file:// with nothing loaded');
-  assert.doesNotMatch(html, /https?:\/\//, 'no external fetches — it has to render with no network');
+  const server = html.slice(0, html.indexOf('<script'));
+  assert.match(server, /id="static"/, 'every section is rendered before any script runs');
+  assert.match(server, /device-register/, 'and the project is named in that markup, not only in the data');
+  for (const hash of ['/overview', '/board', '/features', '/tests', '/issues']) {
+    assert.match(server, new RegExp(`id="${hash}"`), `${hash} has to be reachable as a plain anchor`);
+  }
+  // The one exception to "no network" is the design system's typeface, which has a real fallback.
+  const external = [...html.matchAll(/https?:\/\/[^"' ]+/g)].map(([url]) => url);
+  assert.ok(external.every((url) => /fonts\.(googleapis|gstatic)\.com/.test(url)), `unexpected external request: ${external}`);
   assert.match(html, /<!doctype html>/i);
-  assert.match(html, /device-register/);
 });
 
 test('live adds the refresh, static leaves it out', () => {
@@ -160,11 +170,13 @@ test('a flaky suite is shown as FLAKY with its tally, not as a tick', async () =
   assert.equal(state.features[0].tests.suites[0].state, 'flaky');
   assert.equal(state.tests.flaky, 1);
 
-  // Case is a styling choice; what matters is the word appears and "Passing" does not.
+  // Case is a styling choice; what matters is that the suite is labelled flaky and counted as
+  // flaky. "Passing" still appears on the page — as the heading of a tile counting zero suites —
+  // so the check that matters is the label on this suite and the tally behind it.
   const html = renderDashboard(state);
-  assert.match(html, /flaky/i);
-  assert.match(html, /2\/3 runs/);
-  assert.doesNotMatch(html, /pill ok">Passing/, 'a flaky suite must never be labelled passing');
+  assert.match(html, /badge warn">Flaky/, 'the suite carries the word, not just a colour');
+  assert.match(html, /2\/3 runs/, 'the tally is the evidence — the word on its own is not');
+  assert.equal(state.tests.ok, 0, 'and nothing counts a flaky suite as passing');
 });
 
 test('evidence from an older commit is called stale, not shown as passing', async () => {

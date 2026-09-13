@@ -6,6 +6,7 @@ import { advise } from './commands/advise.js';
 import { check } from './commands/check.js';
 import { context } from './commands/context.js';
 import { dashboard } from './commands/dashboard.js';
+import { scan } from './commands/scan.js';
 import { wizard } from './commands/wizard.js';
 import { cursorAgents } from './commands/cursor-agents.js';
 import { projects } from './commands/projects.js';
@@ -30,7 +31,7 @@ import { verify } from './commands/verify.js';
 import { security } from './commands/security.js';
 import { startScreen, unknownCommand } from './guide.js';
 
-const COMMANDS = { init, adopt, analyze, sync, feature, status, list, dashboard, wizard, check, next, lanes, dispatch, merge, memory, knowledge, context, docs, advise, security, standards, verify, multica, health, doctor: health, setup, version, 'cursor-agents': cursorAgents, 'cursor-kit': cursorAgents, team, projects, hook };
+const COMMANDS = { init, adopt, analyze, scan, sync, feature, status, list, dashboard, wizard, check, next, lanes, dispatch, merge, memory, knowledge, context, docs, advise, security, standards, verify, multica, health, doctor: health, setup, version, 'cursor-agents': cursorAgents, 'cursor-kit': cursorAgents, team, projects, hook };
 
 const OPTIONS = {
   dir: { type: 'string' },
@@ -47,6 +48,7 @@ const OPTIONS = {
   serve: { type: 'boolean' },
   port: { type: 'string' },
   host: { type: 'string' },
+  tunnel: { type: 'boolean' },
   'still-accurate': { type: 'boolean' },
   run: { type: 'boolean' },
   repeat: { type: 'string' },
@@ -77,8 +79,10 @@ Usage
   vibecheck status <feature> <status>                    draft | approved | planned | in-progress | done
   vibecheck list                                         Features with status and progress
   vibecheck wizard [--out <file>]                        Fill in the project spec in a browser, then: vibecheck advise apply
-  vibecheck dashboard [--serve [--port <n>] [--host 0.0.0.0]] [--open] [--out <file>] [--static] [--json]
-                                                         Lifecycle and test status. --serve renders live on every request
+  vibecheck dashboard [--serve [--port <n>] [--host 0.0.0.0] [--tunnel]] [--open] [--out <file>] [--static] [--json]
+  vibecheck scan [--json] [--open] [--out <file>]
+                                                         Lifecycle and test status. --serve streams changes and lane output
+                                                         live, under a random path that changes every start
   vibecheck check                                        Validate specs and detect drift (exit 1 on problems)
   vibecheck analyze [feature] [--fix] [--json]            Do the spec, plan, tasks and tests agree? (exit 1 on contradictions)
                                                          --fix appends criteria with no task or no test to tasks.md as work
