@@ -554,7 +554,7 @@ After editing, Claude runs `vibecheck sync`. `AGENTS.md`, `CLAUDE.md`, the subag
 
 ## CLI reference
 
-`init` · `adopt [--force] [--json]` · `analyze [feature] [--json]` · `sync` · `feature "<name>" [--from <requirements file>]` · `status <id> <status>` · `list` · `check` · `next [--json]` · `lanes <id>` · `dispatch <id> [--engine] [--dry-run]` · `merge <id>` · `memory <status|recall|remember>` · `knowledge <status|search|manifest|publish>` · `context <feature|topic>` · `docs <status|new|stamp>` · `advise [domain "<idea>"|next|recommend|apply [preset]|components|presets|prefer]` · `security [questions|apply|status]` · `verify [feature] [--run] [--repeat <n>]` · `wizard [--out <file>]` · `dashboard [--open] [--out <file>] [--static] [--json]` · `projects [--prune] [--json]` · `team <capture|status|import-ecc>` · `standards <list|index|inject>` · `cursor-kit [--remove]` · `setup [--dry-run] [--only]` · `health [--live]` (alias `doctor`) · `version` · `hook <event>`.
+`init` · `adopt [--force] [--json]` · `analyze [feature] [--json]` · `sync` · `feature "<name>" [--from <requirements file>]` · `status <id> <status>` · `list` · `check` · `next [--json]` · `lanes <id>` · `dispatch <id> [--engine] [--dry-run]` · `merge <id>` · `memory <status|list|search|recall|remember|correct|forget|capture>` · `scan [--json] [--open] [--out <file>]` · `knowledge <status|search|manifest|publish>` · `context <feature|topic>` · `docs <status|new|stamp>` · `advise [domain "<idea>"|next|recommend|apply [preset]|components|presets|prefer]` · `security [questions|apply|status]` · `verify [feature] [--run] [--repeat <n>]` · `wizard [--out <file>]` · `dashboard [--open] [--out <file>] [--static] [--json]` · `projects [--prune] [--json]` · `team <capture|status|import-ecc>` · `standards <list|index|inject>` · `cursor-kit [--remove]` · `setup [--dry-run] [--only]` · `health [--live]` (alias `doctor`) · `version` · `hook <event>`.
 
 Run `vibecheck` on its own for what to do next in the current folder, or `vibecheck --help` for
 every command.
@@ -608,6 +608,14 @@ event when anything the page shows has changed, and a `log` event whenever a dis
 output. The page patches itself in place. There is no meta-refresh, so your scroll position
 survives — which matters when you are watching from a phone.
 
+**It updates without interrupting you.** An update walks the live DOM against a freshly rendered
+one and changes only what differs — the text of a counter, the class on a badge, a row that
+genuinely appeared. Replacing `innerHTML` would destroy and remake every element twice a second,
+so the scroll would jump, focus would be lost, a half-typed filter would empty and an open menu
+would shut. Anything you are using is left alone: a field you are typing in keeps what you typed,
+a box you ticked stays ticked, and an element marked `data-keep` — the lane console the browser
+appends to — is never touched by a render.
+
 **It shows lane output.** `dispatch` has always written a `.log` per lane. Those logs now stream to
 the page as the agents write them, tailing the last few KB when you open it late so a console is
 never blank.
@@ -616,8 +624,19 @@ never blank.
 first connection and stops with the last. Change is detected by fingerprinting the collected state
 with the timestamp removed — hashing the page itself would report a change every second forever.
 
-**It degrades.** No `EventSource`, or a stream that stays down, falls back to reloading. The page is
+**It degrades, and it has to.** No `EventSource`, or a stream that connects and then says nothing,
+falls back to asking for `<url>state.json` and `<url>logs.json` every two seconds. The page is
 never less current than the meta-refresh it replaces.
+
+That fallback is not theoretical. **Cloudflare quick tunnels buffer a chunked response**, so over a
+tunnel the event stream connects and delivers nothing at all, for as long as the build runs. This
+was measured rather than assumed: padding the opening past the buffer (2K, 16K, 64K), `no-transform`
+with `identity` encoding, `--protocol http2`, and four content types each delivered zero bytes. So
+the page starts a six-second watchdog and drops to polling when nothing arrives. The watchdog keys
+on a `ready` event rather than `onopen`, because `onopen` fires even when the bytes never come.
+
+Live over a tunnel therefore means a two-second poll, not a push. Locally it is a real stream.
+Either way the page shows which one it is using.
 
 ### The address is random
 
@@ -643,6 +662,13 @@ That starts the console, opens a quick tunnel, and prints the address to open on
 Cloudflare hostname with the console's random path already on the end, and the same for the wizard
 and the scan. Ctrl-C closes the tunnel with the console, so a tunnel never outlives what it points
 at.
+
+**Turning it off without stopping the console.** The server owns the tunnel, not the command that
+started it, so the Overview page has a switch. Closing it leaves everything on this machine
+running and only takes away the way in from outside — which is what "I am done for now" usually
+means. Opening one again asks Cloudflare for a fresh address, so a link you closed stays closed.
+You can also start one this way having begun without `--tunnel`. Closing it drops anyone reading
+over it, including you if that is how you got there; the page says so before you press it.
 
 It needs `cloudflared` on your PATH. If it is missing the command says so, prints the install for
 your platform (`winget install --id Cloudflare.cloudflared`, `brew install cloudflared`, or
@@ -677,6 +703,56 @@ blocked gate returns a refusal and the card goes back where it was.
 What is deliberately absent: marking a gate cleared, and resolving an issue. Both are *computed* —
 evidence passes when tests actually ran on a clean commit, review passes when a verdict is written
 in `review.md`. There is no field to set, so there is no button; the page offers the command instead.
+
+### Queueing work: press Build it and an agent starts
+
+The Queue page lists features that are in progress and a **Build it** button on each. Pressing it
+adds the feature to the queue and begins working through it. There is no second button to press,
+because a queue you have to remember to start is a list.
+
+The queue holds an order and nothing else. Draining an entry runs `vibecheck dispatch <feature>` as
+its own process — the same command you would run yourself — so the worktrees, the briefs, the
+routing, the clean-tree check and the refusal to dispatch a feature that is not in-progress all
+stay where they already were. The console has no opinion of its own about when work may start: ask
+it to build a draft feature and you get back the CLI's own refusal, in the console's log.
+
+Entries run **one at a time**; the parallelism is the lanes inside a dispatch. Two dispatches at
+once would race over the same HEAD and the same worktree base. Something already running cannot be
+removed — stopping an agent mid-edit is worse than letting it finish — and **Clear** takes out
+everything that has not started.
+
+The agents' output arrives on the page as it is written, exactly like a lane dispatched from the
+terminal, so you can watch a build from a phone. The queue itself lives in `.git/vibecheck/`,
+outside the working tree, so lining work up never dirties the repository it is about.
+
+### What the agents remember: `vibecheck memory`
+
+Recall answers a question; these answer the other one — what does it think it knows. A memory you
+cannot see is one you cannot correct, and a wrong one is quietly repeated into every brief from
+then on.
+
+```bash
+vibecheck memory list                      # what it holds for this project, newest first, with ids
+vibecheck memory search "sessions"         # find one, also with ids
+vibecheck memory correct <id> "<the right version>"
+vibecheck memory forget <id> [<id> ...]    # irreversible
+vibecheck memory capture spec security     # what vibecheck records unasked; "none" for nothing
+```
+
+Every row carries its id, because an id is what turns "that is wrong" into something you can act
+on. Only current versions are listed: saving a correction supersedes what it replaced, and showing
+both would present a fact and its own retraction as two things it believes.
+
+**Correcting is delete-then-save, not an edit.** agentmemory supersedes a memory when a new one is
+similar enough to it — right for an agent writing as it works, wrong for a person saying "no, it is
+this", because a correction that only sometimes replaces what it corrects is worse than none.
+
+**Forgetting reports what actually went.** The count that comes back is what was found and removed,
+which is not always what was asked for; an id that was already gone is not a deletion.
+
+**`memory.capture`** decides what vibecheck records without being asked, from the five kinds the
+writing code already tags: `spec`, `done`, `lanes`, `health`, `security`. What you save yourself is
+always kept — capture governs what it records unasked, not what you tell it.
 
 ## What is wrong with it: `vibecheck scan`
 
@@ -761,7 +837,10 @@ repeats each suite to catch flakes, and records evidence against a commit — th
 - The edit gate covers Claude's file-editing tools. Writes done through shell commands bypass it, which is why the Stop hook re-checks consistency at the end of every turn.
 - Cursor lanes aren't under Claude's hooks. They're constrained by `AGENTS.md`, the always-on Cursor rule and their brief, and nothing lands without the merge-and-verify step.
 - Lanes can run for many minutes. The dispatch skill runs them as a background command; check progress with `vibecheck lanes <id>` or the `.log` files next to each worktree.
-- The agentmemory REST calls follow its documented `remember` and `smart-search` routes; result parsing is defensive, but if a future agentmemory release changes response shapes, recall may come back empty until `src/memory.js` is adjusted.
+- The agentmemory REST calls follow its documented routes (`remember`, `smart-search`, `memories`, `governance/memories`); the request and response shapes were read out of the shipped agentmemory 0.9.29 handlers rather than guessed, and are exercised against a stand-in server. They have **not** been round-tripped against a live agentmemory, because it needs an engine binary that was not installed on the machine this was written on. Result parsing is defensive, but if a future release changes shapes, listing or recall may come back empty until `src/memory.js` is adjusted.
+- The event stream does not survive a Cloudflare quick tunnel — measured, not assumed — so over a tunnel the console polls every two seconds instead. It stays current; it is not a push.
+- Queued work runs one feature at a time. A second dispatch would race over the same HEAD and worktree base, so there is no parallelism above the lane level.
+- Closing a tunnel from the page drops everyone reading over it. Starting one again gets a different address; the old one is dead.
 - OpenContext integration uses its documented CLI (`oc search --mode keyword --format json`, `oc context manifest`, `oc folder/doc create`) and writes document bodies into the library folder (`OPENCONTEXT_CONTEXTS_ROOT`, default `~/.opencontext/contexts`). If a future `oc` release changes its JSON output, search may come back empty until `src/knowledge.js` is adjusted.
 - The security catalogue encodes common OWASP ASVS-aligned controls and sensible tooling per stack. It's a strong baseline, not a substitute for a threat model or a penetration test on sensitive systems. The generated CI workflow is valid YAML but has not run against your repository; treat its first run as a test.
 - Stack scores come from explicit, editable rules in `src/advisor/recommend.js`, not a model. Licence classes reflect each project's main licence; check the licences of your full dependency tree for a real product. They encode common trade-offs, not a guarantee; the ADR records the reasoning so it can be challenged.
@@ -772,7 +851,7 @@ repeats each suite to catch flakes, and records evidence against a commit — th
 
 ## What the plugin gives Claude Code
 
-14 skills (`/vibe-check-cli:new-project`, `run`, `spec-feature`, `plan-feature`, `implement-feature`, `dispatch`, `merge-lanes`, `review-feature`, `docs`, `rearchitect`, `security`, `setup`, `health`, `spec-check`), 4 subagents (**architect**, **test-engineer**, **implementer**, **reviewer**, each reading the project's `AGENTS.md` first) and 3 hooks (session start, before edits, end of turn).
+The workflow skills (`/vibe-check-cli:new-project`, `run`, `spec-feature`, `plan-feature`, `implement-feature`, `dispatch`, `merge-lanes`, `review-feature`, `docs`, `rearchitect`, `security`, `scan`, `memory`, `setup`, `health`, `spec-check`), 4 subagents (**architect**, **test-engineer**, **implementer**, **reviewer**, each reading the project's `AGENTS.md` first) and 3 hooks (session start, before edits, end of turn).
 
 **Cursor gets the same four subagents** in its own format (`model: inherit`; the reviewer is `readonly`): in every project's `.cursor/agents/` (kept current by `vibecheck sync`) and in `~/.cursor/agents/` for use anywhere (`vibecheck cursor-agents`; installed by the bootstrap and checked by the health check). They work in Cursor's editor, its CLI lanes and Cloud Agents. Files of your own with the same names are never overwritten. Check with `claude plugin details vibe-check-cli@vibe-check-cli`. To start over completely, see "Starting over" in the setup guides (`plugin/scripts/reset.ps1` or `reset.sh`).
 

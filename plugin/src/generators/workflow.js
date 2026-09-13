@@ -358,7 +358,31 @@ Scope: ${input} (empty = everything this machine and project need)
 3. Ask which steps to run with **AskUserQuestion**: multi-select questions of up to 4 options each (split into several questions if needed). Label = the tool's name plus " (Recommended)", description = what it's for and the command it runs. Don't offer steps marked \`manual\`; list them afterwards with their instructions. Steps marked \`interactive\` need a browser sign-in or prompts: mention that the user will run those in Cursor's terminal (View → Terminal).
 4. Run the chosen steps with \`vibecheck setup --yes --only "<id>,<id>"\` (quote the id list: PowerShell mangles an unquoted one). In this mode it never runs \`interactive\` steps: it prints them instead, for the user to run in Cursor's terminal. Installers print a lot; summarise what happened rather than repeating it. If a step waits for a password (\`sudo\`) or another prompt you can't answer, stop and ask the user to run that one command in Cursor's terminal (View → Terminal).
 5. Tell the user about sign-ins you can't do for them: Cursor's CLI (\`agent login\` in Cursor's terminal).
-7. Finish with ${cmd('health')}.
+6. Finish with ${cmd('health')}.
+`;
+
+const scanSkill = ({ input }) => `# What is actually wrong with this project
+
+Scope: ${input} (empty = the whole project)
+
+1. Run \`vibecheck scan --json\`. It reports \`score\`, \`findings\` (each with \`id\`, \`severity\`, \`category\`, \`title\`, \`why\`, \`action\`) and \`notScanned\`.
+2. Lead with what is worst. **critical** means a feature claims to be finished with nothing supporting the claim; that is the one to say out loud first.
+3. Say what was **not** scanned, in the same breath and with the same weight as what was. \`notScanned\` carries the reason for each. There is no vulnerability, dependency or secret scanner wired up, so a clean scan is not a statement about security and must never be reported as one.
+4. Findings with an \`action\` can be fixed by a command; the rest need a person and a decision. Offer the fixable ones as a batch, say what each command will do, and get a yes before running anything.
+5. Run agreed fixes with the command the finding names (\`vibecheck sync\`, \`vibecheck analyze --fix\`, \`vibecheck verify --all --run\`), then rescan and report what actually changed — not what was supposed to change.
+6. To pick and run fixes in a browser, or to watch them from a phone: \`vibecheck dashboard --serve --tunnel\`, then the Scan pages.
+`;
+
+const memorySkill = ({ input }) => `# Manage what the agents remember
+
+Scope: ${input}
+
+1. \`vibecheck memory list\` shows what is held for this project, newest first, with an id on every row. \`vibecheck memory search "<text>"\` finds a particular one, also with ids.
+2. A wrong memory is repeated into every brief until someone removes it. Read the ones that matter back to the user in their own words and ask whether each is still true.
+3. Correct one with \`vibecheck memory correct <id> "<the right version>"\` — it deletes the old one and saves the replacement. Delete one outright with \`vibecheck memory forget <id>\`. **Both are irreversible.** Show exactly what will go and get an explicit yes first; never act on silence or a vague "sure".
+4. Report what actually happened. The count that comes back is what was found and removed, which is not always what was asked for.
+5. \`vibecheck memory capture\` shows what vibecheck records without being asked (spec, done, lanes, health, security); pass the kinds to keep, or \`none\`. What the user saves themselves is always kept, whatever this is set to.
+6. If nothing comes back at all, check \`vibecheck memory status\` before concluding the project has no memories.
 `;
 
 const healthSkill = ({ input, cmd }) => `# Check this machine and project
@@ -450,6 +474,18 @@ export const SKILLS = [
     description: 'Check that every tool this project needs is installed and working (Claude Code, Cursor CLI, memory, knowledge, hooks), and explain fixes. Use when something seems broken or before a first run.',
     argumentHint: '[live]',
     body: healthSkill,
+  },
+  {
+    name: 'scan',
+    description: 'Report what is actually wrong with this project - drift, untraced criteria, missing evidence, stale docs - worst first, with the fixes that can be run and an honest account of what was not scanned. Use when asked how the project is doing, before a release, or when picking up work after a break.',
+    argumentHint: '[area]',
+    body: scanSkill,
+  },
+  {
+    name: 'memory',
+    description: 'Show what the agents remember about this project, correct or delete what is wrong, and choose what gets recorded automatically. Use when a memory is out of date, when the user asks what it knows, or before relying on recalled context.',
+    argumentHint: '[what to look for]',
+    body: memorySkill,
   },
   {
     name: 'design',
