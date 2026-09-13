@@ -101,12 +101,25 @@ export async function listMemories(project, { limit = 50, all = false } = {}) {
     .map(toRow);
 }
 
-/** The same rows a search finds, with their ids kept. */
+/**
+ * Find stored memories, keeping the id on every row.
+ *
+ * This asks `search` and not `smart-search`, which is not a detail. Checked against a running
+ * agentmemory: `smart-search` searches *session observations* — what happened in past sessions,
+ * each carrying an `obsId` — while `search` searches the memories themselves and returns each one
+ * under `observation`, with its `mem_…` id. Only the second kind can be corrected or deleted,
+ * which is the entire reason for asking.
+ */
 export async function searchMemories(project, query, limit = project.memory.recallLimit) {
   if (!isMemoryEnabled(project) || !query.trim()) return [];
-  const payload = await request(project, 'smart-search', { query, limit }, { timeoutMs: MANAGE_TIMEOUT_MS });
+  const payload = await request(project, 'search', { query, limit }, { timeoutMs: MANAGE_TIMEOUT_MS });
   const items = Array.isArray(payload) ? payload : payload?.results ?? payload?.memories ?? payload?.items ?? [];
-  return items.map((item) => ({ ...toRow(item), content: textOf(item) ?? item?.content })).filter((row) => row.id);
+  return items
+    .map((item) => {
+      const memory = item?.observation ?? item;
+      return { ...toRow(memory), content: textOf(memory) ?? memory?.content };
+    })
+    .filter((row) => typeof row.id === 'string' && row.id.startsWith('mem_'));
 }
 
 /**

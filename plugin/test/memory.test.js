@@ -1,12 +1,14 @@
 // Managing what the agents remember.
 //
-// These run against a stand-in agentmemory rather than the real one, and it is worth being exact
-// about what that does and does not prove. The request shapes it accepts — the query on
-// GET /agentmemory/memories, the JSON body on DELETE /agentmemory/governance/memories, the
-// {success, deleted, total} it answers with — were read out of the shipped @agentmemory/agentmemory
-// 0.9.29 handlers, not guessed, so these prove this client speaks that contract. They do not prove
-// the contract itself, and cannot: agentmemory needs an engine binary that is not installed here,
-// so nothing below has been round-tripped against a live server.
+// These run against a stand-in agentmemory, but the shapes it answers with are not invented: every
+// one was observed against a running agentmemory 0.9.29, and the whole client was round-tripped
+// against it — save, list, search, delete, and delete an id that was already gone.
+//
+// That run corrected something these tests had been asserting happily for days. `smart-search`
+// searches *session observations*, which carry an obsId and cannot be deleted; memories live
+// behind `search`, wrapped in `observation`, with the `mem_…` id that governance accepts. The
+// stand-in had been answering smart-search with memory-shaped rows, so the tests passed against a
+// server that does not exist.
 
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
@@ -42,8 +44,14 @@ async function fakeMemory({ memories = [], deleted = null } = {}) {
         const asked = body?.memoryIds ?? [];
         return response.end(JSON.stringify({ success: true, deleted: deleted ?? asked.length, total: asked.length }));
       }
+      // The shape a real agentmemory returns: memories come back from `search`, each wrapped in
+      // `observation`. `smart-search` is a different thing entirely — session observations, with
+      // an obsId and no memory to delete — so it answers that way here too.
+      if (url.pathname === '/agentmemory/search') {
+        return response.end(JSON.stringify({ results: memories.map((memory) => ({ observation: memory, score: 1 })) }));
+      }
       if (url.pathname === '/agentmemory/smart-search') {
-        return response.end(JSON.stringify({ results: memories }));
+        return response.end(JSON.stringify({ results: [{ obsId: 'obs_something', title: 'Bash', type: 'command_run' }] }));
       }
       return response.end(JSON.stringify({ success: true }));
     });
@@ -116,7 +124,16 @@ test('a search keeps the ids that a recall throws away', async () => {
   const [found] = await searchMemories(projectWith(fake.url), 'sessions');
 
   assert.equal(found.id, 'mem_found');
+  assert.equal(fake.seen.at(-1).path, '/agentmemory/search', 'memories live behind search, not smart-search');
   assert.equal(fake.seen.at(-1).body.query, 'sessions');
+});
+
+test('a session observation is never offered as a memory you can correct', async () => {
+  // smart-search returns what happened in past sessions: an obsId, and nothing governance can
+  // delete. Offering one as a memory would give you an id that no delete will ever accept.
+  const fake = await fakeMemory({ memories: [{ obsId: 'obs_1', title: 'Bash', type: 'command_run' }] });
+
+  assert.deepEqual(await searchMemories(projectWith(fake.url), 'bash'), []);
 });
 
 // --- Taking it back ---
