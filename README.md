@@ -4,7 +4,7 @@
 
 Coding agents are fast, and they guess. VibeKit puts one folder in your repo, `vibekit/`, that every agent reads: what the app is, what agents may and may not do, what your words mean, what has been decided, and what is next. An agent that lacks information writes an ask and stops. It never fills a gap with a guess. Between every stage is a gate: a line a human writes. Nothing advances itself.
 
-![version](https://img.shields.io/badge/version-0.2.0--beta-orange)
+![version](https://img.shields.io/badge/version-Alpha-orange)
 ![platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20macOS%20%7C%20Linux-blue)
 ![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-8A63D2)
 ![Cursor](https://img.shields.io/badge/Cursor-supported-black)
@@ -166,7 +166,7 @@ npm run golden:check # the three fixture briefs (§32) against fixtures/golden.j
 
 ## Status
 
-Beta. The suite, the simulation, the recovery fixture and the golden fixtures run in CI on Windows, macOS and Linux. Not built here: the desktop app (§70) and the provider integrations that open pull requests through GitHub's or GitLab's API (§51); the tracker page is the browser surface and the CLI does everything else.
+Alpha. The first version. The suite, the simulation, the recovery fixture and the golden fixtures run in CI on Windows, macOS and Linux. Not built here: the desktop app (§70) and the provider integrations that open pull requests through GitHub's or GitLab's API (§51); the tracker page is the browser surface and the CLI does everything else.
 
 ## License
 
