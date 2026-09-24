@@ -1,6 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
   <title id="title">VibeKit</title>
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="64%" r="40%">
+      <stop offset="0%" stop-color="#cdf34a" stop-opacity=".32"/>
+      <stop offset="100%" stop-color="#cdf34a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
   <rect width="64" height="64" rx="16" fill="#171628"/>
-  <path d="M18 48 L32 18 L46 48" fill="none" stroke="#cdf34a" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M27 16 h10" fill="none" stroke="#f0b429" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="32" cy="41" r="17" fill="url(#glow)"/>
+  <path d="M15 28 L29.5 49 L51.5 15" fill="none" stroke="#cdf34a" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="24" y="21.4" width="17.5" height="4.4" rx="2.2" fill="#f0b429" transform="rotate(-12 32.75 23.6)"/>
 </svg>
