@@ -1,242 +1,194 @@
-# Operating guide: Claude Code + Cursor with VibeKit
+# Operating guide
 
-How to take an idea to secure, tested, documented software using Claude Code as the orchestrator and Cursor agents as parallel builders. It works for web, mobile, desktop and backend developers on any stack. The running example is a laptop asset-management app on .NET 9 + Vue 3 + PostgreSQL; the same steps apply to a Flutter + Supabase mobile app or an offline Tauri desktop tool.
+How a team uses VibeKit day to day. The [specification](spec/vibekit-specification.md) is the reference; this is the short version, in the order things happen.
 
-## 1. Your cockpit
+## 1. Who does what
 
-| Where | Who | Does what |
+| Who | Does | Never does |
 |---|---|---|
-| Claude Code panel in Cursor | Claude, the orchestrator | Specs, plans, reviews, merging, verification. Hooks keep it inside the workflow |
-| Cursor Agents window / `cursor-agent` | Cursor agents, the builders | One lane of parallel work each, in its own git worktree |
-| Subagents (both tools) | architect, test-engineer, implementer, reviewer | Specialists Claude Code and Cursor's Agent hand work to; defined by the plugin and `.cursor/agents/` |
-| Integrated terminal | You + `vibekit` | Menus (`vibekit advise`, `vibekit security`), status (`list`, `verify`, `docs status`) |
-| Browser preview | You | Look at the running UI; acceptance demos |
+| **You** (product owner, tech lead, security) | Answer asks, approve gates, set `done`, close sprints, name approvers in `agents/humans.md` | — |
+| **Analyst** (stage 1) | Asks about what the sources do not settle; writes assumptions | Design, choose a stack, write code |
+| **Planner** (stages 2, 4) | Proposes the architecture with reasons; orders the plan | Write code, edit `standards/` |
+| **Implementer** (stage 5) | Holds one requirement; approach, failing tests, code, `verify`, checkpoints | Edit `standards/`, `entities.md`, another requirement; set `done` |
+| **Reviewer** (stage 6, a different model) | Maps criteria to tests, runs the suite, writes the verdict | Write application code |
 
-You make four kinds of decisions: requirements (by menu), stack and security (by menu), spec and plan approvals, and the final acceptance demo. Everything else is delegated.
+The roles are files in `vibekit/agents/`. `vibekit serve` enforces them over MCP; the git hooks and the Claude Code hooks enforce them for file-only runners.
 
-## 2. One-time setup
+## 2. Start
 
-Follow [SETUP-MAC.md](SETUP-MAC.md) or [SETUP-WINDOWS.md](SETUP-WINDOWS.md). In short, everything happens inside Cursor:
-
-1. Install Cursor and Docker Desktop (on Windows, also WSL2, then connect Cursor to it).
-2. Install the Claude Code extension in Cursor and sign in.
-3. In Cursor's terminal, once: `bash ~/tools/vibekit/plugin/scripts/bootstrap.sh --minimal`, then reload the window.
-4. In the Claude panel: `/vibekit:setup` installs the rest from a menu, and `vibekit health --live` proves it works.
-5. Mark favourites (just ask Claude: "make dotnet-vue my preferred stack") and put your playbook in OpenContext.
-
-## 3. Start a project (about 15 minutes)
-
-In an empty folder, in the Claude Code panel:
-
-```text
-/vibekit:new-project laptop asset management for our IT team
+```bash
+vibekit project new
 ```
 
-1. **Requirements by menu**, arrow keys only. The first question is your platform (web, mobile, desktop or backend), and later rounds adapt to it: a desktop tool never gets asked about web frameworks or server hosting.
-2. **Stack, layer by layer**: backend (including backend-as-a-service or none), web, mobile and desktop as needed, then the database. Each option shows its licence and score, and your licensing policy filters out what it forbids. Type anything under Other to bring your own. The choices, licences and alternatives go into an ADR.
-3. **Security by menu**, tailored to the stack you picked (section 7), with client-app protections for mobile and desktop.
-4. **What menus can't capture**: Claude drafts the problem, users, v1 capabilities and non-goals; you correct them.
-5. Claude writes the specs, draws the architecture docs and creates the `foundation` feature plus one draft per capability. You approve the foundation spec.
+Name it, choose where it lives, describe it or hand over the document, tick the platforms. The folder is written, the hooks installed, and your words kept verbatim as the first source. `--yes --name --describe --platform` answers everything from flags.
 
-Prefer the terminal? `vibekit init` runs the same menus there.
+Have code already? `vibekit project import .` reads it and explains it back — in plain language, every line with a confidence — before `--convert` writes the folder. Nothing in the existing code is changed. See [docs/BROWNFIELD.md](docs/BROWNFIELD.md).
 
-Prefer neither? `vibekit wizard` opens the same questions as a form in your browser — useful
-when you would rather see all the options at once, or hand the choices to someone who does not
-live in a terminal. It saves a `requirements.json`; put it in the project and run
-`vibekit advise apply` (or tell Claude Code *"apply my requirements"*) and scaffolding carries
-on exactly as above. It asks about a **boilerplate** too, offering only starters that fit the
-stack you chose — with the licence and any cost shown — or generating the structure from scratch.
+Not sure it should be built at all? `vibekit ext add assess`, then `vibekit project assess "<idea>"`: five files, a decision record, no code.
 
-### Already have a codebase?
+## 3. The gates
 
-Run `vibekit adopt` in the repository instead. It detects the stack from the manifests, writes
-`specs/project.json` marked `"origin": "adopted"`, and produces as-is architecture and data-model
-docs plus `assessment/adopt.md` listing every file it read.
+`vibekit sprint run` reads the gate and prints the stage prompt to run. Each gate is a line you write:
 
-Read `assessment/adopt.md` first, because the useful part is the **"Not determined"** section.
-Adopt never guesses: a command it cannot detect is left empty rather than filled with a plausible
-default, so that list is your to-do. In particular `vibekit check` will fail until you supply a
-test command, which is deliberate — agents cannot verify their work without one.
+| Stage | The line | Where |
+|---|---|---|
+| 1 clarify | `reviewed: 2026-09-24 by <name>` | `workflow/assumptions.md` |
+| 2 architecture | `approved: 2026-09-24 by <name>` | `workflow/architecture.md` |
+| 3 design | `approved: …` below `<!-- local -->` in `tokens.md`, and in `components.md` | `product/design/` |
+| 4 plan | `approved: …` | `workflow/plan.md` |
 
-Existing code needs no specs. New work goes through features as usual. Assess, modernize and
-migrate are specified but not yet built; see [docs/BROWNFIELD.md](docs/BROWNFIELD.md).
+The tracker's approve button writes exactly the same line. Nothing in VibeKit writes one on its own.
 
-## 4. Scaffold fast with multiple agents
+## 4. Answering asks
 
-The same lane pattern works for every platform: a Flutter app splits into `mobile/` UI, backend functions and tests; a Tauri app into the Rust core, the web UI and packaging. The example below is the .NET + Vue foundation.
-
-**The rule that makes parallel work safe: contracts first, then disjoint lanes, then integrate.** Conflicts come from files that everyone touches: the solution file, `Program.cs` service registration, `package.json`, shared DTOs. Those belong to sequential tasks. Everything else can fan out.
-
-A foundation `tasks.md` designed for lanes on .NET + Vue:
-
-```text
-- [ ] T-1 [impl] Solution skeleton and contracts: .sln, Clean Architecture projects and references,
-                 OpenAPI skeleton, .env.example, docker-compose with PostgreSQL (AC-1) — *.sln, src/*/**.csproj
-- [ ] T-2 [test] Test harness: xUnit + Testcontainers, Vitest, Playwright (AC-1) — tests/, src/*.WebApp/vitest.config.ts
-- [ ] T-3 [impl] Backend baseline: health, Serilog, auth policies, rate limiting, headers (AC-2..AC-9)
-                 — src/*.WebApi/**, src/*.Infrastructure/** [P]
-- [ ] T-4 [impl] Frontend baseline: Vue 3 + Vite + Pinia, SCSS design system, BFF auth client (AC-2)
-                 — src/*.WebApp/** [P]
-- [ ] T-5 [impl] Delivery: Dockerfile, Nginx, systemd, CI and security workflow (AC-15..AC-18)
-                 — deploy/**, .github/** [P]
-- [ ] T-6 [test] Security criteria tests: one test per (security: …) criterion — tests/Security/** [P]
-- [ ] T-7 [test] End-to-end smoke: sign in, see the empty inventory (AC-1) — e2e/**
-- [ ] T-8 [docs] Architecture, deployment and threat-model docs match what was built
+```bash
+vibekit action                       # every project, most blocking first
+vibekit action answer                # walk through them: each question, the agent's options as a menu, type your own, skip, reject
+vibekit action answer 1 "a CSV export uploaded when the take starts" 3 "Stripe"   # one or several, by number or id
+vibekit action export --out answers.md   # a file to fill in offline …
+vibekit action answer --from answers.md  # … and apply; `reject: <reason>` on a line sends that one back
+vibekit tracker stock                # the same inbox on your phone: finds the project by name, opens a tunnel, prints a QR code
 ```
 
-T-1 and T-2 run first. `/vibekit:run` then reaches the `[P]` block and dispatches T-3 to T-6 to four agents at once. T-7 and T-8 run after the merge.
+Ask ids are per project, so when two projects both have a `Q-001` open you say which: `stock/Q-001`. Every answer is written the moment it is given, so stopping a walk halfway loses nothing.
 
-**Three ways to run lanes** (set in the menus, or `workflow.engine`):
+Every ask leads with `## In plain terms`. Blocking asks wait for a person; nobody answers on their behalf. Non-blocking ones let the stage continue with an assumption you review at the gate.
 
-| Engine | What happens | Best when |
-|---|---|---|
-| `cursor` | Claude runs `vibekit dispatch` in the background; each lane gets a worktree, `npm/dotnet` install and a headless `cursor-agent` with a focused brief | You want speed and don't need to watch |
-| `manual` | Worktrees and briefs are prepared; you open each worktree in Cursor's Agents window and paste its brief | You want to watch and steer each agent |
-| `claude` | Same as `cursor`, with headless Claude Code | You'd rather keep everything on Claude |
+## 5. Sprints
 
-For a block of just two small tasks, Claude uses parallel subagents inside the session instead.
-
-**Cursor and Claude in the same batch.** Add `workflow.routes` to send each lane to the agent that suits it, by the files it touches, e.g. the Vue lane to Cursor and the API and security-test lanes to Claude. `vibekit lanes <id>` shows the routing before you dispatch.
-
-**Tips:**
-- Three to four lanes is the sweet spot. More lanes means more merge work and more install time.
-- Each lane owns directories, not "areas of concern". If two tasks name the same file, they aren't `[P]`.
-- Lanes never edit `specs/`; they commit with the task id (`feat: T-4 …`). `vibekit merge <id>` integrates, runs the tests and ticks the tasks — `/vibekit:run` does it at the right moment.
-- Keep one orchestrator. Parallelism lives inside a feature's lanes, not in several Claude sessions fighting over the same specs.
-
-## 5. Test the code
-
-Tests come first: a `[test]` task and the test-engineer subagent write failing tests from the acceptance criteria, then the implementer makes them pass.
-
-**The naming convention that connects tests to the spec:** every test name starts with `<feature number>:AC-<n>`.
-
-```csharp
-[Fact(DisplayName = "003:AC-2 rejects assigning a retired laptop")]
-public async Task Rejects_retired_laptop() { … }
+```bash
+vibekit sprint plan --cost           # the sprints and the token forecast, before you approve
+vibekit sprint run --lanes 2         # hand out independent work: never two agents on one entity
+vibekit sprint status                # progress, lanes, what is blocked — as work, not ids
+vibekit sprint close --by "<name>"   # the gate, then your name
 ```
 
-```ts
-it('003:AC-2 shows an error when assigning a retired laptop', async () => { … })   // Vitest
-test('003:AC-2 admin cannot assign a retired laptop', async ({ page }) => { … })   // Playwright
+`run` hands out; it does not run a model. A seat (Claude Code, Cursor) opens the branch and runs the prompt `vibekit sprint start` prints; `vibekit serve --stdio` is the MCP server for anything else, `--sandbox` for a container per session. `--until blocked` is the overnight setting.
+
+The sprint gate: every piece of work `done`, nothing held, no open asks, no high-severity bug, `vibekit check` green, the security scan clean of high findings, documents regenerated, all three reports produced, lessons proposed. Then `--by`.
+
+## 6. One piece of work
+
+```bash
+vibekit start REQ-014 --as implementer   # hold it; branch req/REQ-014
+# approach → failing test per AC-n → code
+vibekit req checkpoint REQ-014 --done "…" --in-hand "…" --next "…" --step 2 --of 5
+git commit -m "feat(REQ-014): …" -m "VibeKit-Requirement: REQ-014"
+vibekit verify                           # exit codes into ## Evidence
+vibekit req tested REQ-014 --as implementer
+vibekit review REQ-014                   # the mechanical half; a reviewer session does the rest
+vibekit req done REQ-014                 # a person
 ```
 
-**Test pyramid for .NET + Vue:**
+A killed session resumes from the checkpoint: `vibekit sprint start` prints it; `vibekit start REQ --as implementer` on an unheld in-progress requirement picks it up and logs the change of hands.
 
-| Level | Tool | Covers |
-|---|---|---|
-| Unit | xUnit + FluentAssertions + NSubstitute | Domain rules, application handlers |
-| Integration | `WebApplicationFactory` + Testcontainers (real PostgreSQL) | Endpoints, EF Core mappings, authorization policies |
-| Frontend unit | Vitest + Vue Test Utils | Components, Pinia stores |
-| End to end | Playwright | Critical user journeys per target |
-| Accessibility | `@axe-core/playwright` inside e2e | WCAG checks on every screen |
-| Security | Tests for `(security: …)` criteria + the CI workflow | Headers, lockout, IDOR, CSRF, secrets, dependencies |
+## 7. Bugs
 
-**Smoke and UI suites.** Besides unit and integration tests, every project has a `smoke` suite (a few fast checks of the critical paths, tagged `@smoke` / `Category=Smoke`) and a `ui` suite (Playwright for the Vue app, Appium or MAUI UI tests for mobile, each with an accessibility check). Plans give every visible criterion a UI test and the critical path a smoke test.
+```bash
+vibekit bug "due dates show a day early" --test tests/dates.test.js --severity high --found-on REQ-014
+vibekit bug assess BUG-001 --cause "UTC date rendered in local time"
+vibekit bug fix BUG-001                  # a branch, the same loop as any requirement
+vibekit bug test BUG-001                 # verified · partial · failed
+```
 
-Run everything with the `test` command in AGENTS.md (for this stack: `dotnet test && npm --prefix src/<App>.WebApp run test:unit`).
+No reproducing test, no bug. High enters the current sprint and blocks its gate; medium and low go to the backlog. An agent may not set severity above medium and may not close one.
 
-**A suite that passes sometimes is not passing.** `vibekit verify <id> --run --repeat 3` runs
-each suite three times and records how many passed. Pass on every run and it counts as evidence;
-pass on some and it is recorded as **flaky**, which does not. Set it once for the project with
-`standards.testing.runs` instead of remembering the flag. This matters most on the suites that
-touch time, ordering or the network — exactly the ones a single green run flatters.
+## 8. Design
 
-`vibekit dashboard --open` shows all of it in the browser: how many suites are healthy, and per
-feature every suite with its result, its run tally, its duration and the command to reproduce it.
+```bash
+vibekit design add https://linear.app    # what it took, and three questions it could not answer
+vibekit design apply                     # answered questions and extracted values → tokens
+vibekit design preview                   # your screens, light and dark, phone and desktop
+vibekit design feedback "too cramped"    # three things it usually means; pick one
+```
 
-## 6. Validate the code against the spec
+Spacing, density, type scale and colour relationships are borrowed as design always has; a logo or a layout is not.
 
-Six layers, from automatic to human:
+## 9. Security
 
-| Layer | Checks | Command / trigger |
-|---|---|---|
-| Traceability and evidence | Every criterion has a test named `NNN:AC-n`; the test, smoke and UI suites pass on a clean commit | `vibekit verify 003 --run` records evidence for that commit; required before `done` |
-| Status gates | No TODOs in approved specs; all criteria and tasks ticked before `done` | `vibekit status` refuses otherwise |
-| Reviewer | Spec coverage, architecture boundaries, standards, security controls touched, NFRs → `review.md` | the review step of `/vibekit:run` |
-| Living docs | Feature doc, design doc and touched diagrams match the code | `vibekit docs status`; required before `done` |
-| Security CI | Secrets, SAST, dependencies, containers, optional DAST | `.github/workflows/security.yml` on every push |
-| You | Walk each acceptance criterion in the running app | `vibekit status <id> done` once it holds up |
+```bash
+vibekit security scan [--url https://staging.example.com]
+vibekit check --security --deps
+```
 
-If the code and the spec disagree, decide which one is wrong. If the spec was wrong, fix it first. It's the contract, and fixing it keeps every later check honest.
+The scan measures against the frameworks that apply (the classifications decide the defaults; `vibekit settings frameworks` chooses), counts what needs a person honestly, writes `docs/security-scan-<date>.md`, and opens a bug per finding. It is not a penetration test and says so.
 
-## 7. Security: chosen by menu, enforced by tests
+## 10. Shipping
 
-After you pick a stack, two security rounds adapt to your answers:
+```bash
+vibekit release                          # refused until every requirement in the sprint is done
+vibekit rollback v1.2.0                  # previous release back, hotfix opened with the incident note
+vibekit undo REQ-014                     # spec back to ready; dependants to review
+vibekit hotfix "refund double-charged"   # S bug on hotfix/*, compliance pass, patch release
+```
 
-- **Identity and access**: session style (backend cookies for web, PKCE for mobile), account protections (moved to your identity provider when you chose SSO), authorization (tenant isolation appears for SaaS), secrets (paid managers disappear when you chose fully open source).
-- **Protection and assurance**: data (field encryption, backups, retention, append-only audit), edge (headers and CSP, rate limits, WAF, CORS), CI checks (Semgrep, dependency audit, Trivy, gitleaks) and monitoring (security events, PII redaction, alerts, ZAP).
+## 11. Stopping
 
-Secure defaults are pre-selected, and your compliance level marks some controls as required. Deselect a required control and it's recorded as an accepted risk, not silently dropped.
+`vibekit project stop --reason "month end"` checkpoints, releases holds, writes the resume note. `vibekit project resume` re-establishes ground truth before anything restarts: checks, dependencies, prompt versions, sources, open asks.
 
-**Where it's stored, and why:**
+## 12. Outside knowledge and tools
 
-| Store | What | Why |
-|---|---|---|
-| `specs/project.json` | The selected controls and accepted risks | Source of truth: versioned, reviewed in pull requests |
-| `specs/security.md` | Each control, how it's implemented on your stack, its ASVS reference | Generated for humans and agents |
-| AGENTS.md + Cursor rule | The rules, for every Claude and Cursor agent | Applied while writing code, especially auth, config and data access |
-| Foundation feature | One acceptance criterion per control | Security is built and tested in the scaffold, not bolted on later |
-| `.github/workflows/security.yml` | Scanners for your stack | Catches what tests can't |
-| `docs/security/threat-model.md` | Data flows, trust boundaries, STRIDE | A living doc that goes stale when the architecture changes |
-| agentmemory / OpenContext | A summary / the baseline document | Recall in later sessions / reuse in your next project |
+```bash
+vibekit settings server jira <token>          # the credential; the declaration is in vibekit/agents/servers.yml
+vibekit check --servers                       # declared well, authenticated, reachable — before a sprint starts
+vibekit tools skills import git@github.com:youragency/skills --dry-run
+vibekit ext add git@github.com:youragency/kit  # shows what it adds and its budget, asks, pins the commit
+vibekit ext update                            # fetch, show the diff, move the pin only when you say so
+vibekit check --budget                        # the always-loaded cost by source: repo, each extension, imported, team, vibekit
+```
 
-A file is the right primary store because it's versioned, reviewable and enforceable. Memory is for recall, and the knowledge library is for reuse. Change the baseline any time with `/vibekit:security`.
+**Publishing your own kit.** An extension is a git repository with an `extension.yml` (name, version, `requires: vibekit >= 1.2`, licence, what it adds, the declared always-loaded budget) and folders of data: `skills/`, `checks/` (declarative, six kinds), `stages/`, `documents/`, `reports/`, `templates/`, `servers.yml`, `always/`, `pipeline.md`. Never code. Before a release:
 
-## 8. Design the frontend
+```bash
+vibekit ext verify ./kit                      # the §5 rules, then the three fixture briefs against golden outputs (--quick skips the briefs)
+vibekit ext keygen --out ~/.keys              # once: an Ed25519 pair; the private key stays off git
+vibekit ext sign ./kit --key ~/.keys/vibekit-ext.key   # writes extension.sig; commit it with the release
+```
 
-Work in this order: design system → concepts → per-feature design → build → verify.
+Installers run `vibekit settings trust acme acme.pub` once, and `vibekit settings require-signed true` on machines that must refuse anything unsigned, tampered or from an unknown key. A team's own kit needs none of this; anything that leaves the organisation does.
 
-1. **Design system first**: `docs/design/system.md` holds the tokens, type scale, components and a link to the design files. Your SCSS structure (`_variables`, `_mixins`, `_reset`, `_animations`, `_components`, `main.scss`) is built in the foundation's frontend lane from those tokens.
-2. **Three concepts** (your skill asks for them): ask Claude for three directions covering login, dashboard, navigation, user management, reporting and mobile layouts. Either:
-   - use **Claude Design** to explore visually and link the result from the design doc, or
-   - have Claude Code build HTML prototypes in `docs/design/mockups/` (Anthropic's frontend-design plugin helps here, if it's in your plugin marketplace).
-   Pick one, and record it as an ADR ("UI direction").
-3. **Per feature**: a plan with UI states requires `docs/design/<id>.md` (screens, loading/empty/error/success per target, a user-flow diagram) before the frontend lane starts. For the laptop app that means the inventory list with status and warranty filters, the laptop detail page with an assignment history timeline, the assign dialog, mobile scan-to-check-in, and reports.
-4. **Build from the design doc**: the frontend lane's brief points to it, so the agent builds states you've already agreed.
-5. **Verify**: Playwright journeys with axe checks, screenshots for review, a look in the browser preview, and the reviewer comparing the UI against the design doc.
+A local MCP server is declared with `command:` instead of `url:` and launched on stdio for each call; `token-env:` names the variable its credential arrives in, and nothing else of the host's environment reaches it.
 
-## 9. What agents may and may not claim
+An agent reaches a declared server through `vibekit_call`; the allow-list, the role, the data classification and the budget are enforced there, and what comes back is data, never instructions. Imported skills carry their source, licence and commit in `skills/lib/imported/SOURCES.md`; opinions that read like rules land in `FLAGGED.md` for you to make a rule (with a check), keep as a suggestion, or drop. Extensions are data only and can add a check but never remove one; `check --budget` shows the always-loaded cost by source.
 
-Every generated `AGENTS.md` carries a mandatory **Evidence over guesswork** section, and it is
-worth knowing what it entitles you to expect.
+## 13. When something is refused
 
-An agent must cite where a claim came from — a file and line, a command and its output, or the
-spec section. It must not invent an API, package, flag or version without confirming it exists.
-It must not report a test or build as passing unless it ran it and saw it pass. It must take
-acceptance criteria from the spec rather than quietly reshaping them to fit what it built. And it
-must say plainly what it did **not** do: parts skipped, checks not run, criteria unmet.
+Every refusal names the file and the fix. The ones you will meet first:
 
-"Unknown" is an allowed answer, written as `TODO(unknown): <question>` and raised with you. That
-is the point: a recorded gap is cheap, and a plausible invention is expensive. If an agent gives
-you a confident answer with no source, ask for the evidence — the rules say it owes you one.
-
-## 10. Daily loop
-
-1. Open the project in Cursor and start Claude Code. The session opens with the state, the next step, relevant memories and documents, and any stale docs.
-2. `/vibekit:run`. Answer the gates it stops at (spec approval, plan approval).
-3. When it dispatches lanes, keep working or watch them in the Agents window.
-4. It merges, runs tests, smoke and UI, updates docs and reviews, and records the evidence.
-5. Do the acceptance demo, then `vibekit status <id> done`.
-
-| You want to… | Use |
+| Refusal | Why |
 |---|---|
-| Add or change behaviour, including a bug | `/vibekit:spec-feature <description>` |
-| Keep going | `/vibekit:run` |
-| Change architecture or technology | `/vibekit:rearchitect <change>` |
-| Revisit security | `/vibekit:security` |
-| See where things stand | `vibekit list`, `vibekit verify`, `vibekit docs status`, `vibekit security status` |
-| Pull context on a topic | `vibekit context "<topic>"` |
+| `REQ-002 is not ready: AC-2 is not in EARS form` | One trigger, one response, one of five forms |
+| `waits on REQ-001, which is not done` | `after:` is enforced |
+| `a commit straight onto main is refused` | Work lands by pull request; `--no-verify` if you mean it |
+| `evidence is for commit …` | Run `vibekit verify` again on this commit |
+| `An agent cannot set REQ-001 to done` | Only a person closes work |
+| `Sprint 1 is not at its gate` | Every row is a fact; fix the red ones |
+| `a bug nobody can reproduce is a report, not work` | Name the failing test |
 
-## 11. Troubleshooting
+## 14. A first project, end to end
 
-| Symptom | Fix |
-|---|---|
-| "Blocked by the spec-driven workflow" when Claude edits code | Intended: write a small spec (`/vibekit:spec-feature`) and move it to in-progress |
-| Turn won't end: "architecture changed, update the document now" | Update the flagged docs (`/vibekit:docs`) and stamp them |
-| A menu question appears empty in Claude Code | Known glitch right after a skill starts; Claude asks again |
-| Something doesn't work and you don't know what | `vibekit health --live`: every failing item comes with the fix command for your OS |
-| Hooks don't fire | `claude --debug`, then the `/plugin` Errors tab; check the plugin is enabled for the project |
-| `oc init` rewrote AGENTS.md | `vibekit sync --force` |
-| Lane merge conflict | Resolve, commit, run `vibekit merge <id>` again; next time, move the shared file into a sequential task |
-| `vibekit verify` shows a criterion as missing | Name a test `NNN:AC-n …`, or fix the spec if the criterion is wrong |
-| Memory or knowledge shows nothing | `vibekit memory status` / `vibekit knowledge status`; the workflow runs without them |
+A stock-taking app for three warehouses, from nothing to a first release, with the commands in the order you would type them.
+
+```bash
+mkdir stock-take && cd stock-take && git init
+vibekit project new --name stock-take --describe "Staff count stock on a phone; supervisors review variances" --platform web,api
+vibekit ingest brief.md            # if there is a requirements document: redacted, split into sections, obligations extracted
+vibekit sprint run                 # prints the clarify prompt; your agent runs it and writes asks
+vibekit action answer              # you answer them, one at a time
+vibekit sprint run                 # the analyst finishes; assumptions.md waits for `reviewed: … by <you>`
+```
+
+Each gate is a line you write, or the approve button on the tracker. Architecture, design and plan follow the same shape: the agent proposes with reasons, you read, you approve.
+
+```bash
+vibekit sprint plan --cost         # sprints in dependency order, walking skeleton first, with the token forecast
+vibekit sprint run --lanes 2       # two agents, never on the same entity; each holds one requirement on req/REQ-nnn
+vibekit sprint status              # where each lane is, in words
+vibekit action                     # whenever an agent stops on a question
+vibekit review REQ-003             # the mechanical half of the review; the reviewer session writes the verdict
+vibekit req done REQ-003           # a person
+vibekit sprint close --by "Sam"    # every row of the gate true, then your name
+vibekit release 0.1.0              # changelog, tag, evidence bundle
+```
+
+From then on: `vibekit feature add` for new work, `vibekit bug … --test` for anything broken, `vibekit hotfix` when production is down, `vibekit tracker stock-take` to carry the whole thing on your phone.

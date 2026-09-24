@@ -7,9 +7,9 @@
     {
       "name": "vibekit",
       "source": "./plugin",
-      "description": "VibeKit: spec-driven, multi-agent development for Claude Code and Cursor.",
+      "description": "VibeKit: spec-driven development for coding agents, with a person deciding every question that matters — requirements as the unit of work, an asks inbox, sprints with human gates, an MCP runner that enforces what agents may read, write and run, and a live tracker.",
       "version": "0.2.0-beta"
     }
   ],
-  "description": "VibeKit: spec-driven, multi-agent development for Claude Code and Cursor."
+  "description": "VibeKit: spec-driven development for coding agents, with a person deciding every question that matters."
 }

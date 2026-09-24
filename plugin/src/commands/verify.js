@@ -1,49 +1,47 @@
-import { findFeature, listFeatures } from '../features.js';
-import { repoState, runCountOf, runSuites, runsFor, saveEvidence, SUITE_NAMES } from '../evidence.js';
-import { loadProject } from '../project.js';
-import { testReference, traceFeature } from '../verify.js';
+import { join } from 'node:path';
+import { heldRequirement, recordEvidence } from '../folder/evidence.js';
+import { exists } from '../fsutil.js';
+import { folderName } from './folder.js';
 
-const TRACKED = ['in-progress', 'done'];
-
-async function targets(root, query) {
-  const features = await listFeatures(root);
-  return query ? [findFeature(features, query)] : features.filter((feature) => TRACKED.includes(feature.status));
-}
-
-function printTrace(feature, trace) {
-  console.log(`\n${feature.id} [${feature.status}] — ${trace.covered.length}/${trace.covered.length + trace.missing.length} criteria traced to tests`);
-  trace.covered.forEach(({ criterion, files }) => console.log(`  ✔ AC-${criterion}  ${files.join(', ')}`));
-  trace.missing.forEach((criterion) => console.log(`  ✖ AC-${criterion}  no test named "${testReference(feature, criterion)} …"`));
-  trace.orphans.forEach((criterion) => console.log(`  ! ${testReference(feature, criterion)} is referenced by a test but not in the spec`));
-}
-
-async function recordRun(root, traces, results) {
-  const state = repoState(root);
-  const passed = results.every((result) => result.ok) && traces.every(({ trace }) => !trace.missing.length);
-  console.log(`\n${results.map((result) => {
-    const { runs, passed: green, flaky } = runCountOf(result);
-    return `${flaky ? '⚠' : result.ok ? '✔' : '✖'} ${SUITE_NAMES[result.suite]}${runs > 1 ? ` ${green}/${runs}` : ''}`;
-  }).join('  ')}`);
-  // Naming the flakes separately: they are the results people most often skim past as "passed".
-  const flakes = results.filter((result) => result.flaky);
-  flakes.forEach((result) => console.log(`⚠ ${SUITE_NAMES[result.suite]} is flaky — ${result.passed} of ${result.runs} runs passed. This will not count as evidence.`));
-  if (!state) return console.log('! Not a git repository: results are not recorded as evidence (git init to enable).');
-  for (const { feature } of traces) {
-    await saveEvidence(root, feature.id, { commit: state.commit, dirty: state.dirty, suites: results });
+/**
+ * `vibekit verify`. Specification §55 (Claims are evidence, not statements).
+ *
+ * Runs the commands in map.md, captures the exit codes into the requirement's `## Evidence`, and
+ * says whether it is green. `status: tested` is refused without an evidence block whose sha
+ * matches HEAD, so this is the only way work reaches the reviewer.
+ */
+export async function verify({ root, args, json, folder: chosen }) {
+  const folder = chosen ?? (await folderName(root));
+  if (!(await exists(join(root, folder, 'product/requirements')))) {
+    throw new Error(`No ${folder}/product/requirements/ here. \`vibekit init\` writes the folder; \`vibekit add\` writes a requirement.`);
   }
-  console.log(state.dirty ? '! Uncommitted changes: evidence recorded but will not count. Commit, then run again.' : `✔ Evidence recorded for commit ${state.commit.slice(0, 8)}`);
-}
 
-export async function verify({ root, args, run: shouldRun, json, repeat }) {
-  const project = await loadProject(root);
-  const runs = repeat === undefined ? runsFor(project) : Number(repeat);
-  if (!Number.isInteger(runs) || runs < 1) throw new Error(`--repeat must be a positive whole number, got "${repeat}"`);
-  const features = await targets(root, args[0]);
-  const traces = await Promise.all(features.map(async (feature) => ({ feature, trace: await traceFeature(root, feature) })));
-  if (json) console.log(JSON.stringify(traces.map(({ trace }) => trace), null, 2));
-  else traces.forEach(({ feature, trace }) => printTrace(feature, trace));
-  const untraced = traces.some(({ trace }) => trace.missing.length);
-  const results = shouldRun ? runSuites(project, root, { runs }) : [];
-  if (shouldRun) await recordRun(root, traces, results);
-  if (untraced || results.some((result) => !result.ok)) process.exitCode = 1;
+  const named = args.find((argument) => /^(?:REQ|MIG|BUG)-/i.test(argument));
+  const id = named?.toUpperCase() ?? (await heldRequirement(root, folder));
+  if (!id) {
+    console.log('Nothing to verify: no requirement is named and none is held.');
+    console.log('  vibekit verify REQ-001    records evidence for one requirement');
+    console.log('  vibekit start REQ-001 --as implementer, then vibekit verify, records for the one you hold');
+    return;
+  }
+
+  const result = await recordEvidence(root, id, { folder });
+  if (json) return void console.log(JSON.stringify(result, null, 2));
+
+  if (!result.ran) {
+    console.log(`! Nothing ran: ${folder}/product/map.md names no build, test or smoke command.`);
+    console.log(`  ## Evidence was written saying so. \`${id}\` cannot reach tested until a command exists to prove it.`);
+    process.exitCode = 1;
+    return;
+  }
+
+  for (const entry of result.results) {
+    console.log(`${entry.code === 0 ? '✔' : '✖'} ${entry.suite.padEnd(6)} ${entry.command}  exit ${entry.code}${entry.timedOut ? ' (timed out)' : ''}  ${entry.seconds}s`);
+    if (entry.code !== 0) for (const line of String(entry.output).trim().split('\n').slice(-8)) console.log(`    ${line}`);
+  }
+  console.log('');
+  console.log(`${result.green ? '✔' : '✖'} ## Evidence written to ${id}${result.commit ? ` for commit ${result.commit.slice(0, 7)}` : ''}${result.dirty ? ' · working tree dirty' : ''}`);
+  if (result.dirty) console.log('  Evidence on a dirty tree describes files that were not committed. Commit, then run this again before tested.');
+  if (!result.green) process.exitCode = 1;
+  else console.log(`  Next: vibekit req tested ${id}`);
 }

@@ -1,77 +1,89 @@
-import { findFeature, listFeatures } from '../features.js';
-import { createAsker } from '../menu.js';
-import { loadProject } from '../project.js';
-import { applySecurity, publishSecurity, readSecurityAnswers, requirementsOrEmpty } from '../security/apply.js';
-import { findControl, implementationFor, stackFamily } from '../security/controls.js';
-import { securityRounds } from '../security/questions.js';
-import { traceFeature } from '../verify.js';
-import { sync } from './sync.js';
+import { createBug } from '../folder/bugs.js';
+import { writeText } from '../fsutil.js';
+import { frameworksFor, readPosture, renderScan, savePosture, scanContext, scanReportPath, score, securityProbe, securityRead } from '../security/scan.js';
+import { folderName } from './folder.js';
 
-const USAGE = 'Usage: vibekit security [questions [--json] | apply [--from <answers.json>] | status]';
-
-async function finish(root, raw, force) {
-  const { project, criteria, workflowCreated, saved } = await applySecurity(root, raw);
-  await sync({ root, force });
-  const published = await publishSecurity(root, project);
-  const { controls, acceptedRisks } = project.security;
-  console.log(`✔ Security baseline: ${controls.length} controls → specs/project.json, specs/security.md, AGENTS.md`);
-  console.log(`✔ ${criteria.added} acceptance criteria added to ${criteria.featureId} (each needs a passing test before done)`);
-  if (workflowCreated) console.log('✔ CI security workflow created: .github/workflows/security.yml');
-  if (saved || published) console.log(`✔ Saved to ${[saved && 'agentmemory', published && 'OpenContext'].filter(Boolean).join(' and ')}`);
-  acceptedRisks.forEach((risk) => console.log(`! Accepted risk: ${findControl(risk.id).title} — ${risk.reason}`));
-}
-
-export async function interactiveSecurity(root, { asker, force }) {
-  const raw = {};
-  for (const round of securityRounds(await requirementsOrEmpty(root))) {
-    console.log(`\n── ${round.title} ──`);
-    for (const question of round.questions) raw[question.id] = await asker.choose(question);
-  }
-  await finish(root, raw, force);
-}
-
-async function questions(root, { json }) {
-  const rounds = securityRounds(await requirementsOrEmpty(root));
-  if (json) return console.log(JSON.stringify({ rounds }, null, 2));
-  rounds.forEach((round) => {
-    console.log(`\n${round.title}`);
-    round.questions.forEach((question) => console.log(`  ${question.id}${question.multi ? ' (multi)' : ''}: ${question.options.map((option) => `${option.id}${question.defaults.includes(option.id) ? '*' : ''}`).join(' | ')}`));
-  });
-  console.log('\n* = secure default');
-}
-
-async function status(root) {
-  const project = await loadProject(root);
-  const family = stackFamily(project);
-  if (!project.security.controls.length) return console.log('No security baseline yet. Run: vibekit security');
-  project.security.controls.map(findControl).forEach((item) => console.log(`✔ ${item.title} — ${implementationFor(item, family)}`));
-  project.security.acceptedRisks.forEach((risk) => console.log(`! Accepted risk: ${findControl(risk.id).title}`));
-  const features = await listFeatures(root);
-  const target = features.find((feature) => feature.spec.includes('(security: '));
-  if (!target) return;
-  const trace = await traceFeature(root, findFeature(features, target.id));
-  console.log(`\n${target.id}: ${trace.covered.length} of ${trace.covered.length + trace.missing.length} criteria traced to tests (vibekit verify ${target.id.slice(0, 3)})`);
-}
-
-async function withAsker(work) {
-  const asker = createAsker();
-  try {
-    return await work(asker);
-  } finally {
-    asker.close();
-  }
-}
-
-const ACTIONS = {
-  questions,
-  apply: async (root, { from, force }) => finish(root, await readSecurityAnswers(root, from), force),
-  status,
-};
-
+/**
+ * `vibekit security scan` and `vibekit security`. Specification §70.
+ *
+ * `scan` runs the four passes and writes the report; bare `security` prints the current posture
+ * from the last scan without re-running. High findings become bugs and block the sprint gate.
+ */
 export async function security(options) {
-  const [action] = options.args;
-  if (!action) return withAsker((asker) => interactiveSecurity(options.root, { asker, force: options.force }));
-  const run = ACTIONS[action];
-  if (!run) throw new Error(USAGE);
-  await run(options.root, options);
+  const { root, args, folder: chosen, json } = options;
+  const folder = chosen ?? (await folderName(root));
+  const [verb] = args;
+
+  if (verb === 'scan') return scan(root, folder, options);
+  if (verb && verb !== 'status') throw new Error('Usage: vibekit security [scan [--url <address>] [--allow-private] [--online] [--no-bugs]]');
+
+  const posture = await readPosture(root, folder);
+  if (json) return void console.log(JSON.stringify(posture, null, 2));
+  if (!posture?.last) return void console.log('No scan yet. `vibekit security scan` measures the application against the frameworks that apply.');
+  console.log(`Posture · last scan ${posture.last.date}`);
+  for (const framework of posture.last.frameworks) console.log(`  ${framework.id.padEnd(18)} ${String(framework.met).padStart(3)} of ${String(framework.applicable).padEnd(3)} met · ${framework.failed} failed · ${framework.human} need a person`);
+  console.log(`  ${posture.last.high} high · ${posture.last.medium} medium · ${posture.last.low} low`);
+  if (posture.history.length > 1) {
+    const first = posture.history[0];
+    const trend = posture.last.high - first.high;
+    console.log(`  Trend since ${first.date}: high findings ${trend <= 0 ? `down ${-trend}` : `up ${trend}`} — ${trend <= 0 ? 'getting safer' : 'accumulating exceptions'}`);
+  }
+}
+
+async function scan(root, folder, options) {
+  const { json } = options;
+  const context = await scanContext(root, { folder });
+  const frameworks = await frameworksFor(root, { folder, context });
+  const { installed } = await import('../extensions.js');
+  const scoring = await installed('security-frameworks');
+
+  const read = await securityRead(root, { folder, offline: !options.online, context });
+  let probe = null;
+  if (options.url) probe = await securityProbe(root, options.url, { allowPrivate: Boolean(options['allow-private']), folder });
+
+  const evidence = { ...read.evidence, ...(probe?.evidence ?? {}) };
+  const findings = [...read.findings, ...(probe?.findings ?? [])];
+  const scored = scoring ? score(frameworks, evidence, { probed: Boolean(probe), context }) : [];
+
+  // Every finding becomes a bug with the control it fails, unless told not to (a re-run should
+  // not open the same bug twice; the report is the record either way).
+  if (!options['no-bugs']) {
+    const { listRequirements } = await import('../folder/requirements.js');
+    const existing = await listRequirements(root, folder).catch(() => []);
+    for (const finding of findings) {
+      const title = `${finding.check}: ${finding.message}`.slice(0, 110);
+      const already = existing.find((entry) => entry.kind === 'bug' && entry.status !== 'done' && entry.title === title);
+      if (already) { finding.bug = already.id; continue; }
+      const created = await createBug(root, {
+        title, severity: finding.severity, foundBy: 'vibekit security scan', foundOn: finding.where ?? 'main', by: 'human',
+        criterion: `The system shall satisfy ${finding.check} (${finding.message.replace(/\.$/, '')}).`,
+      }, folder).catch(() => null);
+      if (created) { finding.bug = created.id; existing.push({ id: created.id, kind: 'bug', status: 'draft', title }); }
+    }
+  }
+
+  const date = new Date().toISOString().slice(0, 10);
+  const result = { date, frameworks: scored, findings, high: findings.filter((entry) => entry.severity === 'high'), medium: findings.filter((entry) => entry.severity === 'medium'), low: findings.filter((entry) => entry.severity === 'low'), probed: Boolean(probe), evidence };
+  const reportPath = scanReportPath(root, new Date());
+  await writeText(reportPath, renderScan(result));
+  result.report = reportPath;
+  await savePosture(root, result, folder);
+
+  if (json) return void console.log(JSON.stringify(result, null, 2));
+
+  if (scoring) {
+    for (const framework of scored) console.log(`  ${(framework.name + (framework.level ? ` ${framework.level}` : '')).padEnd(22)} ${String(framework.met).padStart(3)} of ${String(framework.applicable).padEnd(4)} applicable   ${framework.failed} failed · ${framework.human} need a person`);
+  } else {
+    console.log('  Framework scoring is an extension: vibekit ext add security-frameworks. The read pass below ran regardless.');
+  }
+  console.log('');
+  console.log(`  ${result.high.length} high · ${result.medium.length} medium · ${result.low.length} low  →  ${findings.filter((entry) => entry.bug).length} bug(s) open, high ones block the sprint gate`);
+  for (const finding of findings.slice(0, 12)) console.log(`    ${finding.severity.padEnd(6)} ${finding.check.padEnd(14)} ${finding.message}${finding.bug ? `  → ${finding.bug}` : ''}`);
+  if (findings.length > 12) console.log(`    … ${findings.length - 12} more in the report`);
+  if (!probe) console.log('  Probe pass skipped: --url <address> runs headers, TLS, rate-limit and auth probes against the deployed application.');
+  console.log(`  Report: ${reportPath}`);
+  console.log('');
+  console.log('  Not a substitute for a human penetration test before real money or real personal data goes live; it is what');
+  console.log('  makes sure that tester spends their time on what a machine cannot find.');
+  if (result.high.length) process.exitCode = 1;
 }
