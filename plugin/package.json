@@ -10,11 +10,9 @@
     "bin",
     "src",
     "examples",
+    "fixtures",
     "scripts",
-    "standards",
     "skills",
-    "playbooks",
-    "agents",
     "hooks",
     ".claude-plugin"
   ],
@@ -22,9 +20,12 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "node scripts/build-plugin.js",
     "test": "node --test test/*.test.js",
-    "test:repeat": "node scripts/repeat-tests.js 3"
+    "test:repeat": "node scripts/repeat-tests.js 3",
+    "simulate": "node tools/simulate.mjs",
+    "recovery": "node tools/recovery.mjs",
+    "golden": "node tools/golden.mjs",
+    "golden:check": "node tools/golden.mjs --check"
   },
   "license": "MIT"
 }
