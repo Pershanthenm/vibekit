@@ -11,6 +11,7 @@
     "src",
     "examples",
     "fixtures",
+    "library",
     "scripts",
     "skills",
     "hooks",

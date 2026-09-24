@@ -1,6 +1,9 @@
 .DS_Store
 site/node_modules
 site/dist
+site/.vite
+* 2
+* 3
 * 2.js
 * 2.mjs
 * 2.md

@@ -109,7 +109,8 @@ async function walk(dir, prefix = '') {
 
 /** The shape of a `<name>.test.md`, which §56 gives exactly. */
 export function parseSkillTest(text) {
-  const meta = readFrontMatter(String(text ?? ''));
+  // A shipped test is a generated file, so its first line is the header; the front matter is next.
+  const meta = readFrontMatter(String(text ?? '').replace(/^<!--[\s\S]*?-->\n/, ''));
   const list = (value) => {
     const raw = String(value ?? '').trim();
     if (!raw) return [];
@@ -293,6 +294,8 @@ export function overlaps(skills, { limit = OVERLAP_LIMIT } = {}) {
   const found = [];
   for (let i = 0; i < skills.length; i += 1) {
     for (let j = i + 1; j < skills.length; j += 1) {
+      // The same skill at two scopes is the override chain's business, not an overlap.
+      if (skills[i].name === skills[j].name) continue;
       const left = new Set(skills[i].triggers.map((trigger) => String(trigger).toLowerCase()));
       const right = new Set(skills[j].triggers.map((trigger) => String(trigger).toLowerCase()));
       if (!left.size || !right.size) continue;
@@ -307,7 +310,14 @@ export function overlaps(skills, { limit = OVERLAP_LIMIT } = {}) {
 
 /** Which three would load for a task, and which were left out. §56's budget. */
 export function loadFor(skills, task, { limit = LOAD_LIMIT } = {}) {
-  const matching = skills
+  // One body per name: when a skill exists at several scopes, only the winner of the override
+  // chain loads — the point of the chain is that the others do not.
+  const winners = new Map();
+  for (const skill of skills) {
+    const current = winners.get(skill.name);
+    if (!current || (SCOPE_ORDER[skill.scope] ?? 9) < (SCOPE_ORDER[current.scope] ?? 9)) winners.set(skill.name, skill);
+  }
+  const matching = [...winners.values()]
     .filter((skill) => fires(skill, task))
     // The most specific triggers win: a skill that fired on a longer phrase matched more of the
     // task, which is a better reason to load it than alphabetical order.

@@ -85,8 +85,11 @@ export const FOLDER_FILES = Object.freeze([
 
   // --- skills: indexed, never injected ------------------------------------------------------
   { path: 'skills/.abstract', kind: Kind.Generated, source: 'abstract', loading: Loading.Always, budget: 100, ceiling: 120 },
-  { path: 'skills/index.yml', kind: Kind.Generated, source: 'skills', loading: Loading.Always, budget: 20, base: 15, perUnit: 'skill' },
+  /** An entry is a name, three to six trigger phrases and a path: about forty tokens, not the twenty a list of single words would cost. */
+  { path: 'skills/index.yml', kind: Kind.Generated, source: 'skills', loading: Loading.Always, budget: 40, base: 15, perUnit: 'skill' },
   { path: 'skills/lib/*.md', kind: Kind.Authored, loading: Loading.OnTrigger, budget: 250, glob: true },
+  /** §56 — the shipped library, written by the generator so file-driven agents can read it; a repo copy in lib/ wins. */
+  { path: 'skills/lib/vibekit/*.md', kind: Kind.Generated, source: 'library', loading: Loading.OnTrigger, budget: 400, glob: true },
 
   // --- agents: a role is a load set plus a write scope ---------------------------------------
   { path: 'agents/analyst.md', kind: Kind.Authored, loading: Loading.Never, budget: 0 },

@@ -91,6 +91,8 @@ vibekit check                    # every mechanical check
 vibekit check --runners          # each runner can reach the folder; which are unsandboxed
 vibekit check --servers          # if the project declares MCP servers: declared well, credential present, reachable
 vibekit project select --rescan ~/code   # register the projects you already have, so `vibekit action` sees them
+vibekit skills                   # the 27 skills that ship with VibeKit, plus the project's own; `skills adopt <name>` to take one over
+vibekit skills catalogue         # 374 more in 16 domains; `skills enable <name|domain>` indexes the ones this project is about
 ```
 
 ## 7. Your phone

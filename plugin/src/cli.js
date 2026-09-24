@@ -90,6 +90,8 @@ const OPTIONS = {
   read: { type: 'string' },
   advise: { type: 'boolean' },
   'no-tour': { type: 'boolean' },
+  'no-library': { type: 'boolean' },
+  domain: { type: 'string' },
   deps: { type: 'boolean' },
   offline: { type: 'boolean' },
   online: { type: 'boolean' },
@@ -234,7 +236,7 @@ Shipping
   vibekit undo <id>                             Remove a shipped feature cleanly; dependants go to review
 
 Setup
-  vibekit init [--yes] [--adopt] [--from-speckit] [--delivery none|checks-only|full]
+  vibekit init [--yes] [--adopt] [--from-speckit] [--delivery none|checks-only|full] [--no-library]
   vibekit team [add "<Name> <email>" --role "<role>" | codeowners]
   vibekit cost                                  Spend against forecast by sprint, model and piece of work
   vibekit settings [<key> <value> | tiers | frameworks | server <id> <token> | trust <name> <pub> | require-signed true]
@@ -251,7 +253,9 @@ Setup
 Also
   vibekit ingest <file> [--yes] · ask · req · start · unhold · tracker [--tunnel] · serve [--stdio | --tracker] [--sandbox]
   vibekit verify · drift · trace --matrix · assumptions · evidence · changelog · ship · reverse · distil · clarify
-  vibekit skills · test-skills · upgrade-prompts · rescan · githook · tour · spec · version
+  vibekit skills [catalogue [<word>] | enable <name|domain> | disable | adopt <name> | reference <name> | --for "<task>"]
+  vibekit test-skills
+  vibekit upgrade-prompts · rescan · githook · tour · spec · version
 
 Options
   --dir <path>   Project root (default: current directory)

@@ -34,7 +34,8 @@ export async function budgetReport(root, folder = 'vibekit', { delivery = 'check
 
   // Counted first: a per-unit budget cannot be checked until the units are known.
   const requirementFiles = await listGlob(join(base, 'product/requirements'), /^(?:REQ|MIG|BUG)-.*\.md$/);
-  const skillFiles = await listGlob(join(base, 'skills/lib'), /^(?!.*\.test\.md$).*\.md$/);
+  // The project's own skills and the shipped ones both cost an index entry.
+  const skillFiles = [...await listGlob(join(base, 'skills/lib'), /^(?!.*\.test\.md$).*\.md$/), ...await listGlob(join(base, 'skills/lib/vibekit'), /^(?!.*\.test\.md$).*\.md$/)];
   const memoryFiles = await listGlob(join(base, 'memory/repo'), /\.md$/);
   const entitiesText = await readText(join(base, 'product/entities.md'));
   const entityCount = countSections(entitiesText);
