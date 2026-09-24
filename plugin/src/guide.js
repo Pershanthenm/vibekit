@@ -1,17 +1,16 @@
 // What someone sees when they type `vibekit` with nothing after it, or misspell a command.
 //
-// The old behaviour printed forty lines of usage in both cases — and a typo exited 0, so a
-// script could not tell a mistake from success. A first-time reader got every command at once
-// with no clue which to run first.
-//
-// This answers one question instead: given the state of this folder, what should you do next?
+// Both used to print forty lines of usage — and a typo exited 0, so a script could not tell a
+// mistake from success. This answers one question instead: given the state of this folder, what
+// should you do next? A first-time reader gets the pitch once (§65) and the one command that fits.
 
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { listFeatures } from './features.js';
+import { FOLDER_NAMES } from './folder/layout.js';
+import { listRequirements, readTasksState } from './folder/requirements.js';
+import { currentStage, nextAction } from './folder/workflow.js';
 import { exists } from './fsutil.js';
-import { nextAction } from './next.js';
-import { PROJECT_FILE, loadProject } from './project.js';
+import { gerund } from './folder/sprints.js';
 
 // Colour only when someone is actually watching. Piped output, CI logs and the tests all get
 // plain text, so nothing has to strip escape codes back out.
@@ -30,16 +29,16 @@ export function commandList(entries) {
   return entries.map(([command, description]) => `  ${bold(pad(command, width))}  ${dim(description)}`).join('\n');
 }
 
-// Files that mean "there is already a codebase here", so `adopt` is the honest first suggestion
-// rather than `init`, which would scaffold over the top of someone's work.
-const CODE_MARKERS = [
-  'package.json', 'pyproject.toml', 'requirements.txt', 'go.mod', 'Cargo.toml',
-  'pom.xml', 'build.gradle', 'build.gradle.kts', 'composer.json', 'Gemfile', 'pubspec.yaml',
-];
+// Files that mean "there is already a codebase here", so `project import` is the honest first
+// suggestion rather than `project new`, which would start a spec as if the code did not exist.
+const CODE_MARKERS = ['package.json', 'pyproject.toml', 'requirements.txt', 'go.mod', 'Cargo.toml', 'pom.xml', 'build.gradle', 'build.gradle.kts', 'composer.json', 'Gemfile', 'pubspec.yaml', '*.sln'];
 
 async function looksLikeExistingCode(root) {
-  const markers = await Promise.all(CODE_MARKERS.map((file) => exists(join(root, file))));
-  if (markers.some(Boolean)) return true;
+  for (const file of CODE_MARKERS) {
+    if (file.startsWith('*')) {
+      if ((await readdir(root).catch(() => [])).some((name) => name.endsWith(file.slice(1)))) return true;
+    } else if (await exists(join(root, file))) return true;
+  }
   try {
     return (await readdir(join(root, 'src'))).length > 0;
   } catch {
@@ -47,127 +46,78 @@ async function looksLikeExistingCode(root) {
   }
 }
 
-function startingOptions(hasCode) {
-  const start = [
-    ['vibekit wizard', 'pick your stack in a browser, then come back'],
-    ['vibekit init', 'answer the same questions here in the terminal'],
-  ];
-  // Ordered by what is actually true of this folder, rather than always leading with `init`.
-  return hasCode
-    ? [['vibekit adopt', 'there is already code here — adopt it, do not scaffold over it'], ...start]
-    : start;
+async function folderIn(root) {
+  for (const name of FOLDER_NAMES) if (await exists(join(root, name, 'profile.md'))) return name;
+  return null;
 }
 
-async function noProjectScreen(root) {
+async function noFolderScreen(root) {
   const hasCode = await looksLikeExistingCode(root);
+  const start = hasCode
+    ? [['vibekit project import .', 'there is code here — read it and explain it back before anything is written'], ['vibekit project new', 'start a spec beside it anyway']]
+    : [['vibekit project new', 'name it, say what you want, answer the questions, get a spec'], ['vibekit project select', 'your projects on this machine, with where each one got to']];
   return [
     '',
-    `  ${bold('vibekit')} ${dim('· spec-driven development for Claude Code and Cursor')}`,
+    `  ${bold('vibekit')} ${dim('· spec-driven development for coding agents, with a person deciding every question that matters')}`,
     '',
-    `  ${hasCode ? 'There is code here, but no vibekit project yet.' : 'No project here yet.'}`,
+    `  ${hasCode ? 'There is code here, but no vibekit/ folder yet.' : 'No project here yet.'}`,
     '',
     `  ${heading('Start here')}`,
-    commandList(startingOptions(hasCode)),
+    commandList(start),
     '',
-    `  ${dim(`Not sure? Run ${hasCode ? 'vibekit adopt' : 'vibekit wizard'}.`)}`,
-    `  ${dim('Every command: vibekit --help')}`,
+    `  ${dim('Every command: vibekit --help · the tour: vibekit tour')}`,
     '',
   ].join('\n');
 }
 
-const describeStack = (project) => [project.stack.backend, project.stack.frontend, project.stack.database]
-  .map((entry) => String(entry ?? '').split(' — ')[0])
-  .filter(Boolean)
-  .join(' · ');
-
-async function projectScreen(root, project) {
-  const features = await listFeatures(root);
-  const done = features.filter((feature) => feature.status === 'done').length;
-  const next = await nextAction(root, project).catch(() => null);
-
+async function projectScreen(root, folder) {
+  const [stage, action, requirements, tasks] = await Promise.all([
+    currentStage(root, folder), nextAction(root, folder), listRequirements(root, folder), readTasksState(root, folder),
+  ]);
+  const done = requirements.filter((entry) => entry.status === 'done').length;
+  const held = Object.entries(tasks.held);
   const lines = [
     '',
-    `  ${bold(project.project.name)} ${dim(`· ${describeStack(project) || 'stack not chosen yet'}`)}`,
-    `  ${dim(`${features.length} feature${features.length === 1 ? '' : 's'} · ${done} done`)}`,
+    `  ${bold(root.split(/[\\/]/).pop())} ${dim(`· stage ${stage.n} ${stage.name} · ${done} of ${requirements.length} done`)}`,
     '',
   ];
-
-  if (next) {
-    lines.push(`  ${heading('Do this next')}`);
-    lines.push(`  ${next.reason}`);
-    lines.push(`  ${bold(next.command)}`);
-    if (next.gate) lines.push(`  ${dim(`Waiting on you: ${next.gate}`)}`);
-    lines.push('');
+  if (held.length) lines.push(`  ${heading('In progress')}`, ...held.map(([id, holder]) => `  ${gerund(requirements.find((entry) => entry.id === id)?.title ?? id)} ${dim(`(${holder.role}, ${holder.runner})`)}`), '');
+  if (action) {
+    lines.push(`  ${heading(action.forHuman ? 'Needs you' : 'Next')}`, `  ${action.detail ?? ''}`, commandList([[action.command, action.forHuman ? 'a decision only a person makes' : 'the next piece of work']]), '');
+  } else {
+    lines.push(`  ${heading('Nothing outstanding')}`, '');
   }
-
-  lines.push(`  ${heading('Also useful')}`);
-  lines.push(commandList([
-    ['vibekit dashboard', 'the whole lifecycle and test status, in your browser'],
-    ['vibekit list', 'every feature, its stage and progress'],
-    ['vibekit check', 'are the specs valid and the generated files in sync?'],
-    ['vibekit health', 'is everything this project needs installed and working?'],
-  ]));
-  lines.push('');
-  lines.push(`  ${dim('Every command: vibekit --help')}`);
-  lines.push('');
+  lines.push(
+    `  ${heading('Every day')}`,
+    commandList([['vibekit action', 'everything waiting on you, most blocking first'], ['vibekit sprint run', 'work the current sprint'], ['vibekit project status', 'where things are']]),
+    '',
+    `  ${dim('Every command: vibekit --help')}`,
+    '',
+  );
   return lines.join('\n');
 }
 
-/** The screen for a bare `vibekit`: what to do next, given what is actually in this folder. */
 export async function startScreen(root) {
-  if (!(await exists(join(root, PROJECT_FILE)))) return noProjectScreen(root);
-  const project = await loadProject(root).catch(() => null);
-  if (!project) {
-    return [
-      '',
-      `  ${bold('vibekit')}`,
-      `  ${PROJECT_FILE} exists but could not be read.`,
-      `  ${bold('vibekit check')} ${dim('shows what is wrong')}`,
-      '',
-    ].join('\n');
-  }
-  return projectScreen(root, project);
+  const folder = await folderIn(root);
+  return folder ? projectScreen(root, folder) : noFolderScreen(root);
 }
 
-// Levenshtein, small and iterative. Only ever run against the command list, so the input is tiny.
-function distance(left, right) {
-  const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
-  for (let i = 1; i <= left.length; i += 1) {
-    let diagonal = previous[0];
-    previous[0] = i;
-    for (let j = 1; j <= right.length; j += 1) {
-      const current = previous[j];
-      previous[j] = Math.min(
-        previous[j] + 1,
-        previous[j - 1] + 1,
-        diagonal + (left[i - 1] === right[j - 1] ? 0 : 1),
-      );
-      diagonal = current;
+// Levenshtein, small enough to keep here. A suggestion is only offered when the typo is close.
+function distance(a, b) {
+  const rows = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+  for (let j = 1; j <= b.length; j += 1) rows[0][j] = j;
+  for (let i = 1; i <= a.length; i += 1) {
+    for (let j = 1; j <= b.length; j += 1) {
+      rows[i][j] = Math.min(rows[i - 1][j] + 1, rows[i][j - 1] + 1, rows[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
     }
   }
-  return previous[right.length];
+  return rows[a.length][b.length];
 }
 
-/**
- * The closest command to what was typed, when it is close enough to be worth guessing. A third
- * of the word may differ; beyond that a suggestion is noise and "no such command" is the more
- * useful answer.
- */
-export function closestCommand(typed, names) {
-  const budget = Math.max(1, Math.floor(typed.length / 3));
-  const [best] = names
-    .map((name) => ({ name, score: distance(typed.toLowerCase(), name.toLowerCase()) }))
-    .filter((entry) => entry.score <= budget)
-    .sort((left, right) => left.score - right.score);
-  return best?.name ?? null;
-}
-
-/** What to print when a command does not exist. The caller is responsible for exiting non-zero. */
-export function unknownCommand(typed, names) {
-  const suggestion = closestCommand(typed, names);
-  return [
-    `vibekit: no such command "${typed}"`,
-    suggestion ? `Did you mean ${bold(`vibekit ${suggestion}`)}?` : '',
-    dim('Run "vibekit" for what to do next, or "vibekit --help" for every command.'),
-  ].filter(Boolean).join('\n');
+export function unknownCommand(name, known) {
+  const closest = known.map((candidate) => ({ candidate, score: distance(name, candidate) })).sort((a, b) => a.score - b.score)[0];
+  // Within a third of the word's length: sending someone to the wrong command is worse than
+  // admitting the command is unknown.
+  const suggestion = closest && closest.score <= Math.max(1, Math.floor(name.length / 3)) ? `\n  Did you mean: vibekit ${closest.candidate}?` : '';
+  return `vibekit: no such command "${name}".${suggestion}\n  Every command: vibekit --help`;
 }

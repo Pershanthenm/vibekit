@@ -165,25 +165,3 @@ test('a log that does not exist is not an error', async () => {
   assert.equal(await readSince(join(tempDir('vc-log-'), 'missing.log'), 0), null);
 });
 
-test('lane output reaches the page as an agent writes it', async () => {
-  const root = await newProject('--yes');
-  gitInit(root);
-  await run(['feature', '--dir', root, 'Shared list']);
-
-  const base = worktreeBase(root);
-  mkdirSync(base, { recursive: true });
-  const logPath = join(base, 'api.log');
-  writeFileSync(logPath, 'installing dependencies\n');
-  writeFileSync(join(base, '001-shared-list.json'), JSON.stringify({ feature: '001-shared-list', lanes: [{ name: 'api', logPath }] }));
-
-  const { url } = await serve(root);
-  const streamed = events(`${url}events`, (all) => all.some((event) => event.type === 'log' && /compiling/.test(event.data.text)));
-  setTimeout(() => appendFileSync(logPath, 'compiling\n'), 400);
-
-  const logs = (await streamed).filter((event) => event.type === 'log');
-  const text = logs.map((event) => event.data.text).join('');
-  assert.ok(logs.length, 'the console must receive lane output');
-  assert.equal(logs[0].data.lane, 'api');
-  assert.match(text, /installing dependencies/, 'a page opened late still sees the tail');
-  assert.match(text, /compiling/, 'and everything written after it');
-});

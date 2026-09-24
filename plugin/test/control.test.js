@@ -9,7 +9,10 @@ import { after, test } from 'node:test';
 import { run } from '../src/cli.js';
 import { serveDashboard } from '../src/commands/dashboard.js';
 import { secret } from '../src/live.js';
-import { EXAMPLE, fillSpec, newProject, read } from './helpers.js';
+import { EXAMPLE, newProject, read } from './helpers.js';
+import { generateFolder } from '../src/folder/generate.js';
+import { claim, setStatus, writeSection } from '../src/folder/requirements.js';
+import { listAsks, openAsk } from '../src/folder/asks.js';
 
 console.log = () => {};
 
@@ -31,27 +34,57 @@ const post = (server, body, { token = server.token, type = 'application/json', m
   },
 );
 
-const withFeature = async () => {
+const REQUIREMENT = `---
+id: REQ-001
+title: Cancel a booking
+kind: requirement
+size: M
+status: ready
+entities: [Booking]
+source: BRS-001 §4.2
+after: []
+assumes: []
+---
+
+## Acceptance
+
+- AC-1  When a booking is cancelled, the system shall set its status to \`cancelled\`.
+
+## Security
+
+Touches Booking.
+
+## Approach
+
+## Verification
+
+## Review
+
+## Log
+`;
+
+const withRequirement = async () => {
   const root = await newProject('--from', EXAMPLE);
-  await run(['feature', '--dir', root, 'Shared shopping list']);
+  await generateFolder(root, { name: 'bookings', commands: { test: 't' }, entities: [{ name: 'Booking', class: 'internal' }] });
+  const { writeFile } = await import('node:fs/promises');
+  await writeFile(join(root, 'vibekit/product/requirements/REQ-001.md'), REQUIREMENT);
   return root;
 };
-
-const SPEC = 'specs/features/001-shared-shopping-list/spec.md';
-const TASKS = 'specs/features/001-shared-shopping-list/tasks.md';
+const withFeature = withRequirement;
 
 // --- Who may write ---
 
 test('the token is separate from the link: knowing the url is not enough to change anything', async () => {
-  const root = await withFeature();
+  const root = await withRequirement();
   const server = await serve(root);
-  const before = await read(root, SPEC);
+  const path = 'vibekit/product/requirements/REQ-001.md';
+  const before = await read(root, path);
 
   for (const token of [null, secret(), `${server.token}x`, server.token.slice(0, -1)]) {
-    const response = await post(server, { action: 'feature.status', id: '001', status: 'approved' }, { token });
+    const response = await post(server, { action: 'req.status', id: 'REQ-001', status: 'done' }, { token });
     assert.equal(response.status, 401, `a request with ${token ? 'the wrong token' : 'no token'} must be refused`);
   }
-  assert.equal(await read(root, SPEC), before, 'and nothing may have changed');
+  assert.equal(await read(root, path), before, 'and nothing may have changed');
 });
 
 test('the token never appears in the page, so a leaked link cannot be replayed into a write', async () => {
@@ -88,93 +121,104 @@ test('an action that is not on the list is refused without being looked at', asy
 // --- What a write actually does ---
 
 test('a status change goes through the same gates the CLI applies, and is refused the same way', async () => {
-  const root = await withFeature();
+  const root = await withRequirement();
   const server = await serve(root);
-  const specPath = join(root, SPEC);
-  const before = await readFile(specPath, 'utf8');
+  const path = join(root, 'vibekit/product/requirements/REQ-001.md');
+  const before = await readFile(path, 'utf8');
 
-  // The spec still has TODOs in it, which is exactly what `vibekit status` refuses to approve.
-  const refused = await post(server, { action: 'feature.status', id: '001', status: 'approved' });
+  // Nobody has reviewed it, which is exactly what `vibekit req done` refuses.
+  const refused = await post(server, { action: 'req.status', id: 'REQ-001', status: 'done' });
   assert.equal(refused.status, 409);
   const body = await refused.json();
-  assert.match(body.error, /TODO/i, "the refusal says why, in the CLI's own words");
-  assert.equal(await readFile(specPath, 'utf8'), before, 'a refused change writes nothing');
-  assert.ok(body.state, 'and the truth comes back with it, so the page can redraw honestly');
+  assert.match(body.error, /## Review/, "the refusal says why, in the CLI's own words");
+  assert.equal(await readFile(path, 'utf8'), before, 'a refused change writes nothing');
 
-  // Once the spec is finished the same request is allowed, and lands in the file.
-  await fillSpec(root, '001-shared-shopping-list', { tasks: ['- [ ] T-1 [impl] build it (AC-1)'] });
-  const allowed = await post(server, { action: 'feature.status', id: '001', status: 'approved' });
+  // The same request is allowed once a reviewer has actually written a verdict and a mapping.
+  await writeSection(root, 'REQ-001', 'Evidence', '- test exit 0');
+  await writeSection(root, 'REQ-001', 'Review', 'approved');
+  await writeSection(root, 'REQ-001', 'Verification', 'AC-1 → Cancel_AC1');
+  const allowed = await post(server, { action: 'req.status', id: 'REQ-001', status: 'done' });
   assert.equal(allowed.status, 200);
-  assert.match(await readFile(specPath, 'utf8'), /^status: approved$/m, 'the board and the spec agree, or the board is lying');
-  assert.equal((await allowed.json()).state.features[0].status, 'approved');
+  assert.match(await readFile(path, 'utf8'), /^status: done$/m, 'the board and the file agree, or the board is lying');
 });
 
 test('a status that is not one of ours is a bad request, not a new status', async () => {
-  const root = await withFeature();
+  const root = await withRequirement();
   const server = await serve(root);
 
-  const response = await post(server, { action: 'feature.status', id: '001', status: 'shipped' });
+  const response = await post(server, { action: 'req.status', id: 'REQ-001', status: 'shipped' });
   assert.equal(response.status, 400);
   assert.match((await response.json()).error, /not a status/);
 });
 
-test('ticking a task ticks the box in tasks.md, and only that box', async () => {
-  const root = await withFeature();
-  await fillSpec(root, '001-shared-shopping-list', {
-    tasks: ['- [ ] T-1 [test] prove it (AC-1)', '- [ ] T-2 [impl] build it (AC-1)'],
-  });
+test('the page cannot close a requirement an agent is still holding', async () => {
+  const root = await withRequirement();
+  await setStatus(root, 'REQ-001', 'in-progress', { by: 'agent' });
+  await claim(root, { id: 'REQ-001', role: 'implementer', runner: 'claude-code' });
+  await writeSection(root, 'REQ-001', 'Evidence', '- test exit 0');
+  await writeSection(root, 'REQ-001', 'Review', 'approved');
+  await writeSection(root, 'REQ-001', 'Verification', 'AC-1 → t');
   const server = await serve(root);
-  const tasksPath = join(root, TASKS);
 
-  assert.equal((await post(server, { action: 'task.tick', id: '001', task: 'T-2' })).status, 200);
-  const after = await readFile(tasksPath, 'utf8');
-  assert.match(after, /- \[x\] T-2/);
-  assert.match(after, /- \[ \] T-1/, 'the other task is left alone');
+  const refused = await post(server, { action: 'req.status', id: 'REQ-001', status: 'done' });
+  assert.equal(refused.status, 409);
+  assert.match((await refused.json()).error, /still held by implementer/);
 
-  assert.equal((await post(server, { action: 'task.untick', id: '001', task: 'T-2' })).status, 200);
-  assert.match(await readFile(tasksPath, 'utf8'), /- \[ \] T-2/);
-
-  const missing = await post(server, { action: 'task.tick', id: '001', task: 'T-9' });
-  assert.equal(missing.status, 400, 'a task that does not exist is not invented');
+  // Releasing is a move the page may make, and then closing is allowed.
+  assert.equal((await post(server, { action: 'req.release', id: 'REQ-001' })).status, 200);
+  assert.equal((await post(server, { action: 'req.status', id: 'REQ-001', status: 'done' })).status, 200);
 });
 
-// --- The wizard, served beside the console ---
-
-test('the wizard is served under the same secret path, so one tunnel reaches both', async () => {
-  const root = await withFeature();
-  const server = await serve(root);
-
-  const page = await fetch(`${server.url}wizard`);
-  assert.equal(page.status, 200);
-  const html = await page.text();
-  assert.match(html, /build your spec/i);
-  assert.match(html, /Build from here/, 'the served form can hand the answers straight back');
-  assert.ok(html.includes(server.control), 'and knows where to send them');
-
-  const wrong = await fetch(`http://127.0.0.1:${server.port}/wizard`);
-  assert.equal(wrong.status, 404, 'it is not reachable without the secret path');
-});
-
-test('answers sent from the form land where the CLI already looks for them', async () => {
-  const root = await withFeature();
-  const server = await serve(root);
-
-  const response = await post(server, {
-    action: 'requirements.save',
-    requirements: { platform: 'web', appType: 'crud', licensing: 'permissive' },
+test('answering an ask from the page writes the same files the CLI writes', async () => {
+  const root = await withRequirement();
+  await openAsk(root, {
+    kind: 'question', stage: 1, by: 'analyst', ask: 'Who may cancel a booking?',
+    why: 'It decides the policy.', plain: 'Who is allowed to cancel a booking?',
   });
+  const server = await serve(root);
 
+  const response = await post(server, { action: 'ask.answer', id: 'Q-001', answer: 'The member and any staff member.' });
   assert.equal(response.status, 200);
-  assert.equal((await response.json()).result.saved, 'specs/requirements.json');
-  assert.deepEqual(JSON.parse(await read(root, 'specs/requirements.json')), { platform: 'web', appType: 'crud', licensing: 'permissive' });
+  const [ask] = await listAsks(root);
+  assert.equal(ask.status, 'answered');
+  assert.match(ask.answer, /any staff member/);
+  assert.match(await readFile(join(root, 'vibekit/workflow/answers/1-answers.md'), 'utf8'), /any staff member/);
 });
 
-test('the form cannot post something that is not a set of answers', async () => {
+test('an answer with no words is refused, so an ask is never closed by an empty click', async () => {
+  const root = await withRequirement();
+  await openAsk(root, { kind: 'question', by: 'analyst', ask: 'Who may cancel?', why: 'Policy.', plain: 'Who can cancel?' });
+  const server = await serve(root);
+  assert.equal((await post(server, { action: 'ask.answer', id: 'Q-001', answer: '   ' })).status, 400);
+});
+
+// --- §57 actions beyond status: a note, a size, an added requirement ---
+
+test('the page can add a requirement, size it and leave a note, through the same functions the CLI uses', async () => {
   const root = await withFeature();
   const server = await serve(root);
 
-  for (const requirements of [undefined, 'platform=web', ['web'], 42]) {
-    const response = await post(server, { action: 'requirements.save', requirements });
-    assert.equal(response.status, 400, `${JSON.stringify(requirements)} is not an answer sheet`);
-  }
+  const added = await post(server, { action: 'req.add', title: 'members can cancel a booking' });
+  assert.equal(added.status, 200);
+  const id = (await added.json()).result.id;
+  assert.match(id, /^REQ-\d+$/);
+
+  const sized = await post(server, { action: 'req.size', id, size: 'm' });
+  assert.equal(sized.status, 200);
+  assert.match(await read(root, `vibekit/product/requirements/${id}.md`), /^size: M$/m);
+
+  const noted = await post(server, { action: 'note.add', id, text: 'talk to ops before building this' });
+  assert.equal(noted.status, 200);
+  assert.match(await read(root, `vibekit/product/requirements/${id}.md`), /## Notes\n\n- \d{4}-\d{2}-\d{2} \d{2}:\d{2} \S+: talk to ops/);
+
+  const bad = await post(server, { action: 'req.size', id, size: 'XL' });
+  assert.equal(bad.status, 400);
+
+  // A note on an ask finds the ask's file by its id, however the file was named.
+  await openAsk(root, { kind: 'question', by: 'analyst', ask: 'Who may cancel?', why: 'Policy.', plain: 'Who can cancel?' });
+  const onAsk = await post(server, { action: 'note.add', id: 'Q-001', text: 'ask ops' });
+  assert.equal(onAsk.status, 200);
+  const { readdir } = await import('node:fs/promises');
+  const askFile = (await readdir(join(root, 'vibekit/workflow/asks'))).find((name) => name.startsWith('Q-001'));
+  assert.match(await read(root, `vibekit/workflow/asks/${askFile}`), /## Notes\n\n- .*: ask ops/);
 });

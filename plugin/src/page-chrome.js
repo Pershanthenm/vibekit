@@ -35,7 +35,7 @@ export const THEME = read('atlas.css');
  * in the repository — the served page and the written file cannot disagree, because there is
  * nothing to keep in step.
  */
-export const BROWSER_MODULES = ['dom-morph.js', 'dashboard-render.js', 'scan-plan.js', 'scan-render.js'];
+export const BROWSER_MODULES = ['dom-morph.js', 'dashboard-render.js'];
 
 const OWN_IMPORT = new RegExp(`^(import|export) .*from '\\./(${BROWSER_MODULES.join('|').replace(/\./g, '\\.')})';$`, 'gm');
 

@@ -72,3 +72,33 @@ export async function writeMissing(root, files) {
   }
   return created;
 }
+
+
+/**
+ * A file only its owner may read.
+ *
+ * `chmod 0600` is a silent no-op on Windows, so the redaction mapping and the settings file — one
+ * of which can hold a tunnel token — were world-readable there while the code that "protected"
+ * them returned success. On Windows the equivalent is an ACL: strip inheritance, grant the current
+ * user, nobody else. Returns what it did, so a caller can say so rather than assume.
+ */
+export async function ownerOnly(path) {
+  if (process.platform === 'win32') {
+    const { execFileSync } = await import('node:child_process');
+    const user = process.env.USERNAME ?? process.env.USER;
+    if (!user) return { ok: false, by: 'icacls', why: 'no USERNAME in the environment to grant to' };
+    try {
+      execFileSync('icacls', [path, '/inheritance:r', '/grant:r', `${user}:F`], { stdio: 'ignore' });
+      return { ok: true, by: 'icacls' };
+    } catch (error) {
+      return { ok: false, by: 'icacls', why: String(error.message).split('\n')[0] };
+    }
+  }
+  const { chmod } = await import('node:fs/promises');
+  try {
+    await chmod(path, 0o600);
+    return { ok: true, by: 'chmod' };
+  } catch (error) {
+    return { ok: false, by: 'chmod', why: error.message };
+  }
+}
