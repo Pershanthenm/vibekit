@@ -548,12 +548,19 @@ test('a local MCP server on stdio: launched as words with the credential in its 
     assert.ok(both.problems.some((line) => /url or command, not both/.test(line)));
     const listed = normaliseServer({ id: 'listed', command: ['node', '/tmp/a b/x.mjs'], tools: ['echo'], roles: ['analyst'] });
     assert.deepEqual(listed.command, ['node', '/tmp/a b/x.mjs']);
+    const windowsPath = normaliseServer({ id: 'win', command: ['C:\\Program Files\\nodejs\\node.exe', 'x.mjs'], tools: ['echo'], roles: ['analyst'] });
+    assert.deepEqual(windowsPath.command, ['C:\\Program Files\\nodejs\\node.exe', 'x.mjs']);
+    assert.equal(windowsPath.problems.some((line) => /metacharacters/.test(line)), false, 'a Windows path is words, not a shell string');
     assert.equal(normaliseServer({ id: 'env', command: 'node x', 'token-env': 'lower', tools: ['echo'], roles: ['analyst'] }).problems.some((line) => /token-env/.test(line)), true);
 
+    // A YAML list, not a quoted command line: yamlish treats a value that starts and ends
+    // with `"` as one scalar, so `"node" "file"` would lose the inner quotes. JSON.stringify
+    // keeps a Windows path with spaces as one word.
+    const commandList = `command:\n    - ${JSON.stringify(process.execPath)}\n    - ${JSON.stringify(FAKE_MCP)}`;
     await writeFile(serversPath(root, 'vibekit'), [
-      `- id: notes\n  command: ${process.execPath} "${FAKE_MCP}"\n  token-env: FAKE_TOKEN\n  tools: [echo]\n  roles: [analyst, implementer]\n  data: internal\n  cache: none\n`,
-      `- id: open-notes\n  command: ${process.execPath} "${FAKE_MCP}"\n  tools: [echo]\n  roles: [implementer]\n  data: public\n`,
-      `- id: gone\n  command: ${process.execPath} /nowhere/none.mjs\n  tools: [echo]\n  roles: [analyst]\n  data: public\n`,
+      `- id: notes\n  ${commandList}\n  token-env: FAKE_TOKEN\n  tools: [echo]\n  roles: [analyst, implementer]\n  data: internal\n  cache: none\n`,
+      `- id: open-notes\n  ${commandList}\n  tools: [echo]\n  roles: [implementer]\n  data: public\n`,
+      `- id: gone\n  command:\n    - ${JSON.stringify(process.execPath)}\n    - /nowhere/none.mjs\n  tools: [echo]\n  roles: [analyst]\n  data: public\n`,
     ].join(''));
 
     // check --servers: a stdio server with token-env needs a credential; one without does not.

@@ -1,13 +1,15 @@
 import { execFileSync } from 'node:child_process';
 import { mkdtemp, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { basename, dirname, join, relative, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { similarity } from './distil.js';
 import { DEFAULT_FOLDER } from './folder/layout.js';
 import { readFrontMatter } from './frontmatter.js';
 import { exists, readText, writeText } from './fsutil.js';
 import { indexPath, listSkills } from './skills.js';
 import { estimateProseTokens } from './tokens.js';
+
+const posixRel = (from, to) => relative(from, to).split(sep).join('/');
 
 /**
  * Importing skills from a repository. Extensions and Integration Spec §3.
@@ -173,11 +175,11 @@ export async function importRepository(root, source, { folder = DEFAULT_FOLDER, 
       const body = `# ${skill.title}\n\n${header}\n\n${skill.description ? `${skill.description}\n\n` : ''}${skill.body}${suggestions}\n`;
       const path = join(root, folder, IMPORTED_DIR, `${skill.name}.md`);
       await writeText(path, body);
-      report.written.push(relative(root, path));
+      report.written.push(posixRel(root, path));
       for (const pattern of skill.patterns) {
         const patternPath = join(root, folder, PATTERNS_DIR, `${pattern.name}.md`);
         await writeText(patternPath, `# ${pattern.name}\n\nLifted from ${source} (${skill.source}). Copy this when the shape fits; it is real code, not a description of code.\n\n\`\`\`${pattern.language}\n${pattern.code}\n\`\`\`\n`);
-        report.written.push(relative(root, patternPath));
+        report.written.push(posixRel(root, patternPath));
       }
     }
 
@@ -194,13 +196,13 @@ export async function importRepository(root, source, { folder = DEFAULT_FOLDER, 
     const sourcesPath = join(root, folder, IMPORTED_DIR, 'SOURCES.md');
     const sources = (await readText(sourcesPath)) ?? '# Imported skills\n\nWhat came from where, under which licence, at which commit. A repository with no licence is knowledge you cannot legally redistribute without somebody deciding that deliberately.\n\n| Source | Licence | Commit | Date | Skills |\n| --- | --- | --- | --- | --- |\n';
     await writeText(sourcesPath, `${sources.trimEnd()}\n| ${source} | ${licence ?? '**none — flagged**'} | ${fetched.commit ? fetched.commit.slice(0, 12) : '—'} | ${now().toISOString().slice(0, 10)} | ${converted.map((skill) => skill.name).join(', ') || '—'} |\n`);
-    report.written.push(relative(root, sourcesPath));
+    report.written.push(posixRel(root, sourcesPath));
 
     if (flagged.length && rules === 'flag') {
       const flaggedPath = join(root, folder, IMPORTED_DIR, 'FLAGGED.md');
       const previous = (await readText(flaggedPath)) ?? '# Flagged on import\n\nLines that read like rules, not techniques. In VibeKit an opinion that governs code is a rule in standards/ with a check, or it is nothing. For each: [1] make it a rule (needs a check) · [2] keep as a suggestion · [3] drop.\n';
       await writeText(flaggedPath, `${previous.trimEnd()}\n\n## ${source} · ${now().toISOString().slice(0, 10)}\n\n${flagged.map((entry, index) => `${index + 1}. **${entry.skill}**: "${entry.line}"`).join('\n')}\n`);
-      report.written.push(relative(root, flaggedPath));
+      report.written.push(posixRel(root, flaggedPath));
     }
     return report;
   } finally {

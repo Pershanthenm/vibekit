@@ -438,10 +438,10 @@ test('verify runs the commands in map.md and writes the exit codes into ## Evide
   await run(['add', 'a thing', '--dir', root]);
   const map = join(root, 'vibekit/product/map.md');
   await writeFile(map, (await readFile(map, 'utf8'))
-    .replace(/^build\s{2,}.*$/m, `build     ${process.execPath} -e "process.exit(0)"`)
-    .replace(/^test\s{2,}.*$/m, `test      ${process.execPath} -e "process.exit(0)"`));
+    .replace(/^build\s{2,}.*$/m, `build     "${process.execPath}" -e "process.exit(0)"`)
+    .replace(/^test\s{2,}.*$/m, `test      "${process.execPath}" -e "process.exit(0)"`));
 
-  assert.equal((await mapCommands(root)).test, `${process.execPath} -e "process.exit(0)"`);
+  assert.equal((await mapCommands(root)).test, `"${process.execPath}" -e "process.exit(0)"`);
   const result = await recordEvidence(root, 'REQ-001');
   assert.equal(result.green, true);
 
@@ -460,8 +460,8 @@ test('a red command is recorded red, and tested refuses it', async () => {
   await run(['add', 'a thing', '--dir', root]);
   const map = join(root, 'vibekit/product/map.md');
   await writeFile(map, (await readFile(map, 'utf8'))
-    .replace(/^build\s{2,}.*$/m, `build     ${process.execPath} -e "process.exit(0)"`)
-    .replace(/^test\s{2,}.*$/m, `test      ${process.execPath} -e "process.exit(3)"`));
+    .replace(/^build\s{2,}.*$/m, `build     "${process.execPath}" -e "process.exit(0)"`)
+    .replace(/^test\s{2,}.*$/m, `test      "${process.execPath}" -e "process.exit(3)"`));
 
   const result = await recordEvidence(root, 'REQ-001');
   assert.equal(result.green, false);
