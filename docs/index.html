@@ -131,6 +131,12 @@
       margin-top: 22px; font-size: 20px; color: var(--muted);
       max-width: 38ch; font-style: italic;
     }
+    .inspired {
+      margin-top: 16px; font-family: var(--display); font-size: 13px;
+      font-weight: 700; letter-spacing: .02em; color: var(--faint);
+    }
+    .inspired a { color: var(--muted); text-underline-offset: 3px; }
+    .inspired a:hover { color: var(--brand); }
     .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
     .pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 22px; }
     .pill {
@@ -197,6 +203,7 @@
       letter-spacing: -.02em; line-height: 1.12;
     }
     .sub { color: var(--muted); margin-top: 14px; max-width: 62ch; font-size: 18px; }
+    .sub a { color: var(--fg); text-underline-offset: 3px; }
     .problem {
       display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 36px;
     }
@@ -306,6 +313,12 @@
             Coding agents are fast, and they guess. VibeKit is the folder they have to read,
             the ask they have to write, and the gate only you can close.
           </p>
+          <p class="inspired reveal d2">
+            Inspired by
+            <a href="https://github.com/github/spec-kit">Spec Kit</a>
+            and
+            <a href="https://github.com/buildermethods/agent-os">Agent OS</a>
+          </p>
           <div class="hero-actions reveal d3">
             <a class="btn btn-primary" href="https://github.com/Pershanthenm/vibekit/releases/tag/v0.1.0-alpha">Get Alpha</a>
             <a class="btn btn-ghost" href="#cli">Watch the CLI</a>
@@ -397,8 +410,10 @@
       <div class="wrap">
         <h2>Why not just Spec Kit?</h2>
         <p class="sub">
-          GitHub Spec Kit is excellent at the first pass. That loop ends when the code exists.
-          VibeKit maps onto those same steps — and then keeps the chain. Coming from Spec Kit?
+          Inspired by <a href="https://github.com/github/spec-kit">GitHub Spec Kit</a> and
+          <a href="https://github.com/buildermethods/agent-os">Agent OS</a>: the first-pass loop
+          that writes a spec, a plan and code. That loop ends when the code exists. VibeKit maps
+          onto those same steps — and then keeps the chain. Coming from Spec Kit?
           <code>vibekit project import . --speckit</code> reads the existing files and loses nothing.
         </p>
         <div class="table-wrap">
@@ -514,7 +529,10 @@ vibekit tracker stock   # QR code; approve gates from your phone</pre>
       <img src="logo.svg" alt="" width="22" height="22" style="vertical-align:middle;border-radius:6px;margin-right:8px">
       VibeKit Alpha ·
       <a href="https://github.com/Pershanthenm/vibekit">github.com/Pershanthenm/vibekit</a>
-      · Coming from Spec Kit does not mean starting over.
+      · Inspired by
+      <a href="https://github.com/github/spec-kit">Spec Kit</a>
+      and
+      <a href="https://github.com/buildermethods/agent-os">Agent OS</a>.
     </div>
   </footer>
 
