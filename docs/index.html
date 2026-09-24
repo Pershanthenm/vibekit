@@ -65,10 +65,11 @@
       background: var(--surface-inverse); color: #d7d7e3; font-family: var(--font-mono);
       font-size: 12.5px; line-height: 1.65; padding: var(--sp-4); border-radius: var(--r-md); overflow: auto;
     }
-    .helper { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: var(--text-md); }
+    .helper { display: grid; grid-template-columns: minmax(12ch, 1fr) 1.4fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: var(--text-md); align-items: baseline; }
     .helper:last-child { border-bottom: 0; }
-    .helper b { font-family: var(--font-mono); font-size: 12.5px; }
+    .helper b { font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; overflow-wrap: anywhere; }
     .helper span { color: var(--fg-muted); }
+    @media (max-width: 720px) { .helper { grid-template-columns: 1fr; gap: 4px; } }
     .quote { font-size: var(--text-2xl); font-weight: 800; letter-spacing: var(--tracking-tight); line-height: 1.15; max-width: 22ch; }
     @keyframes blink { 50% { opacity: 0; } }
     @media (prefers-reduced-motion: reduce) { .caret { animation: none; } }
@@ -94,6 +95,7 @@
       <a href="#tracker" data-tip="Tracker"><svg class="ic" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg><span>Tracker</span></a>
       <a href="#lanes" data-tip="Lanes"><svg class="ic" viewBox="0 0 24 24"><path d="M4 5v14M12 5v14M20 5v14"/></svg><span>Lanes</span></a>
       <a href="#cost" data-tip="Cost"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v10M9.5 9.5h3.5a1.5 1.5 0 0 1 0 3h-2a1.5 1.5 0 0 0 0 3H15"/></svg><span>Cost</span></a>
+      <a href="#commands" data-tip="Commands"><svg class="ic" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>Commands</span></a>
       <a href="#install" data-tip="Install"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg><span>Install</span></a>
     </nav>
     <div class="side-foot">
@@ -246,31 +248,112 @@
 
       <section id="helpers" class="stack">
         <div>
-          <h2 class="t-h1">The helpers, mapped</h2>
-          <p class="prose">Spec Kit’s slash commands walk specify → plan → tasks → implement. VibeKit’s helpers stop the agent when a person is needed, and they keep going after the code is written.</p>
+          <h2 class="t-h1">The helpers</h2>
+          <p class="prose">Slash commands in Claude Code. They are a thin layer over the CLI, so Cursor, Codex and an MCP client stay on the same workflow.</p>
         </div>
+        <article class="card">
+          <div class="grid">
+            <div class="span-6">
+              <div class="helper"><b>/vibekit.clarify</b><span>Asks first. Assumptions get ids.</span></div>
+              <div class="helper"><b>/vibekit.next</b><span>Whatever the current gate allows</span></div>
+              <div class="helper"><b>/vibekit.build</b><span>One requirement, one branch, evidence</span></div>
+              <div class="helper"><b>/vibekit.review</b><span>Second model. A person sets done.</span></div>
+            </div>
+            <div class="span-6">
+              <div class="helper"><b>/vibekit.status</b><span>Where everything stands, in words</span></div>
+              <div class="helper"><b>/vibekit.why</b><span>Why this line of code exists</span></div>
+              <div class="helper"><b>/vibekit.hotfix</b><span>Production is down. Stay small.</span></div>
+              <div class="helper"><b>/vibekit.new-feature</b><span>Add work without a new planning pile</span></div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section id="commands" class="stack">
+        <div>
+          <h2 class="t-h1">The command surface</h2>
+          <p class="prose">Grouped the way <code>vibekit --help</code> prints it. Global options are <code>--dir &lt;path&gt;</code> for the project root and <code>--json</code> where a command has it.</p>
+        </div>
+        <article class="card" style="background:var(--accent-tint)">
+          <div class="t-overline">A normal day</div>
+          <h3 class="card-title">Two commands.</h3>
+          <p class="prose"><code>vibekit action</code> in the morning, and <code>vibekit sprint run</code> once you have cleared it. Or none of this, and the tracker on your phone.</p>
+          <pre class="pre">vibekit action          # everything waiting on you, most blocking first
+vibekit sprint run      # the current sprint, several agents at once
+vibekit tracker stock   # QR code; approve gates from your phone</pre>
+        </article>
         <div class="grid">
           <article class="card span-6">
-            <h3 class="card-title">Spec Kit</h3>
-            <div class="helper"><b>/speckit.constitution</b><span>Governing principles</span></div>
-            <div class="helper"><b>/speckit.specify</b><span>What to build</span></div>
-            <div class="helper"><b>/speckit.clarify</b><span>Resolve ambiguities</span></div>
-            <div class="helper"><b>/speckit.plan</b><span>Stack and architecture</span></div>
-            <div class="helper"><b>/speckit.tasks</b><span>Break the plan down</span></div>
-            <div class="helper"><b>/speckit.implement</b><span>Execute the tasks</span></div>
-            <div class="helper"><b>/speckit.analyze</b><span>Cross-check the artefacts</span></div>
-            <div class="helper"><b>/speckit.converge</b><span>Append leftover work</span></div>
+            <h3 class="card-title">Projects</h3>
+            <div class="helper"><b>project new</b><span>Starts a project. <code>--name</code>, <code>--describe</code>, <code>--from</code>, <code>--platform</code></span></div>
+            <div class="helper"><b>project select</b><span>Lists your projects and picks one. <code>--needs-me</code>, <code>--last</code>, <code>--rescan</code>, <code>--forget</code></span></div>
+            <div class="helper"><b>project status</b><span>Where this project is, or every project on one screen. <code>--all</code></span></div>
+            <div class="helper"><b>project import &lt;repo&gt;</b><span>Reads an existing codebase. <code>--convert</code>, <code>--refresh</code>, <code>--speckit</code></span></div>
+            <div class="helper"><b>project assess</b><span>Asks whether it should be built at all. Needs <code>ext add assess</code></span></div>
+            <div class="helper"><b>project stop / resume</b><span>Stops cleanly and restarts after re-checking the ground</span></div>
           </article>
           <article class="card span-6">
-            <h3 class="card-title">VibeKit</h3>
-            <div class="helper"><b>/vibekit.clarify</b><span>Asks first. Assumptions get ids.</span></div>
-            <div class="helper"><b>/vibekit.next</b><span>Whatever the current gate allows</span></div>
-            <div class="helper"><b>/vibekit.build</b><span>One requirement, one branch, evidence</span></div>
-            <div class="helper"><b>/vibekit.review</b><span>Second model. A person sets done.</span></div>
-            <div class="helper"><b>/vibekit.status</b><span>Where everything stands</span></div>
-            <div class="helper"><b>/vibekit.why</b><span>Why this line of code exists</span></div>
-            <div class="helper"><b>/vibekit.hotfix</b><span>Production is down. Stay small.</span></div>
-            <div class="helper"><b>/vibekit.new-feature</b><span>Add work without a new planning pile</span></div>
+            <h3 class="card-title">Sprints</h3>
+            <div class="helper"><b>sprint plan</b><span>Turns the spec into sprints in dependency order. <code>--cost</code></span></div>
+            <div class="helper"><b>sprint start</b><span>Works the current sprint one piece at a time while you watch</span></div>
+            <div class="helper"><b>sprint run</b><span>Several agents at once. <code>--lanes 2</code>, <code>--until blocked|gate</code>, <code>--headless</code></span></div>
+            <div class="helper"><b>sprint status</b><span>Progress, lanes and what is blocked</span></div>
+            <div class="helper"><b>sprint close --by</b><span>Closes the sprint at its gate. The one step VibeKit cannot do for you</span></div>
+          </article>
+          <article class="card span-6">
+            <h3 class="card-title">Action needed</h3>
+            <div class="helper"><b>action</b><span>Everything waiting on you across every project, most blocking first</span></div>
+            <div class="helper"><b>action answer</b><span>Answers from anywhere and writes it into that project</span></div>
+            <div class="helper"><b>tracker</b><span>The same inbox on your phone. Cloudflare tunnel and a QR code. <code>track</code> is an alias</span></div>
+          </article>
+          <article class="card span-6">
+            <h3 class="card-title">Work</h3>
+            <div class="helper"><b>feature add</b><span>Adds one feature mid-project</span></div>
+            <div class="helper"><b>bug</b><span>A bug is a requirement with its failing test. Then <code>assess|fix|test</code></span></div>
+            <div class="helper"><b>hotfix</b><span>Branches from the live tag, fixes, tests and releases. <code>quick</code> is an alias</span></div>
+            <div class="helper"><b>review</b><span>Runs the reviewer over anything waiting. A person still approves</span></div>
+            <div class="helper"><b>why &lt;file:line&gt;</b><span>Explains why a line of code exists</span></div>
+          </article>
+          <article class="card span-6">
+            <h3 class="card-title">Design</h3>
+            <div class="helper"><b>design</b><span>What the app looks like now and the intent behind it</span></div>
+            <div class="helper"><b>design add</b><span>A URL, image or PDF. Asks about what it could not read</span></div>
+            <div class="helper"><b>design preview</b><span>Renders your real screens with the current design</span></div>
+            <div class="helper"><b>design apply</b><span>Turns references into tokens. <code>feedback</code> records what is wrong</span></div>
+          </article>
+          <article class="card span-6">
+            <h3 class="card-title">Quality</h3>
+            <div class="helper"><b>security scan</b><span>Measures against OWASP, CIS, POPIA and whatever else applies</span></div>
+            <div class="helper"><b>check</b><span>Every mechanical check. This is what CI runs</span></div>
+            <div class="helper"><b>docs</b><span>HLD, LLD, API, data, runbook. <code>arch-docs</code> is an alias</span></div>
+            <div class="helper"><b>report</b><span><code>build</code>, <code>budget</code> or <code>security</code> as documents</span></div>
+          </article>
+          <article class="card span-6">
+            <h3 class="card-title">Shipping</h3>
+            <div class="helper"><b>release</b><span>Verifies, writes the changelog, tags and bundles the evidence</span></div>
+            <div class="helper"><b>rollback &lt;tag&gt;</b><span>Restores the previous release and opens a hotfix</span></div>
+            <div class="helper"><b>undo &lt;id&gt;</b><span>Removes a shipped feature cleanly. <code>revert</code> is an alias</span></div>
+          </article>
+          <article class="card span-6">
+            <h3 class="card-title">Setup</h3>
+            <div class="helper"><b>init</b><span>Creates the folder. <code>--yes</code>, <code>--adopt</code>, <code>--from-speckit</code></span></div>
+            <div class="helper"><b>team</b><span>People and CODEOWNERS. <code>add</code>, <code>codeowners</code></span></div>
+            <div class="helper"><b>cost</b><span>Spend against forecast by sprint, model and piece of work</span></div>
+            <div class="helper"><b>settings</b><span>Machine settings, server tokens, trusted publishers. <code>config</code> is an alias</span></div>
+          </article>
+          <article class="card span-6">
+            <h3 class="card-title">Extensions</h3>
+            <div class="helper"><b>ext add|list|update|remove</b><span>Built-ins are assess, security-frameworks and docs</span></div>
+            <div class="helper"><b>ext verify</b><span>§5 rules and the three fixture briefs. <code>--quick</code> skips the briefs</span></div>
+            <div class="helper"><b>ext keygen / sign</b><span>Make a signing key and sign a release</span></div>
+            <div class="helper"><b>tools skills import</b><span>Imports knowledge as skills with provenance kept</span></div>
+            <div class="helper"><b>tools rates|policy|replay</b><span>Rates, policy, skill tests, and <code>replay --stage</code></span></div>
+          </article>
+          <article class="card span-12">
+            <h3 class="card-title">Lower-level, scripts and agents</h3>
+            <p class="prose">ingest, ask, req, start, unhold, serve (--stdio | --tracker) [--sandbox], verify, drift, trace, assumptions, evidence, changelog, ship, reverse, distil, clarify, skills, test-skills, upgrade-prompts, rescan, githook, tour, spec, version.</p>
+            <p class="prose">Older aliases still work: next, plan, pause, stop, resume, understand, arch-docs, quick, revert, config, replay, track.</p>
+            <p class="prose">Developer scripts in <code>plugin/</code>: <code>npm test</code>, <code>npm run simulate</code>, <code>npm run recovery</code>, <code>npm run test:repeat</code>, <code>npm run golden</code>, <code>npm run golden:check</code>.</p>
           </article>
         </div>
       </section>
@@ -422,10 +505,8 @@ vibekit serve --stdio --sandbox</pre>
           </article>
         </div>
         <article class="card">
-          <h3 class="card-title">Two commands a day</h3>
-          <pre class="pre">vibekit action          # the inbox, most blocking first
-vibekit sprint run      # work the current sprint with several agents
-vibekit tracker stock   # QR code; approve gates from your phone</pre>
+          <h3 class="card-title">Then two commands a day</h3>
+          <p class="prose">The full surface is under <a href="#commands">Commands</a>. A working day is still <code>vibekit action</code>, then <code>vibekit sprint run</code>.</p>
           <div class="cluster mt-4">
             <a class="btn btn-primary" href="https://github.com/Pershanthenm/vibekit/releases/tag/v0.1.0-alpha">Alpha release</a>
             <a class="btn btn-ghost" href="https://github.com/Pershanthenm/vibekit/blob/main/ONBOARDING.md">Onboarding</a>
@@ -472,7 +553,7 @@ vibekit tracker stock   # QR code; approve gates from your phone</pre>
   $("#navOverlay").addEventListener("click", () => document.body.classList.remove("nav-open"));
   $("#toastX").addEventListener("click", () => $("#toast").classList.remove("on"));
 
-  const labels = { home: "Home", problem: "Problem", coverage: "Coverage", helpers: "Helpers", tracker: "Tracker", lanes: "Lanes", cost: "Cost", honest: "Honest", install: "Install" };
+  const labels = { home: "Home", problem: "Problem", coverage: "Coverage", helpers: "Helpers", commands: "Commands", tracker: "Tracker", lanes: "Lanes", cost: "Cost", honest: "Honest", install: "Install" };
   function mark(id) {
     document.querySelectorAll("#nav a").forEach((a) => a.classList.toggle("active", a.getAttribute("href") === `#${id}`));
     const crumb = $("#crumb b");
