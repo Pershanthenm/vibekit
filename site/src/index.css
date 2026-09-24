@@ -1,0 +1,42 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 88px;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  background: #fff;
+  color: #000;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+a {
+  font-family: inherit;
+}
+
+img,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
