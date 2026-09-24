@@ -199,23 +199,21 @@ test('a project being tracked gets a code for its status page', async () => {
 
   const encoded = await announceTunnel(root, { reach }, said.log);
 
-  assert.equal(encoded, reach, 'the status page is what a project that already exists is asked about');
-  assert.match(said.text(), /On your phone: https:\/\/calm-river-1234/, 'the address is printed either way');
-  assert.match(said.text(), /Spec wizard: +https:\/\/calm-river-1234\S+wizard/, 'and so is the other page');
+  assert.equal(encoded, reach, 'the tracker is the one page there is');
+  assert.match(said.text(), /On your phone: https:\/\/calm-river-1234/, 'the address is printed');
   assert.ok(said.text().includes(codeFor(reach)), 'the code is the one for that address');
+  assert.ok(!/wizard/.test(said.text()), 'there is no second page to point a camera at');
 });
 
-test('a folder with no project yet gets a code for the form that makes one', async () => {
-  // Creating a project is the one case where the status page has nothing to say, so pointing a
-  // camera at it would open an empty console instead of the thing there is to do.
+test('a folder with no project yet still gets the tracker, which says what to do', async () => {
   const root = await mkdtemp(join(tmpdir(), 'vibekit-bare-'));
   const reach = 'https://calm-river-1234.trycloudflare.com/kDc2/';
   const said = lines();
 
   const encoded = await announceTunnel(root, { reach }, said.log);
 
-  assert.equal(encoded, `${reach}wizard`);
-  assert.ok(said.text().includes(codeFor(`${reach}wizard`)), 'the code opens the wizard, not the console');
+  assert.equal(encoded, reach);
+  assert.ok(said.text().includes(codeFor(reach)));
 });
 
 test('a tunnel opened from the page prints the code too, not only one asked for on the command line', async () => {

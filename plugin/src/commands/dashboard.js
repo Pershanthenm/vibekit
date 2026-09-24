@@ -3,13 +3,11 @@ import { timingSafeEqual } from 'node:crypto';
 import { createServer } from 'node:http';
 import { isAbsolute, resolve } from 'node:path';
 import { collectState, dashboardPath, renderDashboard } from '../dashboard.js';
-import { BadRequest, Refused, apply } from '../control.js';
+import { BadRequest, Changed, Refused, apply } from '../control.js';
 import { writeText } from '../fsutil.js';
 import { loadProject } from '../project.js';
-import { collectProblems } from './check.js';
 import { PING, POLL_MS, PREAMBLE, RETRY, fingerprint, laneLogs, readSince, secret, sse } from '../live.js';
-import { renderWizard } from '../wizard-page.js';
-import { collectScan } from '../scan.js';
+import { serviceWorker, webManifest } from '../dashboard-view.js';
 import { codeFor } from '../qr.js';
 import { openTunnel } from '../tunnel.js';
 
@@ -44,10 +42,18 @@ const pathFor = (root, out) => (out ? (isAbsolute(out) ? out : resolve(root, out
  */
 export async function writeDashboard(root, project, { out, setup = null, live = true, problems } = {}) {
   const path = pathFor(root, out);
-  const found = problems ?? await collectProblems(root, project).catch(() => []);
+  const found = problems ?? await problemsIn(root).catch(() => []);
   const state = await collectState(root, project, { setup, problems: found });
   await writeText(path, renderDashboard(state, { live }));
   return { path, state };
+}
+
+/** The folder's own checks are the problems the page shows; there is no second checker. */
+async function problemsIn(root) {
+  const { runChecks } = await import('../folder/checks.js');
+  const { folderOf } = await import('../dashboard.js');
+  const result = await runChecks(root, { folder: await folderOf(root) });
+  return result.findings.filter((entry) => entry.severity === 'error').map((entry) => entry.message);
 }
 
 // Reopening on every refresh would fight the user for focus, so each path is opened once per run.
@@ -95,10 +101,15 @@ p{color:#9ea19a;margin:0 0 6px}code{color:#b6f24a}</style></head>
  * titles and blocker text that quote file paths and review comments, and that is not something to
  * put on a shared network by accident.
  */
-export async function serveDashboard(root, { port = DEFAULT_PORT, host = '127.0.0.1', path = secret(), token = secret(), open: openWith = openTunnel, announce = null } = {}) {
+export async function serveDashboard(root, {
+  port = DEFAULT_PORT, host = '127.0.0.1', path = secret(), token = secret(),
+  open: openWith = openTunnel, announce = null,
+  // §57 — when Cloudflare Access is in front, identity comes from its JWT rather than from a
+  // shared token. `access` is injected so the server has no opinion about how it was verified.
+  access = null, folder = undefined,
+} = {}) {
   const prefix = `/${path}`;
   const control = `${prefix}/do`;
-  const scanFeed = `${prefix}/scan.json`;
   const stateFeed = `${prefix}/state.json`;
   const logsFeed = `${prefix}/logs.json`;
   const clients = new Set();
@@ -156,13 +167,9 @@ export async function serveDashboard(root, { port = DEFAULT_PORT, host = '127.0.
 
   const currentState = async () => {
     const project = await loadProject(root);
-    const problems = await collectProblems(root, project).catch(() => []);
+    const problems = await problemsIn(root).catch(() => []);
     return collectState(root, project, { problems, tunnel: tunnelStatus() });
   };
-
-  // The scan walks every spec, every recorded run and every document, so it is read when a page is
-  // served or asks for it — never on the one-second tick that keeps the lifecycle current.
-  const currentScan = async () => collectScan(root, await loadProject(root));
 
   // One pass: has anything the page shows changed, and has any lane written a new line?
   async function tick() {
@@ -298,6 +305,19 @@ export async function serveDashboard(root, { port = DEFAULT_PORT, host = '127.0.
     return a.length === b.length && timingSafeEqual(a, b);
   };
 
+  /**
+   * §57 — who is asking, and may they do this.
+   *
+   * With Access in front, the shared token is not an alternative route: a token is something a
+   * link can leak and an identity is not, so when Access is configured it decides on its own.
+   */
+  const whoAndWhether = async (request, body) => {
+    if (!access) return { session: null, refusal: authorised(request.headers.authorization) ? null : 'A write token is required.' };
+    const session = await access.sessionFor(request).catch((error) => ({ error: error.message }));
+    if (session?.error) return { session: null, refusal: session.error };
+    return { session, refusal: await access.refuse(session, body) };
+  };
+
   // At most 16KB: every action here is a few short fields, and a socket that keeps sending is
   // not a request, it is a way to fill memory.
   const readBody = (request) => new Promise((done, failed) => {
@@ -320,24 +340,26 @@ export async function serveDashboard(root, { port = DEFAULT_PORT, host = '127.0.
    */
   async function command(request, response) {
     if (request.method !== 'POST') return json(response, 405, { error: 'Use POST.' });
-    if (!authorised(request.headers.authorization)) return json(response, 401, { error: 'A write token is required.' });
     // A cross-site form cannot set this header, so requiring it keeps one off the endpoint.
     if (!/^application\/json\b/.test(request.headers['content-type'] ?? '')) {
       return json(response, 415, { error: 'Send application/json.' });
     }
     try {
       const body = JSON.parse(await readBody(request) || '{}');
+      const { session, refusal } = await whoAndWhether(request, body);
+      if (refusal) return json(response, access ? 403 : 401, { error: refusal });
       // A project that cannot be read yet is not a reason to refuse: the wizard's whole job is
       // to produce the answers that create one. Actions needing a project load it themselves.
       const project = await loadProject(root).catch(() => null);
-      const result = await apply(root, project, body, { tunnel });
+      const result = await apply(root, project, body, { tunnel, session, trailers: access?.trailers?.(session) ?? null });
       return json(response, 200, { ok: true, result: result ?? null, state: await currentState().catch(() => null) });
     } catch (error) {
-      const status = error instanceof BadRequest ? 400 : error instanceof Refused ? 409 : 500;
+      const status = error instanceof BadRequest ? 400 : error instanceof Refused || error instanceof Changed ? 409 : 500;
       // The refusal comes back with the truth beside it, so a page that drew an optimistic move
-      // has something honest to redraw from.
+      // has something honest to redraw from. `changed` marks the one refusal the page may ask
+      // the person to confirm past (§57); a gate's refusal is never one of those.
       const state = await currentState().catch(() => null);
-      return json(response, status, { error: error?.message ?? 'That did not work.', state });
+      return json(response, status, { error: error?.message ?? 'That did not work.', state, ...(error instanceof Changed ? { changed: true } : {}) });
     }
   }
 
@@ -370,20 +392,16 @@ export async function serveDashboard(root, { port = DEFAULT_PORT, host = '127.0.
       }
       return json(response, 200, { logs: chunks });
     }
-    // Reading the scan is what the link already grants; only running its fixes needs the token.
-    if (pathname === scanFeed) {
-      try {
-        return json(response, 200, await currentScan());
-      } catch (error) {
-        return json(response, 503, { error: error?.message ?? 'the project could not be read' });
-      }
+    // §57 — installable, and readable offline. Both live under the secret path like everything
+    // else, so the worker's scope is this console and no other.
+    if (pathname === `${prefix}/sw.js`) {
+      response.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'no-store' });
+      return response.end(serviceWorker(prefix));
     }
-    // The wizard rides the same server, and therefore the same tunnel and the same secret path:
-    // one link reaches both, and the form can hand its answers straight back with no CORS, no
-    // second token and nothing for the user to copy between windows.
-    if (pathname === `${prefix}/wizard` || pathname === `${prefix}/wizard/`) {
+    if (pathname === `${prefix}/manifest.webmanifest`) {
       const project = await loadProject(root).catch(() => null);
-      return page(response, 200, renderWizard({ projectName: project?.project?.name ?? '', control }));
+      response.writeHead(200, { 'Content-Type': 'application/manifest+json; charset=utf-8', 'Cache-Control': 'no-store' });
+      return response.end(JSON.stringify(webManifest({ name: project?.project?.name ?? 'VibeKit', start: `${prefix}/` })));
     }
     if (pathname !== prefix && pathname !== `${prefix}/`) {
       // No hint that anything is here: a wrong path is a wrong path, whatever it was reaching for.
@@ -392,8 +410,8 @@ export async function serveDashboard(root, { port = DEFAULT_PORT, host = '127.0.
     }
 
     try {
-      const [state, scan] = await Promise.all([currentState(), currentScan().catch(() => null)]);
-      return page(response, 200, renderDashboard(state, { live: true, stream: true, control, scan, scanUrl: scanFeed }));
+      const state = await currentState();
+      return page(response, 200, renderDashboard(state, { live: true, stream: true, control, streamUrl: `${prefix}/events`, prefix }));
     } catch (error) {
       return page(response, 503, errorPage(error?.message ?? 'the project could not be read'));
     }
@@ -441,15 +459,10 @@ export async function serveDashboard(root, { port = DEFAULT_PORT, host = '127.0.
  */
 export async function announceTunnel(root, state, log = console.log) {
   if (!state?.reach) return null;
-  const wizard = `${state.reach}wizard`;
-  const specced = await loadProject(root).then(() => true).catch(() => false);
-  const target = specced
-    ? { url: state.reach, what: 'Scan to open the status page:' }
-    : { url: wizard, what: 'Scan to fill in the project spec:' };
+  const target = { url: state.reach, what: 'Scan to open the tracker:' };
 
   log('');
   log(`  On your phone: ${state.reach}`);
-  log(`  Spec wizard:   ${wizard}`);
   // Too long to encode is not worth an error: the addresses above still work.
   const code = codeFor(target.url);
   if (code) {
@@ -506,7 +519,6 @@ export async function dashboard({ root, out, json, open, static: isStatic, serve
     console.log(`Live console on ${server.url}`);
     console.log('  Updates as the work happens: task ticks, lane output, test runs. Ctrl-C to stop.');
     console.log('  The path is random and changes every start, so an old link stops working.');
-    console.log(`  Spec wizard on ${server.url}wizard`);
     console.log(`\n  Write token: ${server.token}`);
     console.log('  The page asks for this the first time you change something, and keeps it in that');
     console.log('  browser. Reading needs only the link; changing the project needs this as well.');
@@ -535,15 +547,15 @@ export async function dashboard({ root, out, json, open, static: isStatic, serve
     return server;
   }
 
-  const project = await loadProject(root);
-  const problems = await collectProblems(root, project).catch(() => []);
+  const project = await loadProject(root).catch(() => null);
+  const problems = await problemsIn(root).catch(() => []);
   if (json) {
     console.log(JSON.stringify(await collectState(root, project, { problems }), null, 2));
     return;
   }
   const { path, state } = await writeDashboard(root, project, { out, live: !isStatic, problems });
-  const blocked = state.features.flatMap((feature) => feature.gates.filter((gate) => gate.state === 'blocked'));
+  const waiting = state.needsYou.length;
   console.log(`Wrote ${path}`);
-  console.log(`  ${state.features.length} feature(s) · ${blocked.length} blocked gate(s)${state.next ? ` · next: ${state.next.step}` : ''}`);
+  console.log(`  ${state.stats.requirements} requirement(s) · ${waiting} waiting on you${state.next ? ` · next: ${state.next.command}` : ''}`);
   if (open) openInBrowser(path);
 }
