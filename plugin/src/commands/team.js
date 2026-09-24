@@ -1,55 +1,96 @@
-import { importEcc, recordedEccNames } from '../import-ecc.js';
-import { buildPlugin, bumpVersion, captureTeam, readTeam, teamPaths, teamRepo } from '../team.js';
+import { join } from 'node:path';
+import { ROLES, humansPath, loadHumans } from '../humans.js';
+import { readText, writeText } from '../fsutil.js';
+import { folderName } from './folder.js';
 
-const USAGE = 'Usage: vibekit team <capture [--skip a,b] | import-ecc <name,name,...> [--version x] | status> [--repo <folder>]';
-const list = (items) => (items.length ? items.join(', ') : 'none');
+/**
+ * `vibekit team`. Specification §67, §47 and §51.
+ *
+ *   team                          who may approve what, from agents/humans.md
+ *   team add "<Name> <email>" --role "tech lead"     name an approver (also what invites them to the tracker)
+ *   team codeowners               write CODEOWNERS from humans.md and the layer rules in map.md
+ *
+ * The file records it; the tracker and the provider enforce it. Nothing here is stored anywhere
+ * else, so a team that never runs this command can edit humans.md by hand and get the same result.
+ */
+export async function team(options) {
+  const { root, args, folder: chosen, json } = options;
+  const folder = chosen ?? (await folderName(root));
+  const [verb, ...rest] = args;
 
-async function capture(repo, { skip }) {
-  const report = await captureTeam(repo, { skip: skip ? skip.split(',').map((name) => name.trim()) : [] });
-  const built = await buildPlugin(repo);
-  const version = await bumpVersion(repo);
-  console.log(`✔ Skills from your Claude folder: ${list(report.skills)}`);
-  console.log(`✔ Subagents from your Claude folder: ${list(report.agents)}`);
-  console.log(`✔ Plugins your team will get automatically: ${list(report.plugins)}`);
-  report.skipped.forEach((item) => console.log(`! skipped ${item}`));
-  report.localPlugins.forEach((item) => console.log(`! ${item} comes from a folder on this machine; teammates can't install it. Publish its marketplace to git to share it.`));
-  console.log(`✔ Plugin rebuilt as ${version}: ${built.skills} skills, ${built.agents} subagents${built.team.plugins.length ? `, ${built.team.plugins.length} ${built.team.plugins.length === 1 ? 'dependency' : 'dependencies'}` : ''}`);
-  console.log(`\nNext: commit and push ${repo} to your team repository. Everyone else: pull, then run vibekit setup (or /vibekit:setup).`);
+  if (verb === 'add') return add(root, folder, rest, options);
+  if (verb === 'codeowners') return codeowners(root, folder, options);
+  if (verb && verb !== 'status') throw new Error('Usage: vibekit team [add "<Name> <email>" --role "<role>" | codeowners]');
+
+  const humans = await loadHumans(root, folder);
+  if (json) return void console.log(JSON.stringify(humans, null, 2));
+  console.log(`Team · ${folder}/agents/humans.md`);
+  console.log('');
+  if (!humans.approvers.length) console.log('  No approvers named yet. Until someone is, every gate waits on a name nobody has.');
+  for (const person of humans.approvers) console.log(`  ${person.role.padEnd(14)} ${person.name}${person.email ? ` <${person.email}>` : '   (no email: the tracker cannot map a login to them)'}`);
+  if (!humans.approvers.some((person) => person.role === 'security')) console.log('  security       — none named; the tech lead holds the role and the security report says so');
+  console.log('');
+  console.log('  vibekit team add "Ada Lovelace <ada@example.com>" --role "tech lead"');
+  console.log('  vibekit team codeowners      CODEOWNERS from humans.md and map.md, so the provider enforces the human-review rule');
 }
 
-async function importFromEcc(repo, { args, version, from }) {
-  const given = (args[1] ?? '').split(',').map((name) => name.trim()).filter(Boolean);
-  const names = given.length ? given : await recordedEccNames(repo);
-  if (!given.length && names.length) console.log(`Re-importing your recorded list (${names.length} names)`);
-  if (!names.length) throw new Error('Name the ECC skills, agents or commands to import, e.g. vibekit team import-ecc api-design,tdd-workflow,security-reviewer');
-  const report = await importEcc(repo, names, { from, version });
-  console.log(`ECC ${report.version}: imported ${report.imported.length} of ${names.length}`);
-  for (const kind of ['skill', 'agent', 'command']) {
-    const items = report.imported.filter((item) => item.kind === kind).map((item) => item.name);
-    if (items.length) console.log(`  ✔ ${kind === 'command' ? 'commands (as skills)' : `${kind}s`}: ${items.join(', ')}`);
-  }
-  report.skipped.forEach((item) => console.log(`  ! ${item.name} (${item.kind}) skipped: ${item.reason}`));
-  report.unknown.forEach((item) => console.log(`  ✖ ${item.name} isn't in ECC ${report.version}${item.suggestions.length ? ` — did you mean ${item.suggestions.join(' or ')}?` : ''}`));
-  if (!report.imported.length) return;
-  const built = await buildPlugin(repo);
-  const next = await bumpVersion(repo);
-  console.log(`✔ Plugin rebuilt as ${next}: ${built.skills} skills, ${built.agents} subagents. Licence notice: ${teamPaths(repo).skills.replace(/skills$/, '')}THIRD_PARTY_NOTICES.md`);
-  const ecc = built.team.plugins.find((plugin) => plugin.marketplace === 'ecc' || plugin.name === 'ecc');
-  if (ecc) console.log('! Your team kit also lists the full ECC plugin as a dependency, so developers would get ECC twice. Uninstall it on your machine and run: vibekit team capture --skip ecc');
+/** Add or replace a row in the `## Approvers` table. */
+async function add(root, folder, rest, options) {
+  const who = rest.join(' ').trim();
+  const role = String(options.role ?? '').trim().toLowerCase();
+  const matched = who.match(/^(.+?)\s*<([^>]+)>\s*$/);
+  if (!matched) throw new Error('Usage: vibekit team add "<Name> <email@example.com>" --role "<product owner | tech lead | security>"');
+  if (!ROLES.includes(role)) throw new Error(`--role takes one of: ${ROLES.join(', ')}.`);
+  const [, name, email] = matched;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error(`"${email}" is not an email address.`);
+
+  const path = humansPath(root, folder);
+  const text = (await readText(path)) ?? '# Humans\n\n## Approvers\n\n| Role | Name | May approve |\n| --- | --- | --- |\n';
+  const row = `| ${role} | ${name.trim()} <${email}> | ${MAY_APPROVE[role]} |`;
+  const rowPattern = new RegExp(`^\\|\\s*${role}\\s*\\|[^\\n]*$`, 'm');
+  const next = rowPattern.test(text) ? text.replace(rowPattern, row) : text.replace(/(\| --- \| --- \| --- \|\n)/, `$1${row}\n`);
+  await writeText(path, next);
+  if (options.json) return void console.log(JSON.stringify({ role, name: name.trim(), email }, null, 2));
+  console.log(`✔ ${name.trim()} <${email}> is the ${role}. The tracker maps a Cloudflare Access login for that email to this row.`);
 }
 
-async function status(repo) {
-  const team = await readTeam(repo);
-  console.log(`Team kit in ${repo}/team`);
-  console.log(`  skills:    ${list(team.skills)}`);
-  console.log(`  subagents: ${list(team.agents.map((file) => file.replace(/\.md$/, '')))}`);
-  console.log(`  plugins:   ${list(team.plugins.map((plugin) => `${plugin.name}@${plugin.marketplace}`))}`);
-}
+const MAY_APPROVE = {
+  'product owner': 'plan, scope, requirement priority, prod promotion',
+  'tech lead': 'architecture, standards changes, gate policy, stale holds',
+  security: 'security.md, access.md, the dependency allow-list, L requirements touching secret or financial data',
+};
 
-export async function team({ args, repo, skip, ...rest }) {
-  const target = repo ?? teamRepo();
-  if (args[0] === 'capture') return capture(target, { skip });
-  if (args[0] === 'status') return status(target);
-  if (args[0] === 'import-ecc') return importFromEcc(target, { args, version: rest.version, from: rest.from });
-  throw new Error(USAGE);
+/**
+ * §51 — "Writes a CODEOWNERS file from `agents/humans.md` and the layer rules in `map.md`:
+ * `standards/`, `invariants.md` and `guardrails.md` owned by the tech lead; `product/` by the
+ * product owner; application layers by whoever `humans.md` names."
+ */
+export async function codeowners(root, folder, options = {}) {
+  const humans = await loadHumans(root, folder);
+  const handle = (role) => {
+    const person = humans.approvers.find((entry) => entry.role === role) ?? (role === 'security' ? humans.approvers.find((entry) => entry.role === 'tech lead') : null);
+    return person?.email ? person.email : null;
+  };
+  const techLead = handle('tech lead');
+  const owner = handle('product owner');
+  const securityOwner = handle('security');
+  if (!techLead && !owner) throw new Error('humans.md names nobody with an email; CODEOWNERS needs a handle per row. `vibekit team add` first.');
+
+  const map = (await readText(join(root, folder, 'product/map.md'))) ?? '';
+  const layers = [...map.matchAll(/^(src\/[\w./-]+\/)\s{2,}/gm)].map((match) => match[1]);
+  const lines = [
+    '# generated by vibekit · do not edit · source: team',
+    '# From agents/humans.md and the layer rules in product/map.md. The provider enforces the human-review rule natively.',
+    '',
+    ...(techLead ? [`${folder}/standards/ ${techLead}`, `${folder}/product/invariants.md ${techLead}`, `${folder}/standards/guardrails.md ${techLead}`, `${folder}/workflow/architecture.md ${techLead}`] : []),
+    ...(owner ? [`${folder}/product/ ${owner}`] : []),
+    ...(securityOwner ? [`${folder}/standards/security.md ${securityOwner}`, `${folder}/product/access.md ${securityOwner}`] : []),
+    ...layers.map((layer) => `${layer} ${techLead ?? owner}`),
+    '',
+  ];
+  const path = join(root, 'CODEOWNERS');
+  await writeText(path, lines.join('\n'));
+  if (options.json) return void console.log(JSON.stringify({ path, rows: lines.filter((line) => line && !line.startsWith('#')).length }, null, 2));
+  console.log(`✔ CODEOWNERS written · ${lines.filter((line) => line && !line.startsWith('#')).length} rule(s)`);
+  if (!securityOwner || securityOwner === techLead) console.log('  No security approver named: the tech lead holds security.md and access.md, and the report says so.');
 }

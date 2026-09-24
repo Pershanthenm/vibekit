@@ -25,6 +25,43 @@ export function which(command) {
   return null;
 }
 
+/**
+ * A command line as its words, the way a shell would read it but without running one.
+ *
+ * `command.split(/\s+/)` handed node the literal string `"process.exit(3)"` — quotes included —
+ * which evaluates to a string and exits 0. Every runner here spawns without a shell on purpose, so
+ * this is the one place quoting is understood: double and single quotes group words, a backslash
+ * escapes the next character outside single quotes, and nothing is expanded. A `$` or a `;` is a
+ * character, not an instruction.
+ */
+export function splitArgs(text) {
+  const words = [];
+  let current = '';
+  let quote = null;
+  let started = false;
+  const source = String(text ?? '');
+  for (let index = 0; index < source.length; index += 1) {
+    const character = source[index];
+    if (quote) {
+      if (character === quote) { quote = null; continue; }
+      if (character === '\\' && quote === '"' && index + 1 < source.length) { current += source[index += 1]; continue; }
+      current += character;
+      continue;
+    }
+    if (character === '"' || character === "'") { quote = character; started = true; continue; }
+    if (character === '\\' && index + 1 < source.length) { current += source[index += 1]; started = true; continue; }
+    if (/\s/.test(character)) {
+      if (started) { words.push(current); current = ''; started = false; }
+      continue;
+    }
+    current += character;
+    started = true;
+  }
+  if (quote) throw new Error(`Unbalanced ${quote} in: ${source}`);
+  if (started) words.push(current);
+  return words;
+}
+
 /** The command to spawn: its resolved path where one exists, otherwise the bare name. */
 export const resolveCommand = (command) => which(command) ?? command;
 
