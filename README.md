@@ -9,7 +9,53 @@ Coding agents are fast, and they guess. VibeKit puts one folder in your repo, `v
 ![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-8A63D2)
 ![Cursor](https://img.shields.io/badge/Cursor-supported-black)
 
-VibeKit is a Claude Code plugin and a CLI with no runtime dependencies. It works with Claude Code, Cursor, Codex and any MCP client, because everything it enforces is a Markdown file in git. The full design is [the specification](spec/vibekit-specification.md).
+VibeKit is a Claude Code plugin and a CLI with no runtime dependencies. It works with Claude Code, Cursor, Codex and any MCP client, because everything it enforces is a Markdown file in git. The designed landing page is [docs/index.html](docs/index.html). The full design is [the specification](spec/vibekit-specification.md).
+
+## Purpose
+
+Other tools help you write a spec and then leave you alone. VibeKit is the operating loop after that: a person still decides, evidence still has to match a commit, and you can still ask why any line of code exists.
+
+1. **Start from what the business wrote** — a description or a requirements document, sectioned and cited. An existing codebase is imported, not ignored.
+2. **Ask before assuming.** Unknowns become asks with ids. What cannot be asked becomes an assumption with a blast radius, not a silent guess.
+3. **Build one requirement per agent**, on its own branch, with failing tests first. `vibekit verify` writes the exit codes in. A reviewer on a second model writes the verdict. A person sets `done`.
+
+## Why this instead of Spec Kit
+
+[GitHub Spec Kit](https://github.com/github/spec-kit) is excellent at the first pass: constitution, specify, plan, tasks, implement, converge. That loop ends when the code exists. VibeKit maps onto those same steps — and then keeps the chain.
+
+Coming from Spec Kit already? `vibekit project import . --speckit` reads `memory/constitution.md`, `specs/`, `plan.md` and `tasks.md` and writes the VibeKit folder. Conversion is conservative: anything inferred is an ask, not a silent fact.
+
+| After the first generation | Spec Kit | VibeKit |
+|---|---|---|
+| Unknowns | Clarified once, in the prompt | Asked with an id; assumed with a blast radius; inbox on your phone |
+| When code exists | Converge appends more tasks | Reviewer on a second model, sprint gate, drift in CI |
+| Provenance | The spec files you still have | `vibekit why` from any line back to the source paragraph |
+| Security | Whatever the constitution said | Per-requirement note, trust boundaries, named-framework scan |
+| Existing codebases | Greenfield-first | `project import` and `reverse` from the tests you already have |
+| Small changes | The same ceremony as a feature | Size S / M / L. A hotfix is minutes, not a planning session |
+| Undo | Manual | `vibekit undo REQ-014` — spec and dependants move with the code |
+| What agents may do | Prompts and helper scripts | MCP runner, git hooks, loads manifest, writes list, sandbox |
+
+The one-line version: spec-driven development that does not stop at the first generation.
+
+## The helpers
+
+Spec Kit’s slash commands and `.specify` helper scripts walk specify → plan → tasks → implement. VibeKit’s helpers are the same idea with a different centre of gravity: they stop the agent when a person is needed, and they keep going after the code is written.
+
+| Spec Kit | VibeKit | What changes |
+|---|---|---|
+| `/speckit.constitution` | `standards/` + `vibekit check` | Principles become rules that fire |
+| `/speckit.specify` | `/vibekit.new-feature` · `project new` | The brief is a source, not a one-shot prompt |
+| `/speckit.clarify` | `/vibekit.clarify` · `vibekit action` | An inbox, not a single pass |
+| `/speckit.plan` | architecture and plan gates | You approve with a line in the file |
+| `/speckit.tasks` | `vibekit sprint plan` | Sizes, walking skeleton, cost forecast |
+| `/speckit.implement` | `/vibekit.build` · `sprint run` | One requirement per agent; evidence required |
+| `/speckit.analyze` | `vibekit check` · `vibekit drift` | Mechanical, and it runs in CI |
+| `/speckit.converge` | `/vibekit.review` · sprint close | Second model; a person sets `done` |
+| — | `/vibekit.why` | The chain Spec Kit does not keep |
+| — | `/vibekit.hotfix` · `/vibekit.status` · `/vibekit.next` | Small work stays small; the next step is a command |
+
+The slash commands are a thin layer over the CLI, so Claude Code, Cursor, Codex and an MCP client are never on different workflows.
 
 ## Two commands a day
 
@@ -97,6 +143,7 @@ For Claude Code, install the plugin from this repository's marketplace; the slas
 
 | Where | For |
 |---|---|
+| [docs/index.html](docs/index.html) | Landing page: purpose, Spec Kit, the helpers |
 | [spec/vibekit-specification.md](spec/vibekit-specification.md) | The specification: the folder, the workflow, agents, memory, security, the commands |
 | [spec/vibekit-docs-feature-spec.md](spec/vibekit-docs-feature-spec.md) | Generated architecture documents and diagrams |
 | [GUIDE.md](GUIDE.md) | Working day to day |
