@@ -43,7 +43,7 @@ Clone <your repository URL> to $HOME\tools\vibekit (replace it if it exists), th
 
 On a Mac, or in WSL/Linux, clone to `~/tools/vibekit` and run `bash ~/tools/vibekit/plugin/scripts/bootstrap.sh --minimal --yes` instead.
 
-Setup adds the marketplaces your team's plugins come from, installs VibeKit (which pulls in those plugins automatically), and puts the same subagents and skills into Cursor. Then type `/reload-plugins` in Cursor (not from your phone: Remote Control can't reload plugins), and check with `/vibekit:health`.
+Setup adds the marketplaces your team's plugins come from, installs VibeKit (which pulls in those plugins automatically), and puts the same subagents and skills into Cursor. Then type `/reload-plugins` in Cursor (not from your phone: Remote Control can't reload plugins), and check with `vibekit health`.
 
 ## Changing the kit later
 

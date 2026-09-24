@@ -13,7 +13,7 @@
 
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { MAX_BYTES, encode, render, versionFor } from '../src/qr.js';
+import { MAX_BYTES, codeFor, encode, render, versionFor } from '../src/qr.js';
 
 console.log = () => {};
 
@@ -127,4 +127,24 @@ test('the colours are written out, because a code in the terminal theme is inver
   const escape = String.fromCharCode(27);
   assert.ok(render('colour').includes(`${escape}[30;47m`), 'black on white, said explicitly');
   assert.ok(!render('colour', { colour: false }).includes(escape), 'and left out when asked');
+});
+
+// --- The code the console actually prints ---------------------------------------------------
+//
+// The encoder above is only half the feature. The other half is that a person on a machine with no
+// browser — Claude Code over SSH on a server — gets a code for the *right* page, and that a code
+// being impossible never takes the console down with it.
+
+test('a code is drawn for an address that fits, and withheld rather than thrown for one that does not', () => {
+  assert.ok(codeFor('https://calm-river-1234.trycloudflare.com/kDc2/'), 'a real tunnel address fits');
+  assert.equal(codeFor(`https://x.trycloudflare.com/${'p'.repeat(MAX_BYTES)}`), null, 'too long is null, not an error');
+  assert.equal(codeFor(''), null);
+  assert.equal(codeFor(null), null);
+});
+
+test('the code encodes the address it was given, so it opens that page and not another', () => {
+  // Same bytes in, same matrix out: the code for the wizard cannot be the code for the status page.
+  const reach = 'https://calm-river-1234.trycloudflare.com/kDc2/';
+  assert.notEqual(codeFor(reach), codeFor(`${reach}wizard`));
+  assert.equal(codeFor(reach), render(reach));
 });

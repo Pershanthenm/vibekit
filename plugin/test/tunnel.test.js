@@ -6,8 +6,12 @@
 // which is what lets them assert on the parsing and the timeouts rather than on Cloudflare.
 
 import assert from 'node:assert/strict';
+import { mkdtemp } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { after, test } from 'node:test';
-import { serveDashboard } from '../src/commands/dashboard.js';
+import { announceTunnel, serveDashboard } from '../src/commands/dashboard.js';
+import { MAX_BYTES, codeFor } from '../src/qr.js';
 import { TUNNEL_URL, installHint, installedAt, openTunnel } from '../src/tunnel.js';
 import { EXAMPLE, newProject } from './helpers.js';
 
@@ -175,6 +179,73 @@ test('closing the console closes the tunnel with it', async () => {
   await server.close();
 
   assert.equal(handle.closed, true, 'a tunnel must never outlive the thing it points at');
+});
+
+// --- Getting the address onto a phone --------------------------------------------------------
+//
+// The reason any of this exists is the machine nobody is sitting in front of: Claude Code over SSH
+// on a server, where there is no browser to open and the address is a random 32-character path on
+// a random hostname. Nobody types that into a phone twice, so the console draws it as a square.
+
+const lines = () => {
+  const out = [];
+  return { log: (...args) => out.push(args.join(' ')), text: () => out.join('\n') };
+};
+
+test('a project being tracked gets a code for its status page', async () => {
+  const root = await newProject('--from', EXAMPLE);
+  const reach = 'https://calm-river-1234.trycloudflare.com/kDc2/';
+  const said = lines();
+
+  const encoded = await announceTunnel(root, { reach }, said.log);
+
+  assert.equal(encoded, reach, 'the status page is what a project that already exists is asked about');
+  assert.match(said.text(), /On your phone: https:\/\/calm-river-1234/, 'the address is printed either way');
+  assert.match(said.text(), /Spec wizard: +https:\/\/calm-river-1234\S+wizard/, 'and so is the other page');
+  assert.ok(said.text().includes(codeFor(reach)), 'the code is the one for that address');
+});
+
+test('a folder with no project yet gets a code for the form that makes one', async () => {
+  // Creating a project is the one case where the status page has nothing to say, so pointing a
+  // camera at it would open an empty console instead of the thing there is to do.
+  const root = await mkdtemp(join(tmpdir(), 'vibekit-bare-'));
+  const reach = 'https://calm-river-1234.trycloudflare.com/kDc2/';
+  const said = lines();
+
+  const encoded = await announceTunnel(root, { reach }, said.log);
+
+  assert.equal(encoded, `${reach}wizard`);
+  assert.ok(said.text().includes(codeFor(`${reach}wizard`)), 'the code opens the wizard, not the console');
+});
+
+test('a tunnel opened from the page prints the code too, not only one asked for on the command line', async () => {
+  // This is the route somebody takes when the console was already running before they wanted a
+  // phone, and it used to print nothing at all.
+  const said = lines();
+  const root = await newProject('--from', EXAMPLE);
+  const server = await serveDashboard(root, {
+    port: 0,
+    open: stub('https://from-the-page.trycloudflare.com'),
+    announce: (state) => announceTunnel(root, state, said.log),
+  });
+  servers.push(server);
+
+  await ask(server, 'tunnel.start');
+
+  assert.match(said.text(), /from-the-page\.trycloudflare\.com/, 'the console says how to reach it');
+  assert.ok(said.text().split('\n').some((line) => line.includes('\u2588')), 'and draws a code');
+});
+
+test('an address too long to encode still prints, and does not take the tunnel down with it', async () => {
+  const root = await newProject('--from', EXAMPLE);
+  const reach = `https://calm-river-1234.trycloudflare.com/${'p'.repeat(MAX_BYTES)}/`;
+  const said = lines();
+
+  const encoded = await announceTunnel(root, { reach }, said.log);
+
+  assert.equal(encoded, reach, 'it still says which page it meant');
+  assert.match(said.text(), /On your phone: https:\/\/calm-river/, 'and the address is there to be typed');
+  assert.ok(!said.text().includes('\u2588'), 'there is simply no square');
 });
 
 // --- Installed, but not on this shell's PATH ---------------------------------------------------

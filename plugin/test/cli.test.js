@@ -26,7 +26,8 @@ test('project mode writes unprefixed skills into .claude/skills', async () => {
   await writeFile(specPath, JSON.stringify({ project: { name: 'api' }, targets: ['api'], stack: { languages: ['Python'] }, workflow: { skills: 'project' } }));
   await run(['init', '--dir', root, '--from', specPath]);
   assert.match(await read(root, 'AGENTS.md'), /uv run pytest/);
-  assert.match(await read(root, '.claude/skills/run/SKILL.md'), /\/implement-feature/);
+  assert.match(await read(root, '.claude/skills/run/SKILL.md'), /\/spec-feature/, 'a command is named plainly, with no plugin prefix');
+  assert.match(await read(root, '.claude/skills/run/SKILL.md'), /vibekit playbook implement-feature/, 'and a step with no command is named by what prints it');
   assert.doesNotMatch(await read(root, '.claude/skills/run/SKILL.md'), /vibekit:/);
 });
 

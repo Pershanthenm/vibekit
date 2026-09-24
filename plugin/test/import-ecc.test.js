@@ -61,7 +61,7 @@ test('adding the agent a command needs lets it through; the build ships the lice
   const report = await importEcc(repo, ['plan', 'planner'], { from: ecc });
   assert.deepEqual(report.imported.map((item) => item.name).sort(), ['plan', 'planner']);
   await run(['team', 'import-ecc', 'api-design', '--from', ecc, '--repo', repo]);
-  assert.ok((await readdir(join(repo, 'plugin/skills'))).includes('api-design'));
+  assert.ok((await readdir(join(repo, 'plugin/playbooks'))).includes('api-design'), 'an imported skill ships as a playbook, not a command');
   assert.match(await readFile(join(repo, 'plugin/THIRD_PARTY_NOTICES.md'), 'utf8'), /MIT License/);
 });
 

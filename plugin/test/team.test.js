@@ -56,8 +56,8 @@ test('team capture puts your skills, subagents and plugins into the plugin', asy
   const before = (await json(join(repo, 'plugin/.claude-plugin/plugin.json'))).version;
   await run(['team', 'capture', '--repo', repo]);
 
-  assert.ok((await readdir(join(repo, 'plugin/skills'))).includes('enterprise-dotnet-architect'));
-  assert.equal(await readFile(join(repo, 'plugin/skills/enterprise-dotnet-architect/references/layers.md'), 'utf8'), '# Layers\n', 'supporting files travel with the skill');
+  assert.ok((await readdir(join(repo, 'plugin/playbooks'))).includes('enterprise-dotnet-architect'), 'a captured skill ships as a playbook, not a command');
+  assert.equal(await readFile(join(repo, 'plugin/playbooks/enterprise-dotnet-architect/references/layers.md'), 'utf8'), '# Layers\n', 'supporting files travel with it, or its own text points at nothing');
   assert.ok((await readdir(join(repo, 'plugin/agents'))).includes('db-expert.md'));
   assert.match(await readFile(join(repo, 'plugin/skills/run/SKILL.md'), 'utf8'), /Autopilot/, 'a clashing personal skill never replaces a built-in one');
 

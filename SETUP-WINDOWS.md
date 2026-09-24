@@ -98,7 +98,7 @@ Already in a Claude Code session, with the zip unzipped to `~/tools/vibekit`? Pa
 Set up VibeKit for me: run `bash ~/tools/vibekit/plugin/scripts/bootstrap.sh --minimal --yes` (it can take a few minutes; allow a long timeout) and tell me what happened.
 ```
 
-Approve the command when Claude asks. Then type `/reload-plugins`, and continue with `/vibekit:setup` and `/vibekit:health live`. The only steps Claude can't do for you are the ones that need a password or a browser sign-in; it tells you which, and you run those in a terminal.
+Approve the command when Claude asks. Then type `/reload-plugins`, and continue with `/vibekit:setup` and `vibekit health --live`. The only steps Claude can't do for you are the ones that need a password or a browser sign-in; it tells you which, and you run those in a terminal.
 
 Use this rather than typing `/plugin marketplace add` with a local folder: a known Claude Code issue can install local-folder plugins without their commands.
 
@@ -140,7 +140,7 @@ agent login
 **Check everything.** In the panel:
 
 ```text
-/vibekit:health live
+vibekit health --live
 ```
 
 Claude runs the full check, including a few one-line test prompts to Claude and Cursor, and explains anything that isn't green, with the fix.
@@ -253,7 +253,7 @@ It removes the plugin, its cached copy, the `vibekit` command, `~\tools\vibekit`
 Ask in the panel first:
 
 ```text
-/vibekit:health live
+vibekit health --live
 ```
 
 | Symptom | Fix |
@@ -281,7 +281,7 @@ Set up VibeKit on this Windows machine. In PowerShell: Expand-Archive "$HOME\Dow
 
 3. Approve the commands when Claude asks. If Windows asks for permission to install Node.js, allow it.
 4. Load the plugin: type `/reload-plugins` in the panel. If the panel doesn't know that command, or Node.js was installed in step 3, **close Cursor completely and reopen it**.
-5. Type `/vibekit:` in the panel: you should see 14 commands. Run `/vibekit:setup`, then `/vibekit:health live`.
+5. Type `/vibekit:` in the panel: you should see 5 commands. Run `/vibekit:setup`, then `vibekit health --live` in a terminal.
 
 **Where your projects live:** create them under `C:\Users\<you>\projects\`, one folder each. Ask Claude "list my projects" (it runs `vibekit projects`) to see every VibeKit project on this machine, where it is and what's next.
 

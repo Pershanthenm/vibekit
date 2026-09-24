@@ -131,7 +131,7 @@ If Node.js isn't installed, the script installs it with nvm, so it doesn't need 
    ```
 4. **Check everything:**
    ```text
-   /vibekit:health live
+   vibekit health --live
    ```
    Every line should be ✔. Anything else comes with the exact fix.
 
@@ -180,7 +180,7 @@ git -C ~/tools/vibekit pull
 bash ~/tools/vibekit/plugin/scripts/bootstrap.sh --minimal --yes
 ```
 
-Then `/reload-plugins` in the Claude panel. `/vibekit:health` also tells you when your copy is behind.
+Then `/reload-plugins` in the Claude panel. `vibekit health` also tells you when your copy is behind.
 
 ### If you develop the plugin itself
 
@@ -244,6 +244,6 @@ Then `/reload-plugins` and `/vibekit:setup`.
 | `git` or `node` not found right after installing | Close the terminal tab and open a new one; if Claude can't find them either, close Cursor completely and reopen it |
 | `Unknown command: /vibekit:…` | Type `/reload-plugins` in Cursor itself (not from your phone). Still missing: in Cursor's terminal run `claude plugin list`; if VibeKit isn't there, rerun step 3 of your OS |
 | A step needs your password (Mac, Linux) | Claude hands it to you: run that one command in Cursor's terminal |
-| Anything else | `/vibekit:health live` names the problem and the fix. Then ask your lead |
+| Anything else | `vibekit health --live` names the problem and the fix. Then ask your lead |
 
 Maintaining the kit itself (adding skills, subagents, plugins or ECC pieces) is covered in `TEAM.md`.

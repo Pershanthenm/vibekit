@@ -21,7 +21,7 @@ Follow [SETUP-MAC.md](SETUP-MAC.md) or [SETUP-WINDOWS.md](SETUP-WINDOWS.md). In 
 1. Install Cursor and Docker Desktop (on Windows, also WSL2, then connect Cursor to it).
 2. Install the Claude Code extension in Cursor and sign in.
 3. In Cursor's terminal, once: `bash ~/tools/vibekit/plugin/scripts/bootstrap.sh --minimal`, then reload the window.
-4. In the Claude panel: `/vibekit:setup` installs the rest from a menu, and `/vibekit:health live` proves it works.
+4. In the Claude panel: `/vibekit:setup` installs the rest from a menu, and `vibekit health --live` proves it works.
 5. Mark favourites (just ask Claude: "make dotnet-vue my preferred stack") and put your playbook in OpenContext.
 
 ## 3. Start a project (about 15 minutes)
@@ -101,7 +101,7 @@ For a block of just two small tasks, Claude uses parallel subagents inside the s
 **Tips:**
 - Three to four lanes is the sweet spot. More lanes means more merge work and more install time.
 - Each lane owns directories, not "areas of concern". If two tasks name the same file, they aren't `[P]`.
-- Lanes never edit `specs/`; they commit with the task id (`feat: T-4 …`). `/vibekit:merge-lanes` integrates, runs the tests and ticks the tasks.
+- Lanes never edit `specs/`; they commit with the task id (`feat: T-4 …`). `vibekit merge <id>` integrates, runs the tests and ticks the tasks — `/vibekit:run` does it at the right moment.
 - Keep one orchestrator. Parallelism lives inside a feature's lanes, not in several Claude sessions fighting over the same specs.
 
 ## 5. Test the code
@@ -152,7 +152,7 @@ Six layers, from automatic to human:
 |---|---|---|
 | Traceability and evidence | Every criterion has a test named `NNN:AC-n`; the test, smoke and UI suites pass on a clean commit | `vibekit verify 003 --run` records evidence for that commit; required before `done` |
 | Status gates | No TODOs in approved specs; all criteria and tasks ticked before `done` | `vibekit status` refuses otherwise |
-| Reviewer | Spec coverage, architecture boundaries, standards, security controls touched, NFRs → `review.md` | `/vibekit:review-feature 003` |
+| Reviewer | Spec coverage, architecture boundaries, standards, security controls touched, NFRs → `review.md` | the review step of `/vibekit:run` |
 | Living docs | Feature doc, design doc and touched diagrams match the code | `vibekit docs status`; required before `done` |
 | Security CI | Secrets, SAST, dependencies, containers, optional DAST | `.github/workflows/security.yml` on every push |
 | You | Walk each acceptance criterion in the running app | `vibekit status <id> done` once it holds up |

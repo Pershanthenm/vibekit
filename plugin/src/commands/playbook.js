@@ -10,13 +10,21 @@ import { loadProject } from '../project.js';
 const PLAYBOOKS_DIR = fileURLToPath(new URL('../../playbooks/', import.meta.url));
 
 /**
- * The playbooks that came from the team kit, shipped as files because they are not ours to
- * generate. Missing directory means none were imported, which is not a problem to report.
+ * The playbooks that came from the team kit, shipped as folders because they are not ours to
+ * generate and because their own text points at the files beside them. Missing directory means
+ * none were imported, which is not a problem to report.
  */
 async function teamPlaybooks() {
-  const names = await readdir(PLAYBOOKS_DIR).catch(() => []);
-  return names.filter((name) => name.endsWith('.md')).map((name) => name.replace(/\.md$/, ''));
+  const entries = await readdir(PLAYBOOKS_DIR, { withFileTypes: true }).catch(() => []);
+  const names = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory() && !entry.isSymbolicLink()) continue;
+    if (await readText(join(PLAYBOOKS_DIR, entry.name, 'SKILL.md'))) names.push(entry.name);
+  }
+  return names.sort();
 }
+
+const teamText = (name) => readText(join(PLAYBOOKS_DIR, name, 'SKILL.md'));
 
 const described = (text) => (text.match(/^description:\s*"?(.*?)"?\s*$/m)?.[1] ?? '').trim();
 
@@ -48,7 +56,7 @@ export async function playbook({ root, args }) {
     if (team.length) {
       console.log('\n  From your team kit');
       for (const playbookName of team) {
-        console.log(`    ${playbookName.padEnd(21)} ${gist(described(await readText(join(PLAYBOOKS_DIR, `${playbookName}.md`)) || ''))}`);
+        console.log(`    ${playbookName.padEnd(21)} ${gist(described((await teamText(playbookName)) || ''))}`);
       }
     }
     console.log('\nPrint one with: vibekit playbook <name>');
@@ -62,7 +70,7 @@ export async function playbook({ root, args }) {
   }
   if (skill) return console.log(renderSkill(skill, contextFor(project), '').trim());
 
-  const fromTeam = await readText(join(PLAYBOOKS_DIR, `${name}.md`));
+  const fromTeam = await teamText(name);
   if (fromTeam) return console.log(fromTeam.trim());
 
   const known = [...SKILLS.filter((entry) => !isMenuSkill(entry.name)).map((entry) => entry.name), ...team];

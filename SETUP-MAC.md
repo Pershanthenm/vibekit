@@ -74,7 +74,7 @@ Already in a Claude Code session, with the zip unzipped to `~/tools/vibekit`? Pa
 Set up VibeKit for me: run `bash ~/tools/vibekit/plugin/scripts/bootstrap.sh --minimal --yes` (it can take a few minutes; allow a long timeout) and tell me what happened.
 ```
 
-Approve the command when Claude asks. Then type `/reload-plugins`, and continue with `/vibekit:setup` and `/vibekit:health live`. The only steps Claude can't do for you are the ones that need a password or a browser sign-in; it tells you which, and you run those in a terminal.
+Approve the command when Claude asks. Then type `/reload-plugins`, and continue with `/vibekit:setup` and `vibekit health --live`. The only steps Claude can't do for you are the ones that need a password or a browser sign-in; it tells you which, and you run those in a terminal.
 
 Use this rather than typing `/plugin marketplace add` with a local folder: a known Claude Code issue can install local-folder plugins without their commands.
 
@@ -116,7 +116,7 @@ agent login
 **Check everything.** In the panel:
 
 ```text
-/vibekit:health live
+vibekit health --live
 ```
 
 Claude runs the full check, including a few one-line test prompts to Claude and Cursor, and explains anything that isn't green, with the fix.
@@ -232,7 +232,7 @@ It removes the plugin, its cached copy, the `vibekit` command, `~/tools/vibekit`
 Ask in the panel first:
 
 ```text
-/vibekit:health live
+vibekit health --live
 ```
 
 | Symptom | Fix |

@@ -71,7 +71,7 @@ First team release.
 - Four built-in subagents (architect, test-engineer, implementer, reviewer) for Claude Code and Cursor, plus the team's own.
 - Team kit with a curated Everything Claude Code selection (17 skills, 2 agents, 4 commands as skills); about 2,200 tokens of always-on context.
 - Quality gates: acceptance criteria traced to tests; tests, smoke and UI evidence per commit; living docs; security baseline.
-- One-command onboarding for Windows (PowerShell), macOS and Linux; `/vibekit:setup` and `/vibekit:health`.
+- One-command onboarding for Windows (PowerShell), macOS and Linux; `/vibekit:setup` and `vibekit health`.
 
 Setup: see ONBOARDING.md.
 ```
