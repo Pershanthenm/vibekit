@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/logo.svg" width="88" height="88" alt="VibeKit">
+</p>
+
 # VibeKit
 
 **Spec-driven development for coding agents, with a person deciding every question that matters.**
