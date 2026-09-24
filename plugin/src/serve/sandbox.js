@@ -109,7 +109,10 @@ export function sandboxCommand(root, command, {
  * more place a quote could escape.
  */
 export async function runSandboxed(root, command, options = {}) {
-  const name = options.runtimeName ?? runtime();
+  // `null` is a decision ("there is no runtime"), not a missing option. `??` would treat it as
+  // missing and pick docker off PATH, which is how a CI machine quietly unsandboxes the test
+  // that exists to prove we refuse.
+  const name = Object.hasOwn(options, 'runtimeName') ? options.runtimeName : runtime();
   if (!name) {
     return {
       ran: false,

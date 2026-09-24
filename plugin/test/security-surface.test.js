@@ -249,6 +249,11 @@ test('a quoted argument reaches the program as one word, without its quotes', as
   assert.deepEqual(splitArgs("echo 'a b' c\\ d"), ['echo', 'a b', 'c d']);
   assert.deepEqual(splitArgs('a "b \\"quoted\\" c"'), ['a', 'b "quoted" c']);
   assert.deepEqual(splitArgs('  spaced   out  '), ['spaced', 'out']);
+  assert.deepEqual(
+    splitArgs('"C:\\Program Files\\nodejs\\node.exe" -e "process.exit(3)"'),
+    ['C:\\Program Files\\nodejs\\node.exe', '-e', 'process.exit(3)'],
+    'a Windows path inside quotes is one word, backslashes included',
+  );
   assert.throws(() => splitArgs('bad "quote'), /Unbalanced/);
 });
 
@@ -260,8 +265,8 @@ test('nothing is expanded: a dollar or a semicolon is a character, not an instru
 test('a red command run by verify is recorded red, now that its arguments survive the trip', async () => {
   const { runCommand } = await import('../src/folder/evidence.js');
   const root = await project();
-  const red = await runCommand(root, `${process.execPath} -e "process.exit(3)"`);
+  const red = await runCommand(root, `"${process.execPath}" -e "process.exit(3)"`);
   assert.equal(red.code, 3, 'exit 3 must arrive as exit 3');
-  const green = await runCommand(root, `${process.execPath} -e "process.exit(0)"`);
+  const green = await runCommand(root, `"${process.execPath}" -e "process.exit(0)"`);
   assert.equal(green.code, 0);
 });

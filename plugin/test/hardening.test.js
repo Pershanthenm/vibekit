@@ -226,7 +226,7 @@ test('the container command carries every clause of §52 as a flag', () => {
   const built = sandboxCommand('/repo', 'dotnet test', { session: 's-0001', registries: [] });
   const argv = built.argv.join(' ');
   assert.match(argv, /--read-only/, 'the rest of the filesystem is read-only');
-  assert.match(argv, /--volume \/repo:\/work:rw/, 'the worktree is mounted read-write');
+  assert.ok(built.argv.some((arg) => String(arg).replace(/\\/g, '/').endsWith(':/work:rw')), 'the worktree is mounted read-write');
   assert.match(argv, /--network none/, 'no registry named, so the network is off');
   assert.match(argv, /--cap-drop ALL/);
   assert.match(argv, /no-new-privileges/);
