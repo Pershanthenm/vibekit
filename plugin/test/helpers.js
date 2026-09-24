@@ -179,6 +179,7 @@ export function gitInit(root) {
   sh(root, 'git', 'init', '-q', '-b', 'main');
   sh(root, 'git', 'config', 'user.email', 'test@example.com');
   sh(root, 'git', 'config', 'user.name', 'Test');
+  sh(root, 'git', 'config', 'core.autocrlf', 'false');
   sh(root, 'git', 'add', '-A');
   sh(root, 'git', 'commit', '-qm', 'chore: specs');
 }

@@ -103,7 +103,7 @@ export async function skippedTests(root, { max = 400 } = {}) {
       if (!TEST_FILE.test(entry.name) || !CODE_FILE.test(entry.name)) continue;
       const lines = ((await readText(path)) ?? '').split('\n');
       for (let index = 0; index < lines.length; index += 1) {
-        if (SKIP_MARKERS.test(lines[index])) hits.push({ path: path.slice(root.length + 1), line: index + 1, text: lines[index].trim().slice(0, 100) });
+        if (SKIP_MARKERS.test(lines[index])) hits.push({ path: path.slice(root.length + 1).split(/[\\/]/).join('/'), line: index + 1, text: lines[index].trim().slice(0, 100) });
       }
     }
   };

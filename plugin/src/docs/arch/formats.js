@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { which } from '../../which.js';
+import { runnable, which } from '../../which.js';
 
 /**
  * Output formats. Documentation Feature Spec §4 (Output formats).
@@ -191,7 +191,8 @@ export function convert(inputPath, outputPath, format) {
     };
   }
   try {
-    execFileSync(converter.command, converter.args(inputPath, outputPath), { stdio: ['ignore', 'ignore', 'pipe'] });
+    const spawn = runnable(converter.command, converter.args(inputPath, outputPath));
+    execFileSync(spawn.command, spawn.args, { shell: spawn.shell, stdio: ['ignore', 'ignore', 'pipe'] });
     return { ok: true, format, by: converter.command, path: outputPath };
   } catch (error) {
     return { ok: false, format, reason: `${converter.command} failed: ${String(error.stderr ?? error.message).trim().split('\n')[0]}` };
