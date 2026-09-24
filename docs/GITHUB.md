@@ -58,14 +58,14 @@ Every change to this repository reaches every developer's machine on their next 
 
 ## 5. First release
 
-Releases → **Draft a new release**, tag `v0.2.0-beta`, target `main`, and tick **Set as a pre-release**.
+Releases → **Draft a new release**, tag `v0.1.0-alpha`, target `main`, and tick **Set as a pre-release**.
 
-**Title:** VibeKit 0.2.0-beta
+**Title:** VibeKit Alpha
 
 **Notes:**
 
 ```markdown
-First team release.
+First version. Alpha.
 
 - Spec-driven development for coding agents: requirements with EARS criteria as the unit of work, an asks inbox for every human decision, sprints with human gates.
 - Roles enforced mechanically: an MCP runner (`vibekit serve`) that enforces what agents may read, write and run, git hooks, a reviewer on a second model, evidence captured from exit codes.
