@@ -11,9 +11,15 @@ From a fresh machine to a working setup. Ten minutes on Windows, macOS or Linux.
 ## 2. Install the CLI
 
 ```bash
-git clone <this repository> ~/tools/vibekit
+git clone https://github.com/Pershanthenm/vibekit.git ~/tools/vibekit
 npm install -g ~/tools/vibekit/plugin
 vibekit version
+```
+
+Or from the [Alpha release](https://github.com/Pershanthenm/vibekit/releases/tag/v0.1.0-alpha):
+
+```bash
+npm install -g https://github.com/Pershanthenm/vibekit/releases/download/v0.1.0-alpha/vibekit-0.1.0-alpha.tgz
 ```
 
 On Windows, PowerShell works the same; use `$HOME\tools\vibekit`.
@@ -23,14 +29,25 @@ On Windows, PowerShell works the same; use `$HOME\tools\vibekit`.
 In Claude Code:
 
 ```text
-/plugin marketplace add <this repository>
+/plugin marketplace add Pershanthenm/vibekit
 /plugin install vibekit
 /reload-plugins
 ```
 
 The plugin adds the slash commands (`/vibekit.status`, `/vibekit.next`, `/vibekit.new-feature`, `/vibekit.hotfix`, `/vibekit.clarify`, `/vibekit.build`, `/vibekit.review`, `/vibekit.why`) and three hooks: at session start it hands the agent the load order and `status.md`; before a write it refuses generated files, denied paths and other agents' requirements; at the end of a turn it runs `vibekit check`.
 
-Cursor, Codex and the rest need nothing installed: `vibekit init` writes the pointer files (`.cursorrules`, `AGENTS.md`, `CLAUDE.md`) they read.
+Cursor, Codex and the rest need nothing extra as a plugin: `vibekit project new` writes the pointer files (`.cursorrules`, `AGENTS.md`, `CLAUDE.md`) they read. Attach `vibekit serve --stdio` as an MCP server when you want the runner to enforce what they may read, write and run. For Cursor and the Cursor CLI, that is `~/.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "vibekit": {
+      "command": "vibekit",
+      "args": ["serve", "--stdio"]
+    }
+  }
+}
+```
 
 ## 4. First project
 
