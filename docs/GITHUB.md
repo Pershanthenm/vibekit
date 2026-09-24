@@ -46,7 +46,6 @@ Every change to this repository reaches every developer's machine on their next 
 2. **Code owners for the kit.** Create `.github/CODEOWNERS` so changes to the team kit and the plugin need a lead's review. Replace the team name with a real GitHub team or usernames:
    ```text
    /plugin/   @YOUR-ORG/leads
-   /spec/     @YOUR-ORG/leads
    ```
    Then tick **Require review from Code Owners** in the ruleset.
 3. **Security** (Settings → Code security): turn on **Secret scanning** and **Push protection**.

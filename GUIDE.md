@@ -1,6 +1,6 @@
 # Operating guide
 
-How a team uses VibeKit day to day. The [specification](spec/vibekit-specification.md) is the reference; this is the short version, in the order things happen.
+How a team uses VibeKit day to day, in the order things happen.
 
 ## 1. Who does what
 

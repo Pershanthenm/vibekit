@@ -17,7 +17,7 @@ Coding agents are fast, and they guess. VibeKit puts one folder in your repo, `v
 
 **Site:** [pershanthenm.github.io/vibekit](https://pershanthenm.github.io/vibekit/) · **Release:** [VibeKit Alpha](https://github.com/Pershanthenm/vibekit/releases/tag/v0.1.0-alpha)
 
-VibeKit is a Claude Code plugin and a CLI with no runtime dependencies. It works with Claude Code, Cursor, Codex and any MCP client, because everything it enforces is a Markdown file in git. The full design is [the specification](spec/vibekit-specification.md). Inspired by [Spec Kit](https://github.com/github/spec-kit) and [Agent OS](https://github.com/buildermethods/agent-os).
+VibeKit is a Claude Code plugin and a CLI with no runtime dependencies. It works with Claude Code, Cursor, Codex and any MCP client, because everything it enforces is a Markdown file in git. Inspired by [Spec Kit](https://github.com/github/spec-kit) and [Agent OS](https://github.com/buildermethods/agent-os).
 
 ## Purpose
 
@@ -212,7 +212,7 @@ Every older verb (`next`, `pause`, `understand`, `arch-docs`, `quick`, `revert`,
 
 ## Outside knowledge and tools
 
-Everything from outside adds capability and never weakens a guarantee ([extensions and integration spec](spec/vibekit-extensions-integration-spec.md)):
+Everything from outside adds capability and never weakens a guarantee:
 
 - **MCP servers a project consumes** — declared in `vibekit/agents/servers.yml` as an allow-list of tools, the roles that may call them, the highest data class they may see, a per-session budget. A remote server has a `url:`; a local one has a `command:` (words, never a shell string) and is launched on stdio for each call with its credential in the one variable `token-env:` names. Agents reach both through `vibekit serve`'s `vibekit_call`, which enforces all of it at the boundary and logs every call; credentials live in machine settings (`vibekit settings server <id> <token>`), never in the folder. `vibekit check --servers` before a sprint.
 - **Skills from a repository** — `vibekit tools skills import <repo>`: identity dropped, opinions that govern code flagged rather than imported, substantial code lifted into pattern files, triggers guessed and marked low confidence, provenance and licence recorded, near-duplicates made disjoint.
@@ -302,14 +302,11 @@ See [ONBOARDING.md](ONBOARDING.md) and [docs/MULTI-EDITOR.md](docs/MULTI-EDITOR.
 | Where | For |
 |---|---|
 | [pershanthenm.github.io/vibekit](https://pershanthenm.github.io/vibekit/) | Site: coverage vs Spec Kit and Agent OS, tracker, lanes, cost |
-| [spec/vibekit-specification.md](spec/vibekit-specification.md) | The specification: the folder, the workflow, agents, memory, security, the commands |
-| [spec/vibekit-docs-feature-spec.md](spec/vibekit-docs-feature-spec.md) | Generated architecture documents and diagrams |
 | [GUIDE.md](GUIDE.md) | Working day to day |
 | [ONBOARDING.md](ONBOARDING.md) | Installing on a machine |
 | [docs/BROWNFIELD.md](docs/BROWNFIELD.md) | An existing codebase: `project import` |
 | [docs/MULTI-EDITOR.md](docs/MULTI-EDITOR.md) | Claude Code, Cursor, Codex and others on one project |
 | [docs/GITHUB.md](docs/GITHUB.md) | Publishing the repository for a team: protection, CODEOWNERS, CI, the first release |
-| [spec/vibekit-extensions-integration-spec.md](spec/vibekit-extensions-integration-spec.md) | MCP servers consumed, skills imported, extensions, signing |
 
 ## Development
 
