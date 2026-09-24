@@ -35,6 +35,15 @@ jobs:
       - name: Integration tests
         working-directory: plugin
         run: npm test
+      - name: End-to-end simulation
+        working-directory: plugin
+        run: npm run simulate
+      - name: Recovery fixture (§60 — a release that fails this does not ship)
+        working-directory: plugin
+        run: npm run recovery
+      - name: Golden fixtures (§32 — a prompt edit shows up as a diff in expected questions)
+        working-directory: plugin
+        run: npm run golden:check
 
   flake:
     # The matrix above proves the suite passes once. This proves it passes repeatedly, which is a

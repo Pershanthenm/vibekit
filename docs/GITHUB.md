@@ -10,7 +10,7 @@ Everything to paste into GitHub when you publish the team kit, and the settings 
   ```text
   Make ~/tools/vibekit a git repository on branch main, commit everything, add https://github.com/YOUR-ORG/vibekit as origin, and push.
   ```
-- Then replace `TEAM-REPO-URL` in `README.md` and `ONBOARDING.md` with the repository's address, and push again.
+- Then replace `<this repository>` in `ONBOARDING.md` with the repository's address, and push again.
 
 ## 2. The "About" box
 
@@ -18,11 +18,11 @@ On the repository page, click the gear next to **About**.
 
 **Description** (under GitHub's 350-character limit):
 
-> Spec-driven, multi-agent development for Claude Code and Cursor. Claude leads, Claude and Cursor subagents build in parallel, and every change is traced to a spec and proven by tests, smoke and UI checks. One team kit: same skills, subagents and guardrails on every machine.
+> Spec-driven development for coding agents, with a person deciding every question that matters. One folder in the repo that every agent reads; asks instead of guesses; gates a human closes; evidence from exit codes, not claims. A Claude Code plugin and a CLI with no runtime dependencies, for Claude Code, Cursor, Codex and any MCP client.
 
 Shorter alternative:
 
-> A Claude Code plugin and team kit: specs first, parallel Claude and Cursor subagents, and proof-before-done quality gates.
+> Requirements as the unit of work, an asks inbox for every human decision, sprints with human gates, and an MCP runner that enforces what agents may read, write and run.
 
 **Website:** the onboarding guide, `https://github.com/YOUR-ORG/vibekit/blob/main/ONBOARDING.md`
 
@@ -45,8 +45,8 @@ Every change to this repository reaches every developer's machine on their next 
    - Block force pushes and deletions.
 2. **Code owners for the kit.** Create `.github/CODEOWNERS` so changes to the team kit and the plugin need a lead's review. Replace the team name with a real GitHub team or usernames:
    ```text
-   /team/     @YOUR-ORG/leads
    /plugin/   @YOUR-ORG/leads
+   /spec/     @YOUR-ORG/leads
    ```
    Then tick **Require review from Code Owners** in the ruleset.
 3. **Security** (Settings → Code security): turn on **Secret scanning** and **Push protection**.
@@ -54,7 +54,7 @@ Every change to this repository reaches every developer's machine on their next 
 
 ## 4. Continuous integration
 
-`.github/workflows/tests.yml` is already in the kit. On every pull request and every push to `main`, it runs the 326 integration tests and Claude Code's own plugin validator. If you use the ruleset above, pick the **tests** check as required.
+`.github/workflows/tests.yml` is already in the kit. On every pull request and every push to `main`, it runs the suite on Windows, macOS and Linux, then the end-to-end simulation, the recovery fixture and the golden fixtures; runs the suite three more times on Windows and Ubuntu to catch flakes; and runs Claude Code's own plugin validator. If you use the ruleset above, pick the **tests** check as required.
 
 ## 5. First release
 
@@ -67,11 +67,12 @@ Releases → **Draft a new release**, tag `v0.2.0-beta`, target `main`, and tick
 ```markdown
 First team release.
 
-- Spec-driven workflow for Claude Code: menus for new projects, specs with acceptance criteria, plans, parallel builds, review, sign-off.
-- Four built-in subagents (architect, test-engineer, implementer, reviewer) for Claude Code and Cursor, plus the team's own.
-- Team kit with a curated Everything Claude Code selection (17 skills, 2 agents, 4 commands as skills); about 2,200 tokens of always-on context.
-- Quality gates: acceptance criteria traced to tests; tests, smoke and UI evidence per commit; living docs; security baseline.
-- One-command onboarding for Windows (PowerShell), macOS and Linux; `/vibekit:setup` and `vibekit health`.
+- Spec-driven development for coding agents: requirements with EARS criteria as the unit of work, an asks inbox for every human decision, sprints with human gates.
+- Roles enforced mechanically: an MCP runner (`vibekit serve`) that enforces what agents may read, write and run, git hooks, a reviewer on a second model, evidence captured from exit codes.
+- Bugs as requirements with verdicts, convergence at every gate, a security scan measured against named frameworks.
+- A live tracker for the phone (`vibekit tracker <project>`: tunnel and QR code), behind Cloudflare Access for a team, where every decision is a commit.
+- Outside knowledge that never weakens a guarantee: MCP servers consumed through an allow-list, skills imported with provenance, extensions that are data only, pinned, budgeted and signed.
+- One CLI, no runtime dependencies, tested end to end on Windows, macOS and Linux.
 
 Setup: see ONBOARDING.md.
 ```
@@ -84,10 +85,10 @@ The kit has no licence yet, and choosing one is your organisation's decision. Co
 - **Private, internal only:** leave it unlicensed (all rights reserved), or add your company's standard internal notice.
 - **Open source:** MIT or Apache-2.0 are the usual picks.
 
-Whatever you choose, keep `team/THIRD_PARTY_NOTICES.md`: the Everything Claude Code pieces are MIT-licensed, and that licence requires its notice to stay with them.
+`plugin/THIRD_PARTY_NOTICES.md` records what third-party content ships (currently none).
 
 ## Azure DevOps instead of GitHub
 
 - The repository address looks like `https://dev.azure.com/YOUR-ORG/YOUR-PROJECT/_git/vibekit` (no `.git` at the end). Use that for `TEAM-REPO-URL`.
-- Protect `main` with **branch policies**: minimum reviewers 1, a build validation that runs `cd plugin && npm test`, and required reviewers for `/team` and `/plugin` paths.
+- Protect `main` with **branch policies**: minimum reviewers 1, a build validation that runs `cd plugin && npm test && npm run simulate && npm run recovery && npm run golden:check`, and required reviewers for the `/plugin` and `/spec` paths.
 - Git for Windows includes Git Credential Manager, so developers sign in through the browser on first clone.
