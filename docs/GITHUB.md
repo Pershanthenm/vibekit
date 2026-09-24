@@ -24,7 +24,7 @@ Shorter alternative:
 
 > Requirements as the unit of work, an asks inbox for every human decision, sprints with human gates, and an MCP runner that enforces what agents may read, write and run.
 
-**Website:** the onboarding guide, `https://github.com/YOUR-ORG/vibekit/blob/main/ONBOARDING.md`
+**Website:** the landing page, `https://<you>.github.io/vibekit/` (GitHub Pages from `/docs`), or the onboarding guide if Pages is off.
 
 **Topics:**
 
