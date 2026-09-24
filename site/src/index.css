@@ -12,6 +12,11 @@ html {
 }
 
 html,
+body {
+  max-width: 100%;
+}
+
+html,
 body,
 #root {
   min-height: 100%;
