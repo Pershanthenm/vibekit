@@ -246,7 +246,12 @@ test('a quoted argument reaches the program as one word, without its quotes', as
   // evaluates to a string and exits 0 — so a red test command was recorded as green.
   assert.deepEqual(splitArgs('node -e "process.exit(3)"'), ['node', '-e', 'process.exit(3)']);
   assert.deepEqual(splitArgs('dotnet test --filter "Category=Smoke"'), ['dotnet', 'test', '--filter', 'Category=Smoke']);
-  assert.deepEqual(splitArgs("echo 'a b' c\\ d"), ['echo', 'a b', 'c d']);
+  // Outside quotes a backslash escapes the next character on Unix (`c\ d` → `c d`).
+  // On Windows it is a path separator, so the same bytes stay two words.
+  assert.deepEqual(
+    splitArgs("echo 'a b' c\\ d"),
+    process.platform === 'win32' ? ['echo', 'a b', 'c\\', 'd'] : ['echo', 'a b', 'c d'],
+  );
   assert.deepEqual(splitArgs('a "b \\"quoted\\" c"'), ['a', 'b "quoted" c']);
   assert.deepEqual(splitArgs('  spaced   out  '), ['spaced', 'out']);
   assert.deepEqual(
