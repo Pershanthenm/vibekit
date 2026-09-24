@@ -44,12 +44,28 @@ export function splitArgs(text) {
     const character = source[index];
     if (quote) {
       if (character === quote) { quote = null; continue; }
-      if (character === '\\' && quote === '"' && index + 1 < source.length) { current += source[index += 1]; continue; }
+      // Only `\"` and `\\` are escapes inside double quotes. A Windows path is
+      // `"C:\Program Files\nodejs\node.exe"` — treating `\P` or `\n` as an escape
+      // would silently destroy it, and then the spawn would look for a different file.
+      if (character === '\\' && quote === '"' && index + 1 < source.length) {
+        const next = source[index + 1];
+        if (next === '"' || next === '\\') { current += source[index += 1]; continue; }
+      }
       current += character;
       continue;
     }
     if (character === '"' || character === "'") { quote = character; started = true; continue; }
-    if (character === '\\' && index + 1 < source.length) { current += source[index += 1]; started = true; continue; }
+    if (character === '\\' && index + 1 < source.length) {
+      const next = source[index + 1];
+      if (process.platform === 'win32' && next !== '"' && next !== '\\') {
+        current += character;
+        started = true;
+        continue;
+      }
+      current += source[index += 1];
+      started = true;
+      continue;
+    }
     if (/\s/.test(character)) {
       if (started) { words.push(current); current = ''; started = false; }
       continue;

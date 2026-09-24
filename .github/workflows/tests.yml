@@ -31,6 +31,7 @@ jobs:
         run: |
           git config --global user.email "ci@example.com"
           git config --global user.name "CI"
+          git config --global core.autocrlf false
 
       - name: Integration tests
         working-directory: plugin
@@ -67,6 +68,7 @@ jobs:
         run: |
           git config --global user.email "ci@example.com"
           git config --global user.name "CI"
+          git config --global core.autocrlf false
 
       - name: Run the suite three times
         working-directory: plugin

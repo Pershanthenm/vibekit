@@ -69,7 +69,7 @@ export function normaliseServer(entry, { source = 'agents/servers.yml' } = {}) {
     const words = Array.isArray(entry.command) ? entry.command.map(String) : splitWords(String(entry.command ?? ''));
     const text = words.join(' ');
     if (!words.length) problems.push(`${id}: command is empty`);
-    else if (/[;&|<>`$\\]|\$\(/.test(text)) problems.push(`${id}: command may not contain shell metacharacters; it is run as words, not a shell string`);
+    else if (/[;&|<>`$]|\$\(/.test(text)) problems.push(`${id}: command may not contain shell metacharacters; it is run as words, not a shell string`);
     else command = words;
   } else {
     try {
