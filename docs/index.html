@@ -263,6 +263,14 @@
       border: 1px solid var(--border); border-radius: var(--r);
       padding: 18px 20px; overflow: auto; font-family: var(--mono); font-size: 13.5px; line-height: 1.7;
     }
+    .installs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 28px; }
+    .install {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 22px;
+    }
+    .install h3 { font-family: var(--display); font-size: 18px; letter-spacing: -.02em; margin-bottom: 8px; }
+    .install p { color: var(--muted); font-size: 15px; margin-bottom: 12px; }
+    .install pre { margin-top: 0; font-size: 12.5px; }
     footer { padding: 36px 0 56px; color: var(--muted); font-size: 15px; }
     footer a { color: var(--fg); }
     .reveal { opacity: 0; transform: translateY(18px); animation: rise .7s ease forwards; }
@@ -272,7 +280,7 @@
     @keyframes drift { to { transform: translate(28px, 18px) scale(1.06); } }
     @keyframes mark-in { from { opacity: 0; transform: scale(.86) rotate(-6deg); } to { opacity: 1; transform: none; } }
     @media (max-width: 900px) {
-      .hero-grid, .cards, .helpers, .problem { grid-template-columns: 1fr; }
+      .hero-grid, .cards, .helpers, .problem, .installs { grid-template-columns: 1fr; }
       .problem .span { grid-column: auto; }
       .nav-inner { flex-wrap: wrap; padding: 8px 0; }
       .nav-links { margin-left: 0; width: 100%; }
@@ -295,7 +303,7 @@
         <a href="#cli">The CLI</a>
         <a href="#speckit">vs Spec Kit</a>
         <a href="#helpers">Helpers</a>
-        <a href="#start">Start</a>
+        <a href="#install">Install</a>
         <a href="https://github.com/Pershanthenm/vibekit/releases/tag/v0.1.0-alpha">Alpha</a>
         <a href="https://github.com/Pershanthenm/vibekit">Repository</a>
       </nav>
@@ -506,14 +514,65 @@
       </div>
     </section>
 
-    <section id="start" class="band">
+    <section id="install" class="band">
       <div class="wrap">
-        <h2>Two commands a day</h2>
-        <p class="sub">Everything waiting on you, then the current sprint. Or none of this, and the tracker on your phone.</p>
+        <h2>Install</h2>
+        <p class="sub">
+          Node.js 20+ and Git. The CLI is the same on every tool. Claude Code also gets a plugin;
+          Cursor, Codex and the rest read the pointer files <code>vibekit project new</code> writes.
+        </p>
         <pre class="start">npm install -g https://github.com/Pershanthenm/vibekit/releases/download/v0.1.0-alpha/vibekit-0.1.0-alpha.tgz
-cd your-project && vibekit project new
+# or from source:
+git clone https://github.com/Pershanthenm/vibekit.git
+npm install -g ./vibekit/plugin
+vibekit version</pre>
+        <div class="installs">
+          <article class="install">
+            <h3>Claude Code</h3>
+            <p>The plugin adds slash commands and hooks. The CLI still has to be on PATH.</p>
+            <pre class="start">/plugin marketplace add Pershanthenm/vibekit
+/plugin install vibekit
+/reload-plugins
 
-vibekit action          # the inbox, most blocking first
+cd your-project && vibekit project new</pre>
+          </article>
+          <article class="install">
+            <h3>Cursor and Cursor CLI</h3>
+            <p><code>project new</code> writes <code>.cursorrules</code>. Attach the MCP server so the CLI enforces reads, writes and commands. Same for the Cursor CLI.</p>
+            <pre class="start">cd your-project && vibekit project new
+
+# ~/.cursor/mcp.json — Cursor and `cursor-agent`
+{
+  "mcpServers": {
+    "vibekit": {
+      "command": "vibekit",
+      "args": ["serve", "--stdio"]
+    }
+  }
+}</pre>
+          </article>
+          <article class="install">
+            <h3>Codex</h3>
+            <p>Codex reads <code>AGENTS.md</code>. Point its MCP config at the same stdio server.</p>
+            <pre class="start">cd your-project && vibekit project new
+
+# MCP command
+vibekit serve --stdio</pre>
+          </article>
+          <article class="install">
+            <h3>Other CLI agents</h3>
+            <p>OpenCode, Aider, or any MCP client: they read <code>AGENTS.md</code>, or they speak JSON-RPC on stdio. Git hooks still apply.</p>
+            <pre class="start">cd your-project && vibekit project new
+# or, on a repo you already have:
+vibekit project import .
+
+vibekit serve --stdio          # MCP
+vibekit serve --stdio --sandbox</pre>
+          </article>
+        </div>
+        <h2 style="margin-top:48px">Two commands a day</h2>
+        <p class="sub">Everything waiting on you, then the current sprint. Or none of this, and the tracker on your phone.</p>
+        <pre class="start">vibekit action          # the inbox, most blocking first
 vibekit sprint run      # work the current sprint with several agents
 vibekit tracker stock   # QR code; approve gates from your phone</pre>
         <div class="hero-actions">

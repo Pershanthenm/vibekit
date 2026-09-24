@@ -136,16 +136,73 @@ Redaction on ingest; entropy-scored secret detection on ingest, commit, memory a
 
 ## Install
 
+Node.js 20+ and Git. Docker or Podman for `serve --sandbox`; `cloudflared` for tunnels.
+
+### CLI (every tool)
+
 From the [Alpha release](https://github.com/Pershanthenm/vibekit/releases/tag/v0.1.0-alpha):
 
 ```bash
 npm install -g https://github.com/Pershanthenm/vibekit/releases/download/v0.1.0-alpha/vibekit-0.1.0-alpha.tgz
-cd your-project && vibekit project new
+vibekit version
 ```
 
-Or clone this repository and `npm install -g ./plugin`.
+Or from this repository:
 
-For Claude Code, install the plugin from this repository's marketplace; the slash commands `/vibekit.status`, `/vibekit.next`, `/vibekit.new-feature`, `/vibekit.hotfix`, `/vibekit.clarify`, `/vibekit.build`, `/vibekit.review` and `/vibekit.why` run the same CLI. Node.js 20+ and Git are required; Docker or Podman for `serve --sandbox`; `cloudflared` for tunnels. See [ONBOARDING.md](ONBOARDING.md).
+```bash
+git clone https://github.com/Pershanthenm/vibekit.git
+npm install -g ./vibekit/plugin
+```
+
+Then, in a project: `vibekit project new`. On a repo you already have: `vibekit project import .`.
+
+### Claude Code
+
+The plugin adds slash commands (`/vibekit.status`, `/vibekit.next`, `/vibekit.new-feature`, `/vibekit.hotfix`, `/vibekit.clarify`, `/vibekit.build`, `/vibekit.review`, `/vibekit.why`) and hooks. The CLI still has to be on PATH.
+
+```text
+/plugin marketplace add Pershanthenm/vibekit
+/plugin install vibekit
+/reload-plugins
+```
+
+Then `cd your-project && vibekit project new`.
+
+### Cursor and Cursor CLI
+
+`project new` writes `.cursorrules`. Attach the MCP server so reads, writes and commands are enforced — in the Cursor app and in the Cursor CLI (`cursor-agent`).
+
+```json
+{
+  "mcpServers": {
+    "vibekit": {
+      "command": "vibekit",
+      "args": ["serve", "--stdio"]
+    }
+  }
+}
+```
+
+Save that as `~/.cursor/mcp.json`. Add `--sandbox` to the args if you want a container per session.
+
+### Codex
+
+Codex reads `AGENTS.md`, which `project new` writes. Point its MCP config at:
+
+```bash
+vibekit serve --stdio
+```
+
+### Other CLI agents
+
+OpenCode, Aider, or any MCP client: they read `AGENTS.md`, or they speak JSON-RPC on stdio. Git hooks still apply.
+
+```bash
+cd your-project && vibekit project new
+vibekit serve --stdio
+```
+
+See [ONBOARDING.md](ONBOARDING.md) and [docs/MULTI-EDITOR.md](docs/MULTI-EDITOR.md).
 
 ## Documentation
 
