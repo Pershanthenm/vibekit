@@ -1,9 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { open, stat } from 'node:fs/promises';
-import { runLogPath } from './control.js';
-import { listFeatures } from './features.js';
-import { loadManifest } from './manifest.js';
-import { queueLogPath } from './queue.js';
+import { readdir } from 'node:fs/promises';
+import { join } from 'node:path';
+import { FOLDER_NAMES } from './folder/layout.js';
 
 /**
  * 192 bits, url-safe. Used for the path the console is served under and, separately, for the
@@ -54,20 +53,23 @@ export function fingerprint(state) {
 }
 
 /**
- * Every log the console follows: each dispatched lane's output, and the transcript of fixes run
- * from the scan. Both travel as the same kind of event, so the page needs one console rather than
- * two, and watching a fix from a phone works because watching a lane already did.
+ * Every log the console follows.
+ *
+ * Parallel lanes and the build queue are gone (spec §12: one requirement, one holder, one
+ * branch), so what remains is the transcript of anything the page itself ran. Session output
+ * lands in .state/sessions/<id>/ and is picked up from there once serve writes it.
  */
 export async function laneLogs(root) {
+  const folder = (await Promise.all(FOLDER_NAMES.map(async (name) => ((await readdir(join(root, name)).catch(() => null)) ? name : null)))).find(Boolean);
+  if (!folder) return [];
+  const dir = join(root, folder, '.state/sessions');
+  const ids = (await readdir(dir).catch(() => [])).sort();
   const logs = [];
-  for (const feature of await listFeatures(root).catch(() => [])) {
-    const manifest = await loadManifest(root, feature.id).catch(() => null);
-    for (const lane of manifest?.lanes ?? []) {
-      if (lane.logPath) logs.push({ id: `${feature.id}/${lane.name}`, lane: lane.name, feature: feature.id, path: lane.logPath });
+  for (const id of ids) {
+    for (const file of (await readdir(join(dir, id)).catch(() => [])).filter((name) => /\.(?:log|txt)$/.test(name))) {
+      logs.push({ id: `${id}/${file}`, lane: id, feature: file.replace(/\.(?:log|txt)$/, ''), path: join(dir, id, file) });
     }
   }
-  logs.push({ id: 'scan/run', lane: 'fixes', feature: 'scan', path: runLogPath(root) });
-  logs.push({ id: 'queue/run', lane: 'queue', feature: 'queue', path: queueLogPath(root) });
   return logs;
 }
 
