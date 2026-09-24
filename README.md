@@ -8,8 +8,12 @@ Coding agents are fast, and they guess. VibeKit puts one folder in your repo, `v
 ![platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20macOS%20%7C%20Linux-blue)
 ![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-8A63D2)
 ![Cursor](https://img.shields.io/badge/Cursor-supported-black)
+[![site](https://img.shields.io/badge/site-pershanthenm.github.io%2Fvibekit-cdf34a?labelColor=1c1b2e)](https://pershanthenm.github.io/vibekit/)
+[![release](https://img.shields.io/github/v/release/Pershanthenm/vibekit?include_prereleases&label=release)](https://github.com/Pershanthenm/vibekit/releases/tag/v0.1.0-alpha)
 
-VibeKit is a Claude Code plugin and a CLI with no runtime dependencies. It works with Claude Code, Cursor, Codex and any MCP client, because everything it enforces is a Markdown file in git. The designed landing page is [docs/index.html](docs/index.html). The full design is [the specification](spec/vibekit-specification.md).
+**Site:** [pershanthenm.github.io/vibekit](https://pershanthenm.github.io/vibekit/) · **Release:** [VibeKit Alpha](https://github.com/Pershanthenm/vibekit/releases/tag/v0.1.0-alpha)
+
+VibeKit is a Claude Code plugin and a CLI with no runtime dependencies. It works with Claude Code, Cursor, Codex and any MCP client, because everything it enforces is a Markdown file in git. The full design is [the specification](spec/vibekit-specification.md).
 
 ## Purpose
 
@@ -132,10 +136,14 @@ Redaction on ingest; entropy-scored secret detection on ingest, commit, memory a
 
 ## Install
 
+From the [Alpha release](https://github.com/Pershanthenm/vibekit/releases/tag/v0.1.0-alpha):
+
 ```bash
-npm install -g ./plugin
+npm install -g https://github.com/Pershanthenm/vibekit/releases/download/v0.1.0-alpha/vibekit-0.1.0-alpha.tgz
 cd your-project && vibekit project new
 ```
+
+Or clone this repository and `npm install -g ./plugin`.
 
 For Claude Code, install the plugin from this repository's marketplace; the slash commands `/vibekit.status`, `/vibekit.next`, `/vibekit.new-feature`, `/vibekit.hotfix`, `/vibekit.clarify`, `/vibekit.build`, `/vibekit.review` and `/vibekit.why` run the same CLI. Node.js 20+ and Git are required; Docker or Podman for `serve --sandbox`; `cloudflared` for tunnels. See [ONBOARDING.md](ONBOARDING.md).
 
@@ -143,7 +151,7 @@ For Claude Code, install the plugin from this repository's marketplace; the slas
 
 | Where | For |
 |---|---|
-| [docs/index.html](docs/index.html) | Landing page: purpose, Spec Kit, the helpers |
+| [pershanthenm.github.io/vibekit](https://pershanthenm.github.io/vibekit/) | Site: purpose, Spec Kit, the helpers |
 | [spec/vibekit-specification.md](spec/vibekit-specification.md) | The specification: the folder, the workflow, agents, memory, security, the commands |
 | [spec/vibekit-docs-feature-spec.md](spec/vibekit-docs-feature-spec.md) | Generated architecture documents and diagrams |
 | [GUIDE.md](GUIDE.md) | Working day to day |

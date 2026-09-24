@@ -27,5 +27,13 @@
     "golden": "node tools/golden.mjs",
     "golden:check": "node tools/golden.mjs --check"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "homepage": "https://pershanthenm.github.io/vibekit/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pershanthenm/vibekit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Pershanthenm/vibekit/issues"
+  }
 }
