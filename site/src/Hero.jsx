@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { Plus } from "lucide-react";
+import LaptopScene from "./LaptopScene.jsx";
 import "./Hero.css";
 
 const EASE = [0.16, 1, 0.3, 1];
-const VIDEO =
-  "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260508_215831_c6a8989c-d716-4d8d-8745-e972a2eec711.mp4";
 const ALPHA = "https://github.com/Pershanthenm/vibekit/releases/tag/v0.1.0-alpha";
 
 const LINKS = [
@@ -56,20 +55,17 @@ export default function Hero() {
 
   return (
     <section className="hero" id="home">
-      <div className="video-stage">
-        <motion.div
-          className="video-frame"
-          {...enter({
-            initial: { opacity: 0, scale: 1.05 },
-            animate: { opacity: 1, scale: 1 },
-            transition: { duration: 1.8, ease: EASE },
-          })}
-        >
-          <video autoPlay muted loop playsInline>
-            <source src={VIDEO} type="video/mp4" />
-          </video>
-        </motion.div>
-      </div>
+      <motion.div
+        className="scene"
+        aria-hidden="true"
+        {...enter({
+          initial: { opacity: 0, scale: 1.05 },
+          animate: { opacity: 1, scale: 1 },
+          transition: { duration: 1.8, ease: EASE },
+        })}
+      >
+        <LaptopScene reduced={reduced} />
+      </motion.div>
 
       <motion.nav
         className="nav"
@@ -147,7 +143,7 @@ export default function Hero() {
             })}
           >
             <i />
-            Alpha for Claude, Cursor, Codex
+            Alpha · Claude Code, Cursor, Codex, any MCP client
           </motion.p>
           <motion.h1
             {...enter({
@@ -156,9 +152,9 @@ export default function Hero() {
               transition: { delay: 0.8, duration: 0.8, ease: EASE },
             })}
           >
-            Agents write.
+            Agents build it.
             <br />
-            A person decides.
+            You decide it.
           </motion.h1>
           <motion.div
             className="cta-row"
@@ -169,17 +165,17 @@ export default function Hero() {
             })}
           >
             <a className="btn solid" href={ALPHA}>
-              Get Alpha
+              Get the alpha
             </a>
             <a className="btn ghost" href="#coverage" onClick={(event) => jump(event, "#coverage")}>
-              How it works
+              See how it works
             </a>
           </motion.div>
         </div>
         <div className="foot-tags">
-          <span>Tracker</span>
-          <span>Lanes</span>
-          <span>Evidence</span>
+          <span>Asks, not guesses</span>
+          <span>Evidence, not claims</span>
+          <span>Reviewed on a second model</span>
         </div>
       </motion.div>
     </section>

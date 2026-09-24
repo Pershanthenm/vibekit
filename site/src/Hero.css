@@ -9,26 +9,43 @@
   overflow: hidden;
 }
 
-.video-stage {
+.scene {
   position: absolute;
   inset: 0;
   z-index: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  padding-top: 88px;
+  pointer-events: none;
 }
 
-.video-frame {
-  width: 80%;
-  height: 80%;
+.scene-inner {
+  position: relative;
+  width: 88%;
+  height: 58%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
 }
 
-.video-frame video {
+.scene-svg {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  display: block;
+  background: transparent;
 }
+
+.scene-svg .t {
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  fill: #cfd6e6;
+}
+
+.scene-svg .t1 { fill: #e8edf8; }
+.scene-svg .t2 { fill: #7e8799; }
 
 .nav {
   position: fixed;
@@ -196,9 +213,9 @@
   margin-top: auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 22px;
   width: 100%;
-  padding: 48px max(16px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  padding: 64px 16px calc(28px + env(safe-area-inset-bottom, 0px));
   background: linear-gradient(to top, #ffffff 0%, rgba(255, 255, 255, 0.8) 50%, transparent 100%);
 }
 
@@ -214,7 +231,7 @@
 .subtitle {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   font-size: 13px;
   font-weight: 400;
   color: rgba(0, 0, 0, 0.55);
@@ -231,16 +248,17 @@
 
 .foot h1 {
   font-weight: 300;
-  font-size: clamp(1.85rem, 8.4vw, 4.5rem);
+  font-size: clamp(2rem, 8vw, 4.5rem);
   letter-spacing: -0.03em;
-  line-height: 1.05;
+  line-height: 1;
   max-width: 100%;
+  color: #000;
 }
 
 .cta-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
 }
 
@@ -249,12 +267,13 @@
   align-items: center;
   justify-content: center;
   min-height: 44px;
-  padding: 0 18px;
+  padding: 0 20px;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 500;
   text-decoration: none;
   flex: 1 1 auto;
+  transition: opacity 0.2s ease, background 0.2s ease;
 }
 
 .btn.solid {
@@ -262,11 +281,15 @@
   color: #fff;
 }
 
+.btn.solid:hover { opacity: 0.85; }
+
 .btn.ghost {
   background: transparent;
   color: #000;
   border: 1px solid rgba(0, 0, 0, 0.35);
 }
+
+.btn.ghost:hover { background: rgba(0, 0, 0, 0.04); }
 
 .foot-tags {
   display: flex;
@@ -275,12 +298,16 @@
 }
 
 .foot-tags span {
-  padding: 7px 12px;
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 14px;
   border-radius: 999px;
   background: #fff;
   border: 1px solid rgba(0, 0, 0, 0.12);
   font-size: 11px;
   font-weight: 500;
+  color: rgba(0, 0, 0, 0.7);
 }
 
 @media (min-width: 768px) {
@@ -307,17 +334,30 @@
     height: 32px;
   }
 
-  .video-frame {
-    width: 100%;
-    height: 100%;
+  .scene {
+    justify-content: flex-end;
+    align-items: center;
+    padding-top: 0;
+    padding-right: 2%;
+  }
+
+  .scene-inner {
+    width: 54%;
+    height: 86%;
+    overflow: visible;
   }
 
   .foot {
-    flex-direction: row;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 24px;
-    padding: 80px 32px 28px;
+    position: absolute;
+    top: 20vh;
+    left: 0;
+    right: auto;
+    bottom: auto;
+    width: min(46%, 620px);
+    margin: 0;
+    padding: 0 32px;
+    background: none;
+    gap: 22px;
   }
 
   .foot-left {
@@ -326,8 +366,9 @@
   }
 
   .foot h1 {
-    font-size: clamp(2.5rem, 5.5vw, 4.5rem);
+    font-size: clamp(2.25rem, 4.6vw, 4.25rem);
     line-height: 1;
+    white-space: nowrap;
   }
 
   .cta-row {
@@ -337,19 +378,20 @@
   .btn {
     flex: none;
     min-height: 40px;
+    height: 40px;
   }
 }
 
 @media (max-width: 767px) and (max-height: 740px) {
-  .video-frame {
-    width: 86%;
-    height: 62%;
+  .scene-inner {
+    width: 94%;
+    height: 46%;
   }
 
   .foot {
     padding-top: 20px;
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
-    gap: 10px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    gap: 12px;
   }
 
   .foot-left {
@@ -357,17 +399,6 @@
   }
 
   .foot h1 {
-    font-size: clamp(1.7rem, 7.5vw, 2.35rem);
-  }
-}
-
-@media (max-width: 767px) and (max-height: 600px) {
-  .video-frame {
-    height: 56%;
-  }
-
-  .foot {
-    padding-top: 12px;
-    gap: 8px;
+    font-size: clamp(1.75rem, 8vw, 2.4rem);
   }
 }
