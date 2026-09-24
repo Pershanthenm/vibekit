@@ -17,20 +17,20 @@ const LINKS = [
 
 function LogoMark() {
   return (
-    <svg className="logo-mark" viewBox="0 0 28 28" aria-hidden="true">
-      <rect x="3.2" y="7.4" width="16" height="6.2" rx="3.1" fill="#000" transform="rotate(-35 11.2 10.5)" />
-      <rect x="8.6" y="13.2" width="16" height="6.2" rx="3.1" fill="#000" transform="rotate(-35 16.6 16.3)" />
+    <svg className="logo-mark" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="3" y="7" width="13" height="5" rx="2.5" fill="#000" transform="rotate(-35 3 7)" />
+      <rect x="9" y="13" width="13" height="5" rx="2.5" fill="#000" transform="rotate(-35 9 13)" />
     </svg>
   );
 }
 
 function GridIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-      <circle cx="3" cy="3" r="1.35" fill="#fff" />
-      <circle cx="9" cy="3" r="1.35" fill="#fff" />
-      <circle cx="3" cy="9" r="1.35" fill="#fff" />
-      <circle cx="9" cy="9" r="1.35" fill="#fff" />
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+      <circle cx="3.5" cy="3.5" r="1.4" fill="#fff" />
+      <circle cx="8.5" cy="3.5" r="1.4" fill="#fff" />
+      <circle cx="3.5" cy="8.5" r="1.4" fill="#fff" />
+      <circle cx="8.5" cy="8.5" r="1.4" fill="#fff" />
     </svg>
   );
 }
@@ -97,7 +97,7 @@ export default function Hero() {
               <span className={`menu-circle${open ? " is-open" : ""}`}>
                 <Plus size={12} strokeWidth={3} />
               </span>
-              Menu
+              <span className="menu-label">Menu</span>
             </button>
             {open && (
               <div className="menu-panel" id="site-menu">
@@ -114,17 +114,17 @@ export default function Hero() {
           </div>
 
           <div className="tags-pill">
-            <span>Live tracker</span>
-            <span>Parallel lanes</span>
+            <span>Spec-driven</span>
+            <span>Agent-native</span>
           </div>
         </div>
 
         <div className="nav-right">
-          <div className="adaptive">
-            <span className="grid-btn" aria-hidden="true">
+          <div className="right-pill">
+            <span className="right-circle" aria-hidden="true">
               <GridIcon />
             </span>
-            <span className="adaptive-label">Signed gates</span>
+            <span className="right-label">Built for the morning after</span>
           </div>
         </div>
       </motion.nav>
