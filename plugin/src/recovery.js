@@ -30,15 +30,16 @@ export const STEPS = 5;
 export const REQ = 'REQ-001';
 
 const CANCEL = `// Cancel a confirmed booking and issue the refund. REQ-001 AC-1.
-export function cancel(booking) {
+function cancel(booking) {
   if (booking.status !== 'confirmed') throw new Error('only a confirmed booking can be cancelled');
   return { ...booking, status: 'cancelled', refund: { amount: booking.price, to: booking.paidWith } };
 }
+module.exports = { cancel };
 `;
 
-const TEST = `import { test } from 'node:test';
-import assert from 'node:assert/strict';
-import { cancel } from '../src/cancel.js';
+const TEST = `const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const { cancel } = require('../src/cancel.js');
 
 test('Cancel_ConfirmedBooking_IssuesRefund_AC1', () => {
   const result = cancel({ status: 'confirmed', price: 120, paidWith: 'card-1' });
@@ -112,7 +113,7 @@ export async function fixture({ runner = 'claude-code' } = {}) {
   // commands go where a team puts them. They are the fixture's own, so verify has something real to run.
   const projectPath = join(root, 'specs/project.json');
   const project = JSON.parse(await readFile(projectPath, 'utf8'));
-  project.commands = { ...(project.commands ?? {}), build: `"${process.execPath}" -e "process.exit(0)"`, test: `"${process.execPath}" --test tests/` };
+  project.commands = { ...(project.commands ?? {}), build: `"${process.execPath}" -e "process.exit(0)"`, test: `"${process.execPath}" --test tests/cancel.test.js` };
   await writeFile(projectPath, `${JSON.stringify(project, null, 2)}\n`);
   await vk(root, ['req', 'show', REQ], { home }); // regenerates map.md from the new commands
   await commitAll(root, 'scene: stage 5, one ready requirement');

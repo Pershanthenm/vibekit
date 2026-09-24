@@ -196,7 +196,7 @@ async function greenfield() {
 
   // Evidence comes from `verify` running the commands in map.md, never from a hand-written block.
   // The test command is set to something that passes, the way a real project's would.
-  await patch(join(root, 'vibekit/product/map.md'), [[/^build\s{2,}.*$/m, `build     ${process.execPath} -e "process.exit(0)"`], [/^test\s{2,}.*$/m, `test      ${process.execPath} -e "process.exit(0)"`]]);
+  await patch(join(root, 'vibekit/product/map.md'), [[/^build\s{2,}.*$/m, `build     "${process.execPath}" -e "process.exit(0)"`], [/^test\s{2,}.*$/m, `test      "${process.execPath}" -e "process.exit(0)"`]]);
   await git(root, 'add', '-A');
   await commit(root, 'feat(REQ-001): handler and tests');
   const verified = await vk(root, ['verify'], { home });
@@ -595,7 +595,8 @@ async function hostile() {
   has(deps.out, 'not checked:', 'and offline says what it did not look up');
 
   // --sandbox is a decision: without a runtime the session is refused, never quietly unsandboxed.
-  const boxed = await vk(root, ['serve', '--stdio', '--sandbox'], { home, expect: 'any' });
+  // No --stdio here: with docker present that starts a server and never returns.
+  const boxed = await vk(root, ['serve', '--sandbox'], { home, expect: 'any' });
   check(boxed.code !== 0 || /sandbox/i.test(boxed.out), 'serve --sandbox does not silently run unsandboxed', boxed.out.slice(0, 120));
 
   step = 63;
@@ -726,7 +727,7 @@ async function misbehavingAgent() {
   // It skips the test it cannot make pass, writes an evidence block, and claims tested.
   await mkdir(join(root, 'tests'), { recursive: true });
   await writeFile(join(root, 'tests/Cancel.Tests.cs'), '[Fact(Skip = "flaky")]\npublic void Cancel_IssuesRefund_AC1() { }\n');
-  await patch(join(root, 'vibekit/product/map.md'), [[/^build\s{2,}.*$/m, `build     ${process.execPath} -e "process.exit(0)"`], [/^test\s{2,}.*$/m, `test      ${process.execPath} -e "process.exit(0)"`]]);
+  await patch(join(root, 'vibekit/product/map.md'), [[/^build\s{2,}.*$/m, `build     "${process.execPath}" -e "process.exit(0)"`], [/^test\s{2,}.*$/m, `test      "${process.execPath}" -e "process.exit(0)"`]]);
   await git(root, 'add', '-A');
   await commit(root, 'wip');
   await vk(root, ['verify'], { home });
