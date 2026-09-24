@@ -1,6 +1,6 @@
 {
   "name": "vibekit",
-  "version": "0.2.0-beta",
+  "version": "0.1.0-alpha",
   "description": "VibeKit: spec-driven, multi-agent development for Claude Code and Cursor",
   "type": "module",
   "bin": {

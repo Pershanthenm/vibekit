@@ -1,7 +1,7 @@
 {
   "name": "vibekit",
   "description": "VibeKit: requirements as the unit of work, an asks inbox for every human decision, an MCP runner that enforces what agents may read, write and run, and a live tracker — for Claude Code, Cursor and any file-driven agent.",
-  "version": "0.2.0-beta",
+  "version": "0.1.0-alpha",
   "license": "MIT",
   "author": {
     "name": "VibeKit"
