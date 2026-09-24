@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>VibeKit — agents write the code. A person decides.</title>
-  <meta name="description" content="Coding agents guess. VibeKit makes them ask. One folder every agent reads, asks instead of invented facts, and a gate a human closes.">
+  <meta name="description" content="Spec Kit and Agent OS hand you a first version. VibeKit stays for the whole life of the project — coverage, not a first pass.">
   <link rel="canonical" href="https://pershanthenm.github.io/vibekit/">
   <link rel="icon" href="logo.svg" type="image/svg+xml">
   <meta property="og:title" content="VibeKit">
@@ -73,11 +73,11 @@
       font-weight: 800; letter-spacing: -.02em; font-size: 20px;
     }
     .brand img { width: 36px; height: 36px; border-radius: 10px; }
-    .nav-links { margin-left: auto; display: flex; gap: 4px; flex-wrap: wrap; }
+    .nav-links { margin-left: auto; display: flex; gap: 2px; flex-wrap: wrap; }
     .nav-links a {
       text-decoration: none; color: var(--muted);
       font-family: var(--display); font-size: 13px; font-weight: 700;
-      padding: 8px 12px; border-radius: 999px;
+      padding: 8px 11px; border-radius: 999px;
     }
     .nav-links a:hover { color: var(--fg); background: var(--surface); }
     .btn {
@@ -88,11 +88,7 @@
     .btn-primary { background: var(--brand); color: var(--brand-ink); }
     .btn-primary:hover { filter: brightness(1.05); }
     .btn-ghost { border-color: var(--border); color: var(--fg); }
-    .hero {
-      position: relative;
-      padding: 72px 0 48px;
-      overflow: hidden;
-    }
+    .hero { position: relative; padding: 72px 0 48px; overflow: hidden; }
     .hero::before, .hero::after {
       content: ""; position: absolute; border-radius: 50%; filter: blur(10px);
       animation: drift 14s ease-in-out infinite alternate;
@@ -127,10 +123,7 @@
       font-size: clamp(32px, 4.6vw, 56px);
       line-height: 1.06; letter-spacing: -.02em; font-weight: 800;
     }
-    .lede {
-      margin-top: 22px; font-size: 20px; color: var(--muted);
-      max-width: 38ch; font-style: italic;
-    }
+    .lede { margin-top: 22px; font-size: 20px; color: var(--muted); max-width: 38ch; font-style: italic; }
     .inspired {
       margin-top: 16px; font-family: var(--display); font-size: 13px;
       font-weight: 700; letter-spacing: .02em; color: var(--faint);
@@ -145,27 +138,19 @@
       border-radius: 999px; padding: 6px 11px;
     }
     .term {
-      background: #10101c;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      box-shadow: 0 24px 60px rgba(0,0,0,.45);
-      overflow: hidden;
-      min-height: 420px;
-      display: flex; flex-direction: column;
+      background: #10101c; border: 1px solid var(--border); border-radius: 16px;
+      box-shadow: 0 24px 60px rgba(0,0,0,.45); overflow: hidden;
+      min-height: 420px; display: flex; flex-direction: column;
     }
     .term-bar {
       display: flex; align-items: center; gap: 8px;
-      padding: 12px 14px; border-bottom: 1px solid var(--border);
-      background: #141426;
+      padding: 12px 14px; border-bottom: 1px solid var(--border); background: #141426;
     }
     .dot { width: 10px; height: 10px; border-radius: 50%; }
     .dot-r { background: #ff7a7a; }
     .dot-y { background: #f0b429; }
     .dot-g { background: #cdf34a; }
-    .term-title {
-      margin-left: 8px; font-family: var(--mono); font-size: 11px;
-      color: var(--faint); letter-spacing: .04em;
-    }
+    .term-title { margin-left: 8px; font-family: var(--mono); font-size: 11px; color: var(--faint); letter-spacing: .04em; }
     .term-tabs { display: flex; gap: 4px; padding: 8px 10px 0; }
     .term-tabs button {
       font-family: var(--display); font-size: 11px; font-weight: 700;
@@ -175,14 +160,9 @@
     }
     .term-tabs button[aria-selected="true"] { color: var(--brand); border-bottom-color: var(--brand); }
     .term-body {
-      position: relative;
-      flex: 1; padding: 16px 18px 20px;
+      position: relative; flex: 1; padding: 16px 18px 20px;
       font-family: var(--mono); font-size: 13px; line-height: 1.7;
       color: #d8e0b8; white-space: pre-wrap;
-    }
-    .term-body::after {
-      content: ""; position: absolute; inset: 0; pointer-events: none;
-      background: linear-gradient(180deg, transparent 0%, transparent 92%, rgba(12,12,24,.55) 100%);
     }
     .ln { display: block; min-height: 1.7em; }
     .ln.cmd { color: var(--fg); }
@@ -204,48 +184,86 @@
     }
     .sub { color: var(--muted); margin-top: 14px; max-width: 62ch; font-size: 18px; }
     .sub a { color: var(--fg); text-underline-offset: 3px; }
-    .problem {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 36px;
-    }
+    .problem { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 36px; }
     .problem article {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: var(--r); padding: 26px 24px;
     }
-    .problem .span { grid-column: 1 / -1; background:
-      linear-gradient(135deg, color-mix(in srgb, var(--brand) 12%, var(--surface)), var(--surface));
+    .problem .span {
+      grid-column: 1 / -1;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 12%, var(--surface)), var(--surface));
     }
     .kicker {
       font-family: var(--display); font-size: 12px; font-weight: 700;
       letter-spacing: .08em; text-transform: uppercase; color: var(--glow);
       margin-bottom: 10px;
     }
-    .problem h3 { font-family: var(--display); font-size: 24px; letter-spacing: -.015em; margin-bottom: 10px; }
-    .problem p { color: var(--muted); }
-    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; }
-    .card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--r); padding: 22px;
+    .problem h3, .split h3, .card h3, .install h3 {
+      font-family: var(--display); letter-spacing: -.015em; margin-bottom: 10px;
     }
-    .card h3 { font-family: var(--display); font-size: 18px; letter-spacing: -.02em; margin-bottom: 8px; }
-    .card p { color: var(--muted); font-size: 16px; }
+    .problem h3 { font-size: 24px; }
+    .problem p, .card p { color: var(--muted); }
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 22px; }
+    .card h3 { font-size: 18px; }
+    .card p { font-size: 16px; }
     .num {
       width: 28px; height: 28px; border-radius: 8px; background: var(--brand);
       color: var(--brand-ink); font-family: var(--display); font-weight: 800; font-size: 13px;
       display: grid; place-items: center; margin-bottom: 14px;
     }
-    .table-wrap { overflow-x: auto; margin-top: 28px; }
-    table { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 16px; }
-    th, td { text-align: left; padding: 14px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .legend {
+      margin-top: 22px; font-family: var(--display); font-size: 13px; font-weight: 700;
+      color: var(--muted); letter-spacing: .02em;
+    }
+    .legend b { font-weight: 800; }
+    .legend .yes { color: var(--ok); }
+    .legend .part { color: var(--glow); }
+    .legend .no { color: var(--faint); }
+    .stages { display: grid; gap: 42px; margin-top: 36px; }
+    .stage.in .stage-title { animation: rise .6s ease both; }
+    .stage-title {
+      font-family: var(--display);
+      font-size: clamp(26px, 3.4vw, 40px);
+      letter-spacing: -.03em; line-height: 1.08; margin-bottom: 6px;
+    }
+    .stage.after {
+      padding: 22px; border-radius: 22px;
+      border: 1px solid color-mix(in srgb, var(--brand) 35%, var(--border));
+      background: linear-gradient(180deg, color-mix(in srgb, var(--brand) 8%, var(--surface)), var(--surface));
+    }
+    .table-wrap { overflow-x: auto; margin-top: 14px; }
+    table { width: 100%; border-collapse: collapse; font-size: 16px; }
+    th, td { text-align: left; padding: 13px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
     th {
       color: var(--muted); font-family: var(--display); font-size: 12px;
       letter-spacing: .06em; text-transform: uppercase;
     }
-    .win { color: var(--ok); font-weight: 600; }
-    .helpers { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 28px; }
-    .helper-col {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--r); padding: 22px;
+    .cover { table-layout: fixed; }
+    .cover td:first-child, .cover th:first-child { width: 52%; }
+    .cover td:not(:first-child), .cover th:not(:first-child) { text-align: center; width: 16%; }
+    .short { display: none; }
+    .m {
+      display: inline-grid; place-items: center;
+      min-width: 1.6em; font-family: var(--display); font-weight: 800; font-size: 18px;
+      opacity: 0; transform: scale(.6);
     }
+    .in .m { animation: stamp .35s cubic-bezier(.2,1.4,.4,1) forwards; }
+    .cover tbody tr:nth-child(1) .m { animation-delay: .04s; }
+    .cover tbody tr:nth-child(2) .m { animation-delay: .08s; }
+    .cover tbody tr:nth-child(3) .m { animation-delay: .12s; }
+    .cover tbody tr:nth-child(4) .m { animation-delay: .16s; }
+    .cover tbody tr:nth-child(5) .m { animation-delay: .2s; }
+    .cover tbody tr:nth-child(6) .m { animation-delay: .24s; }
+    .cover tbody tr:nth-child(7) .m { animation-delay: .28s; }
+    .cover tbody tr:nth-child(8) .m { animation-delay: .32s; }
+    .cover tbody tr:nth-child(9) .m { animation-delay: .36s; }
+    .m.yes { color: var(--ok); }
+    .m.part { color: var(--glow); }
+    .m.no { color: var(--faint); }
+    .pattern { margin-top: 28px; font-style: italic; color: var(--muted); max-width: 68ch; font-size: 18px; }
+    .helpers { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 28px; }
+    .helper-col { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 22px; }
     .helper-col h3 {
       font-family: var(--display); font-size: 12px; letter-spacing: .08em;
       text-transform: uppercase; color: var(--muted); margin-bottom: 16px;
@@ -258,39 +276,136 @@
     .helper b { font-family: var(--mono); font-size: 13px; font-weight: 600; }
     .helper span { color: var(--muted); font-size: 14px; }
     .band { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .split { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr); gap: 40px; align-items: start; margin-top: 36px; }
+    .split h3 { font-size: 22px; margin-top: 22px; }
+    .split h3:first-child { margin-top: 0; }
+    .split p { color: var(--muted); }
+    .rules { display: grid; gap: 12px; margin-top: 22px; }
+    .rule {
+      display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px;
+    }
+    .rule b { font-family: var(--display); font-size: 15px; }
+    .rule span { color: var(--muted); display: block; font-size: 15px; }
+    .phone-wrap { display: flex; justify-content: center; }
+    .phone {
+      width: min(320px, 100%);
+      background: #0e0e1c;
+      border: 10px solid #2a2940;
+      border-radius: 36px;
+      box-shadow: 0 30px 70px rgba(0,0,0,.5), 0 0 0 1px #3d3c58;
+      overflow: hidden;
+      position: relative;
+    }
+    .phone::before {
+      content: ""; display: block; width: 92px; height: 10px; margin: 10px auto 0;
+      background: #1b1a2c; border-radius: 999px;
+    }
+    .phone-head {
+      padding: 14px 16px 8px; font-family: var(--display); font-size: 11px;
+      letter-spacing: .08em; text-transform: uppercase; color: var(--glow);
+    }
+    .phone-title { padding: 0 16px 10px; font-family: var(--display); font-weight: 800; font-size: 15px; letter-spacing: -.02em; }
+    .board { padding: 0 10px 16px; display: grid; gap: 8px; }
+    .job {
+      background: #161528; border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px;
+      font-family: var(--mono); font-size: 12px; line-height: 1.45;
+    }
+    .job.live { border-color: color-mix(in srgb, var(--brand) 55%, var(--border)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--brand) 18%, transparent); }
+    .job.wait { border-color: color-mix(in srgb, var(--glow) 45%, var(--border)); }
+    .job-top { display: flex; justify-content: space-between; gap: 8px; color: var(--fg); font-weight: 600; }
+    .job-meta { color: var(--muted); }
+    .spend {
+      margin: 4px 10px 16px; padding: 10px 12px; border-radius: 12px;
+      background: color-mix(in srgb, var(--glow) 10%, #161528);
+      font-family: var(--mono); font-size: 12px; color: var(--warn);
+    }
+    .lanes {
+      display: grid; gap: 10px;
+      background: #10101c; border: 1px solid var(--border); border-radius: 16px; padding: 16px;
+      font-family: var(--mono); font-size: 13px;
+    }
+    .lane {
+      display: grid; grid-template-columns: 64px 1fr auto; gap: 10px; align-items: center;
+      padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: #161528;
+    }
+    .lane.live { border-color: color-mix(in srgb, var(--brand) 50%, var(--border)); }
+    .lane .tag { color: var(--brand); font-weight: 600; font-size: 11px; letter-spacing: .06em; }
+    .lane .who { color: var(--muted); font-size: 12px; }
+    .pulse {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--brand);
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 70%, transparent);
+      animation: ping 1.6s ease-out infinite;
+    }
+    .tiers { width: 100%; min-width: 0; margin-top: 18px; }
+    .tiers td:last-child { color: var(--ok); font-weight: 600; }
+    .bill, .waste {
+      background: #10101c; border: 1px solid var(--border); border-radius: 16px;
+      padding: 18px 18px 16px; font-family: var(--mono); font-size: 13px; line-height: 1.65;
+    }
+    .bill-head, .waste-head {
+      font-family: var(--display); font-size: 13px; font-weight: 800;
+      letter-spacing: .04em; margin-bottom: 10px;
+    }
+    .row { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; }
+    .row .dim { color: var(--muted); }
+    .row .numr { text-align: right; font-variant-numeric: tabular-nums; }
+    .keys { margin-top: 12px; color: var(--faint); font-size: 12px; }
+    .meter { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin: 8px 0 14px; }
+    .meter > i {
+      display: block; height: 100%; width: 0; border-radius: inherit;
+      background: linear-gradient(90deg, var(--err), var(--glow));
+    }
+    .in .meter > i { animation: fill .9s ease forwards; }
+    .meter.good > i { background: var(--brand); }
+    .waste .bad { color: var(--err); }
+    .waste .good { color: var(--ok); }
+    .quote {
+      margin-top: 22px; font-family: var(--display); font-weight: 800;
+      font-size: clamp(22px, 3vw, 30px); letter-spacing: -.03em; line-height: 1.15;
+      max-width: 22ch;
+    }
+    .honest { max-width: 62ch; font-size: 18px; color: var(--muted); }
+    .honest p + p { margin-top: 16px; }
+    .honest strong { color: var(--fg); font-weight: 600; }
     pre.start {
       margin-top: 22px; background: #10101c; color: #e8edc8;
       border: 1px solid var(--border); border-radius: var(--r);
       padding: 18px 20px; overflow: auto; font-family: var(--mono); font-size: 13.5px; line-height: 1.7;
     }
     .installs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 28px; }
-    .install {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--r); padding: 22px;
-    }
-    .install h3 { font-family: var(--display); font-size: 18px; letter-spacing: -.02em; margin-bottom: 8px; }
+    .install { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 22px; }
+    .install h3 { font-size: 18px; }
     .install p { color: var(--muted); font-size: 15px; margin-bottom: 12px; }
     .install pre { margin-top: 0; font-size: 12.5px; }
     footer { padding: 36px 0 56px; color: var(--muted); font-size: 15px; }
     footer a { color: var(--fg); }
     .reveal { opacity: 0; transform: translateY(18px); animation: rise .7s ease forwards; }
     .d1 { animation-delay: .08s; } .d2 { animation-delay: .18s; } .d3 { animation-delay: .3s; }
+    .rise { opacity: 0; transform: translateY(22px); }
+    .rise.in { animation: rise .7s ease forwards; }
     @keyframes rise { to { opacity: 1; transform: none; } }
     @keyframes blink { 50% { opacity: 0; } }
     @keyframes drift { to { transform: translate(28px, 18px) scale(1.06); } }
     @keyframes mark-in { from { opacity: 0; transform: scale(.86) rotate(-6deg); } to { opacity: 1; transform: none; } }
+    @keyframes stamp { to { opacity: 1; transform: none; } }
+    @keyframes ping { 70% { box-shadow: 0 0 0 8px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+    @keyframes fill { to { width: var(--w, 33%); } }
     @media (max-width: 900px) {
-      .hero-grid, .cards, .helpers, .problem, .installs { grid-template-columns: 1fr; }
+      .hero-grid, .cards, .helpers, .problem, .installs, .split { grid-template-columns: 1fr; }
       .problem .span { grid-column: auto; }
       .nav-inner { flex-wrap: wrap; padding: 8px 0; }
       .nav-links { margin-left: 0; width: 100%; }
-      table { font-size: 14px; min-width: 0; }
-      th:nth-child(2), td:nth-child(2) { display: none; }
+      table { font-size: 14px; }
+      .cover td, .cover th { padding: 10px 6px; }
+      .cover .full { display: none; }
+      .cover .short { display: inline; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
-      .reveal { opacity: 1; transform: none; }
+      .reveal, .rise, .m { opacity: 1; transform: none; }
       .caret { animation: none; }
+      .meter > i { width: var(--w, 33%); }
     }
   </style>
 </head>
@@ -299,10 +414,11 @@
     <div class="wrap nav-inner">
       <a class="brand" href="#top"><img src="logo.svg" alt=""> VibeKit</a>
       <nav class="nav-links">
-        <a href="#problem">The problem</a>
-        <a href="#cli">The CLI</a>
-        <a href="#speckit">vs Spec Kit</a>
-        <a href="#helpers">Helpers</a>
+        <a href="#problem">Problem</a>
+        <a href="#coverage">Coverage</a>
+        <a href="#tracker">Tracker</a>
+        <a href="#lanes">Lanes</a>
+        <a href="#cost">Cost</a>
         <a href="#install">Install</a>
         <a href="https://github.com/Pershanthenm/vibekit/releases/tag/v0.1.0-alpha">Alpha</a>
         <a href="https://github.com/Pershanthenm/vibekit">Repository</a>
@@ -318,8 +434,7 @@
           <p class="eyebrow reveal">Alpha · Claude Code, Cursor, Codex, any MCP client</p>
           <h1 class="reveal d1">Agents write the code. A person decides every question that matters.</h1>
           <p class="lede reveal d2">
-            Coding agents are fast, and they guess. VibeKit is the folder they have to read,
-            the ask they have to write, and the gate only you can close.
+            Spec Kit and Agent OS hand you a first version. VibeKit stays for the whole life of the project.
           </p>
           <p class="inspired reveal d2">
             Inspired by
@@ -329,13 +444,12 @@
           </p>
           <div class="hero-actions reveal d3">
             <a class="btn btn-primary" href="https://github.com/Pershanthenm/vibekit/releases/tag/v0.1.0-alpha">Get Alpha</a>
-            <a class="btn btn-ghost" href="#cli">Watch the CLI</a>
+            <a class="btn btn-ghost" href="#coverage">See the coverage</a>
           </div>
           <div class="pills reveal d3">
-            <span class="pill">Asks, not guesses</span>
-            <span class="pill">Evidence from exit codes</span>
-            <span class="pill">A reviewer on a second model</span>
-            <span class="pill">Phone tracker with a QR code</span>
+            <span class="pill">Watch it from your phone</span>
+            <span class="pill">Several agents, no collisions</span>
+            <span class="pill">Cheap models where they're enough</span>
           </div>
         </div>
 
@@ -362,17 +476,17 @@
           when nobody can say what was decided, what was guessed, or why a line is there.
         </p>
         <div class="problem">
-          <article>
+          <article class="rise">
             <p class="kicker">Agents invent policy</p>
             <h3>They fill the gaps you never wrote.</h3>
             <p>A coding agent that lacks a fact will pick one. Refunds go to a store credit. Auth is “good enough”. The code compiles. The decision was never yours.</p>
           </article>
-          <article>
+          <article class="rise">
             <p class="kicker">Specs die after generation one</p>
             <h3>The chain breaks at the first PR.</h3>
             <p>Constitution, specify, plan, tasks, implement — then the loop ends. Review, evidence, drift, a hotfix, “why is this here?” are left to chat history.</p>
           </article>
-          <article class="span">
+          <article class="span rise">
             <p class="kicker">What VibeKit does instead</p>
             <h3>If it does not know, it asks. If a person has not signed, it does not move.</h3>
             <p>
@@ -387,100 +501,107 @@
       </div>
     </section>
 
-    <section id="purpose">
-      <div class="wrap">
-        <h2>What it is for</h2>
-        <p class="sub">
-          Spec-driven development that keeps going after the first generation. The operating
-          loop after the spec exists: review, evidence, drift, security, cost, brownfield, and undo.
-        </p>
-        <div class="cards">
-          <article class="card">
-            <div class="num">1</div>
-            <h3>One folder every agent trusts</h3>
-            <p><code>vibekit/</code> holds what the app is, what agents may touch, what your words mean, what has been decided, and what is next. Markdown in git. Delete it and the repo still works.</p>
-          </article>
-          <article class="card">
-            <div class="num">2</div>
-            <h3>A person at every gate</h3>
-            <p>Clarify, architecture, design and plan each wait for a line you write. Nobody but a person sets <code>done</code> or closes a sprint. The tracker on your phone writes the same line.</p>
-          </article>
-          <article class="card">
-            <div class="num">3</div>
-            <h3>Proof, not claims</h3>
-            <p><code>vibekit verify</code> writes the commit, the suite and the exit code into the requirement. Red, dirty, another commit, or a skipped test: <code>tested</code> is refused.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section id="speckit" class="band">
+    <section id="coverage">
       <div class="wrap">
         <h2>Why not just Spec Kit?</h2>
         <p class="sub">
-          Inspired by <a href="https://github.com/github/spec-kit">GitHub Spec Kit</a> and
-          <a href="https://github.com/buildermethods/agent-os">Agent OS</a>: the first-pass loop
-          that writes a spec, a plan and code. That loop ends when the code exists. VibeKit maps
-          onto those same steps — and then keeps the chain. Coming from Spec Kit?
-          <code>vibekit project import . --speckit</code> reads the existing files and loses nothing.
+          <a href="https://github.com/github/spec-kit">Spec Kit</a> gets you to a first version fast, and that's
+          genuinely the hard part starting out. Describe what you want, get a spec, a plan, a task list and
+          working code. <a href="https://github.com/buildermethods/agent-os">Agent OS</a> solves a different
+          problem well — it learns how your team already writes code and feeds the right conventions to the
+          agent, so you stop repeating yourself in every prompt.
         </p>
-        <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>After the first generation</th>
-              <th>Spec Kit</th>
-              <th>VibeKit</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Unknowns</td>
-              <td>Clarified once, in the prompt</td>
-              <td class="win">Asked with an id; assumed with a blast radius; inbox on your phone</td>
-            </tr>
-            <tr>
-              <td>When code exists</td>
-              <td>Converge appends more tasks</td>
-              <td class="win">Reviewer on a second model, sprint gate, drift in CI</td>
-            </tr>
-            <tr>
-              <td>Provenance</td>
-              <td>The spec files you still have</td>
-              <td class="win"><code>vibekit why</code> from any line back to the source paragraph</td>
-            </tr>
-            <tr>
-              <td>Security</td>
-              <td>Whatever the constitution said</td>
-              <td class="win">Per-requirement note, trust boundaries, named-framework scan</td>
-            </tr>
-            <tr>
-              <td>Existing codebases</td>
-              <td>Greenfield-first</td>
-              <td class="win"><code>project import</code> and <code>reverse</code> from the tests you already have</td>
-            </tr>
-            <tr>
-              <td>Small changes</td>
-              <td>The same ceremony as a feature</td>
-              <td class="win">Size S / M / L. A hotfix is minutes, not a planning session</td>
-            </tr>
-            <tr>
-              <td>Undo</td>
-              <td>Manual</td>
-              <td class="win"><code>vibekit undo REQ-014</code> — spec and dependants move with the code</td>
-            </tr>
-            <tr>
-              <td>What agents may do</td>
-              <td>Prompts and helper scripts</td>
-              <td class="win">MCP runner, git hooks, loads manifest, writes list, sandbox</td>
-            </tr>
-          </tbody>
-        </table>
+        <p class="sub">
+          Both are good. VibeKit borrows from both and maps onto the same steps.
+          The difference is how far each one takes you. Spec Kit and Agent OS hand you a first version.
+          VibeKit stays for the whole life of the project.
+        </p>
+        <p class="sub">
+          Already using either? <code>vibekit project import .</code> reads what you have. Nothing is lost.
+        </p>
+
+        <p class="legend">
+          <b class="yes">✓</b> does it &nbsp;·&nbsp;
+          <b class="part">◐</b> partly &nbsp;·&nbsp;
+          <b class="no">—</b> doesn't, and isn't trying to
+        </p>
+
+        <div class="stages">
+          <div class="stage rise">
+            <h3 class="stage-title">Before you build</h3>
+            <div class="table-wrap">
+              <table class="cover">
+                <thead>
+                  <tr><th></th><th><span class="full">Spec Kit</span><span class="short">SK</span></th><th><span class="full">Agent OS</span><span class="short">OS</span></th><th><span class="full">VibeKit</span><span class="short">VK</span></th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Turn an idea into a spec</td><td><span class="m yes">✓</span></td><td><span class="m part">◐</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Read a real requirements document</td><td><span class="m no">—</span></td><td><span class="m no">—</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Ask before assuming</td><td><span class="m part">◐</span></td><td><span class="m part">◐</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Track every guess and what's riding on it</td><td><span class="m no">—</span></td><td><span class="m no">—</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Learn your team's conventions</td><td><span class="m no">—</span></td><td><span class="m yes">✓</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Decide whether to build it at all</td><td><span class="m no">—</span></td><td><span class="m no">—</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Work on a codebase you already have</td><td><span class="m no">—</span></td><td><span class="m yes">✓</span></td><td><span class="m yes">✓</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="stage rise">
+            <h3 class="stage-title">While you build</h3>
+            <div class="table-wrap">
+              <table class="cover">
+                <thead>
+                  <tr><th></th><th><span class="full">Spec Kit</span><span class="short">SK</span></th><th><span class="full">Agent OS</span><span class="short">OS</span></th><th><span class="full">VibeKit</span><span class="short">VK</span></th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Break work into tasks</td><td><span class="m yes">✓</span></td><td><span class="m part">◐</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Write the code</td><td><span class="m yes">✓</span></td><td><span class="m part">◐</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Run several agents at once</td><td><span class="m no">—</span></td><td><span class="m no">—</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Watch it live, from your phone</td><td><span class="m no">—</span></td><td><span class="m no">—</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Prove the tests actually passed</td><td><span class="m no">—</span></td><td><span class="m no">—</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Review on a second model</td><td><span class="m no">—</span></td><td><span class="m no">—</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Survive a crash or a tool switch</td><td><span class="m no">—</span></td><td><span class="m no">—</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Keep small changes small</td><td><span class="m no">—</span></td><td><span class="m part">◐</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Use cheap models where they're enough</td><td><span class="m no">—</span></td><td><span class="m no">—</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Cap what it spends</td><td><span class="m no">—</span></td><td><span class="m no">—</span></td><td><span class="m yes">✓</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="stage after rise">
+            <h3 class="stage-title">After it ships</h3>
+            <div class="table-wrap">
+              <table class="cover">
+                <thead>
+                  <tr><th></th><th><span class="full">Spec Kit</span><span class="short">SK</span></th><th><span class="full">Agent OS</span><span class="short">OS</span></th><th><span class="full">VibeKit</span><span class="short">VK</span></th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Say why any line exists</td><td><span class="m no">—</span></td><td><span class="m no">—</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Catch the spec drifting from the code</td><td><span class="m no">—</span></td><td><span class="m no">—</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Score security against OWASP, POPIA, CIS</td><td><span class="m no">—</span></td><td><span class="m no">—</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Generate HLD, LLD and diagrams in your brand</td><td><span class="m no">—</span></td><td><span class="m no">—</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Hand a client something to approve</td><td><span class="m no">—</span></td><td><span class="m no">—</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Undo a shipped feature cleanly</td><td><span class="m no">—</span></td><td><span class="m no">—</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Show what the agents cost, and what was wasted</td><td><span class="m no">—</span></td><td><span class="m no">—</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Learn from what went wrong</td><td><span class="m no">—</span></td><td><span class="m no">—</span></td><td><span class="m yes">✓</span></td></tr>
+                  <tr><td>Onboard someone without you in the room</td><td><span class="m part">◐</span></td><td><span class="m part">◐</span></td><td><span class="m yes">✓</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
+
+        <p class="pattern">
+          The pattern is the point. Nobody loses the first table by much. The third one is empty
+          for everything except VibeKit, because the others were never built for it — they're
+          first-pass tools, and they say so.
+        </p>
       </div>
     </section>
 
-    <section id="helpers">
+    <section id="helpers" class="band">
       <div class="wrap">
         <h2>The helpers, mapped</h2>
         <p class="sub">
@@ -488,7 +609,7 @@
           stop the agent when a person is needed, and they keep going after the code is written.
         </p>
         <div class="helpers">
-          <div class="helper-col">
+          <div class="helper-col rise">
             <h3>Spec Kit helpers</h3>
             <div class="helper"><b>/speckit.constitution</b><span>Governing principles</span></div>
             <div class="helper"><b>/speckit.specify</b><span>What to build</span></div>
@@ -499,7 +620,7 @@
             <div class="helper"><b>/speckit.analyze</b><span>Cross-check the artefacts</span></div>
             <div class="helper"><b>/speckit.converge</b><span>Append leftover work</span></div>
           </div>
-          <div class="helper-col">
+          <div class="helper-col rise">
             <h3>VibeKit helpers</h3>
             <div class="helper"><b>/vibekit.clarify</b><span>Asks first. Assumptions get ids.</span></div>
             <div class="helper"><b>/vibekit.next</b><span>Whatever the current gate allows</span></div>
@@ -514,7 +635,133 @@
       </div>
     </section>
 
-    <section id="install" class="band">
+    <section id="tracker">
+      <div class="wrap">
+        <p class="kicker">The three things nothing else does</p>
+        <h2>Watch it work. From anywhere.</h2>
+        <p class="sub">Agents run for hours. You shouldn't have to sit there. <code>vibekit tracker</code> puts a live board behind a link. Scan the QR code and it's on your phone.</p>
+        <div class="split">
+          <div class="rise">
+            <h3>No ids, no step counters.</h3>
+            <p>“Creating a list”, not <code>REQ-007 step 4/5</code>. The file is one tap away if you want it, but you shouldn't need it to know what's going on.</p>
+            <h3>You can act from it, not just watch.</h3>
+            <p>Answer the question blocking a lane. Approve a gate. Reorder the sprint. Every tap is a commit in your repo with your name on it.</p>
+            <h3>Your client can use it too.</h3>
+            <p>Send them the link, they approve from a phone, and you stop being the middleman between an agent and a decision. It's a Cloudflare tunnel behind a login, so the QR code is safe on a wall — scanning it gets you a sign-in page, not your repo.</p>
+          </div>
+          <div class="phone-wrap rise">
+            <div class="phone" aria-label="Live tracker on a phone">
+              <div class="phone-head">Tracker · live</div>
+              <div class="phone-title">Sprint 3 · Lists and tasks · 2 of 5 done</div>
+              <div class="board" id="board"></div>
+              <div class="spend" id="spend">Spent R 88 of R 900 this sprint</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="lanes" class="band">
+      <div class="wrap">
+        <h2>Several agents. No collisions.</h2>
+        <p class="sub">One agent at a time is a waiting game. <code>vibekit sprint run</code> works several pieces at once, across whatever tools you've got.</p>
+        <div class="split">
+          <div class="rise">
+            <div class="lanes" id="lanes-board" aria-label="Sprint lanes">
+              <div class="lane live"><span class="tag">LANE A</span><span>Creating a list</span><span class="who">Claude Code · seat</span></div>
+              <div class="lane live"><span class="tag">LANE B</span><span>Marking a task done</span><span class="who">Cursor · seat</span></div>
+              <div class="lane"><span class="tag">QUEUE</span><span>3 more, waiting on these</span><span class="who">next up</span></div>
+              <div class="lane live"><span class="tag">REVIEW</span><span>1 running, different model</span><span class="who">alongside</span></div>
+            </div>
+            <p class="sub" style="margin-top:18px">Mix tools freely. They read the same folder, so a checkpoint written in one is picked up by another — start something in Claude Code, finish it in Cursor, nothing lost. Two lanes is the default. Four is about the limit before merge conflicts eat the gain, and VibeKit tells you rather than letting you find out.</p>
+          </div>
+          <div class="rise">
+            <p class="kicker">Three rules stop the mess</p>
+            <div class="rules">
+              <div class="rule"><span class="pulse" aria-hidden="true"></span><div><b>One job per agent, one branch, one folder each.</b><span>They physically cannot touch each other's files.</span></div></div>
+              <div class="rule"><span class="pulse" aria-hidden="true"></span><div><b>Never two agents on the same entity.</b><span>Jobs that share one get sequenced instead of racing — which prevents most merge pain before it happens.</span></div></div>
+              <div class="rule"><span class="pulse" aria-hidden="true"></span><div><b>A blocked lane blocks only itself.</b><span>One agent hits a question, the others carry on. Reviews run alongside, not after.</span></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="cost">
+      <div class="wrap">
+        <h2>Stop paying premium rates for scaffolding</h2>
+        <p class="quote rise">Your best model doesn't need to write test fixtures.</p>
+        <p class="sub">VibeKit sorts work by what it actually needs and sends each piece to the cheapest thing that does it well.</p>
+        <div class="table-wrap rise">
+          <table class="tiers">
+            <thead><tr><th>The work</th><th>Runs on</th></tr></thead>
+            <tbody>
+              <tr><td>Understanding a brief, architecture, planning</td><td>Your best model</td></tr>
+              <tr><td>Building a normal feature</td><td>A mid-tier model</td></tr>
+              <tr><td>Small fixes, test data, docs, changelogs, routine checks</td><td>A cheap model</td></tr>
+              <tr><td>Secret scanning, parsing, matching</td><td>Your own machine. Free</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="sub">
+          Reviews are never cheaper than the work they check. The reviewer always runs a tier above
+          the implementer, on a different model. That rule isn't configurable — it's what makes the
+          cheap tiers safe. Seats you already pay for go first. Metered models only get used for
+          what a seat can't do. On a typical sprint that's around 60% of the work costing you nothing.
+        </p>
+        <div class="split">
+          <div class="bill rise">
+            <div class="bill-head">You see the bill before you spend it</div>
+            <div>Sprint 3 · 5 pieces of work</div>
+            <div class="row" style="margin-top:10px"><span>Estimated</span><span></span><span class="numr" id="est">R 0</span></div>
+            <div class="row"><span class="dim">On seats you already pay for</span><span class="dim">62%</span><span class="numr dim">R 0</span></div>
+            <div class="row"><span class="dim">Metered</span><span></span><span class="numr">R 1,840</span></div>
+            <div class="meter good" style="--w:62%"><i></i></div>
+            <div class="dim">Based on 14 jobs already built on this template. Your last three sprints came in within 15%.</div>
+            <div class="keys">[enter] approve &nbsp; [c] change models &nbsp; [s] smaller sprint</div>
+          </div>
+          <div class="waste rise">
+            <div class="waste-head">And afterwards, what you wasted</div>
+            <div>Sprint 3 · R 2,400 spent</div>
+            <div class="row" style="margin-top:10px"><span class="bad">WASTE</span><span class="bad">33%</span><span class="numr bad">R 780</span></div>
+            <div class="meter" style="--w:33%"><i></i></div>
+            <div class="row"><span class="dim">Built then rejected</span><span class="dim">→ Q-008</span><span class="numr dim">R 310</span></div>
+            <div class="row"><span class="dim">Extra review rounds</span><span></span><span class="numr dim">R 240</span></div>
+            <div class="row"><span class="dim">Escalations</span><span></span><span class="numr dim">R 160</span></div>
+            <div class="row"><span class="dim">Crashed sessions</span><span></span><span class="numr dim">R 70</span></div>
+            <div class="row" style="margin-top:8px"><span class="good">PRODUCTIVE</span><span></span><span class="numr good">R 1,620</span></div>
+          </div>
+        </div>
+        <p class="pattern">
+          This is the number nobody else shows you. Waste usually runs around a third of spend, and
+          every line of it names the fix. None of it is fixed by buying cheaper tokens. Better
+          questions are cheaper than cheaper models.
+        </p>
+      </div>
+    </section>
+
+    <section id="honest" class="band">
+      <div class="wrap">
+        <h2>The honest version</h2>
+        <div class="honest rise">
+          <p>
+            Spec Kit is free, mature and backed by GitHub. Agent OS is the best thing going for
+            standards. Both have real users today. VibeKit is an alpha built by one person and
+            parts of it are rough.
+          </p>
+          <p>
+            If you want a clean first version and you're happy driving from there, use Spec Kit.
+            If agents keep ignoring how your team writes code, use Agent OS. They're not mutually
+            exclusive with this — Agent OS standards import straight into VibeKit as skills.
+          </p>
+          <p>
+            <strong>VibeKit is for the project where somebody asks, a year later, why a line is there — and you'd like to answer in a second rather than an afternoon.</strong>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="install">
       <div class="wrap">
         <h2>Install</h2>
         <p class="sub">
@@ -527,7 +774,7 @@ git clone https://github.com/Pershanthenm/vibekit.git
 npm install -g ./vibekit/plugin
 vibekit version</pre>
         <div class="installs">
-          <article class="install">
+          <article class="install rise">
             <h3>Claude Code</h3>
             <p>The plugin adds slash commands and hooks. The CLI still has to be on PATH.</p>
             <pre class="start">/plugin marketplace add Pershanthenm/vibekit
@@ -536,7 +783,7 @@ vibekit version</pre>
 
 cd your-project && vibekit project new</pre>
           </article>
-          <article class="install">
+          <article class="install rise">
             <h3>Cursor and Cursor CLI</h3>
             <p><code>project new</code> writes <code>.cursorrules</code>. Attach the MCP server so the CLI enforces reads, writes and commands. Same for the Cursor CLI.</p>
             <pre class="start">cd your-project && vibekit project new
@@ -551,7 +798,7 @@ cd your-project && vibekit project new</pre>
   }
 }</pre>
           </article>
-          <article class="install">
+          <article class="install rise">
             <h3>Codex</h3>
             <p>Codex reads <code>AGENTS.md</code>. Point its MCP config at the same stdio server.</p>
             <pre class="start">cd your-project && vibekit project new
@@ -559,7 +806,7 @@ cd your-project && vibekit project new</pre>
 # MCP command
 vibekit serve --stdio</pre>
           </article>
-          <article class="install">
+          <article class="install rise">
             <h3>Other CLI agents</h3>
             <p>OpenCode, Aider, or any MCP client: they read <code>AGENTS.md</code>, or they speak JSON-RPC on stdio. Git hooks still apply.</p>
             <pre class="start">cd your-project && vibekit project new
@@ -606,10 +853,8 @@ vibekit tracker stock   # QR code; approve gates from your phone</pre>
           { k: "out", t: "" },
           { k: "cmd", t: "vibekit action" },
           { k: "out", t: "1 decision across 1 project, most blocking first" },
-          { k: "out", t: "" },
           { k: "warn", t: "ASK-003  blocking  ·  REQ-001  ·  blocks 1" },
           { k: "out", t: "When a member cancels, where does the refund go?" },
-          { k: "out", t: "" },
           { k: "cmd", t: "vibekit action answer 1 \"the original card\"" },
           { k: "ok", t: "ASK-003 answered · recorded in the requirement" },
         ],
@@ -617,14 +862,13 @@ vibekit tracker stock   # QR code; approve gates from your phone</pre>
       {
         lines: [
           { k: "cmd", t: "vibekit sprint run" },
-          { k: "out", t: "lane 1  REQ-001  implementer  ·  tests first" },
-          { k: "out", t: "src/cancel.js  tests/cancel.test.js" },
+          { k: "out", t: "lane 1  Creating a list          Claude Code" },
+          { k: "out", t: "lane 2  Marking a task done     Cursor" },
           { k: "out", t: "" },
           { k: "cmd", t: "vibekit verify" },
-          { k: "ok", t: "✔ build   node -e \"process.exit(0)\"   exit 0" },
-          { k: "ok", t: "✔ test    node --test tests/            exit 0" },
-          { k: "ok", t: "evidence written into REQ-001  ·  commit 8f21c4a" },
-          { k: "out", t: "" },
+          { k: "ok", t: "✔ build   exit 0" },
+          { k: "ok", t: "✔ test    exit 0" },
+          { k: "ok", t: "evidence written  ·  commit 8f21c4a" },
           { k: "warn", t: "! reviewer on a second model" },
           { k: "out", t: "a person still has to set done" },
         ],
@@ -634,10 +878,7 @@ vibekit tracker stock   # QR code; approve gates from your phone</pre>
           { k: "cmd", t: "vibekit why src/cancel.js:12" },
           { k: "ok", t: "REQ-001  AC-1  ·  BRS-001 §2" },
           { k: "out", t: "\"A member shall cancel a booking.\"" },
-          { k: "out", t: "" },
           { k: "out", t: "assumption A-001  ·  refunds go to the original card" },
-          { k: "out", t: "answered ASK-003  ·  2026-09-24" },
-          { k: "out", t: "" },
           { k: "cmd", t: "vibekit tracker stock" },
           { k: "ok", t: "tunnel  https://stock.trycloudflare.com" },
           { k: "out", t: "scan the code · approve the gate from your phone" },
@@ -650,7 +891,6 @@ vibekit tracker stock   # QR code; approve gates from your phone</pre>
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let scene = 0;
     let token = 0;
-
     const wait = (ms) => new Promise((ok) => setTimeout(ok, ms));
 
     function lineEl(kind, text) {
@@ -701,6 +941,54 @@ vibekit tracker stock   # QR code; approve gates from your phone</pre>
 
     tabs.forEach((tab) => tab.addEventListener("click", () => play(Number(tab.dataset.scene))));
     play(0);
+
+    const jobs = [
+      { live: true, title: "Creating a list", who: "Claude Code · 8 min", meta: "Writing the code · tests failing, as expected" },
+      { live: true, title: "Marking a task done", who: "Cursor · 3 min", meta: "Working out the approach" },
+      { wait: true, title: "Assigning a task to a teammate", who: "Waiting on you", meta: "People who leave a team — your answer" },
+    ];
+
+    function renderBoard(spent) {
+      const board = document.getElementById("board");
+      board.replaceChildren(...jobs.map((job) => {
+        const el = document.createElement("div");
+        el.className = `job${job.live ? " live" : ""}${job.wait ? " wait" : ""}`;
+        el.innerHTML = `<div class="job-top"><span>${job.live ? "▶" : "⏸"} ${job.title}</span><span>${job.who}</span></div><div class="job-meta">${job.meta}</div>`;
+        return el;
+      }));
+      document.getElementById("spend").textContent = `Spent R ${spent} of R 900 this sprint`;
+    }
+
+    let spent = 88;
+    renderBoard(spent);
+    if (!reduce) {
+      setInterval(() => {
+        spent = Math.min(900, spent + (spent % 7 === 0 ? 3 : 1));
+        const mins = jobs[0].who.match(/\d+/);
+        if (mins) jobs[0].who = `Claude Code · ${Number(mins[0]) + 1} min`;
+        renderBoard(spent);
+      }, 2400);
+    }
+
+    const est = document.getElementById("est");
+    const seen = new Set();
+    const io = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        entry.target.classList.add("in");
+        if (entry.target.classList.contains("bill") && !seen.has("est")) {
+          seen.add("est");
+          if (reduce) { est.textContent = "R 1,840"; continue; }
+          let n = 0;
+          const tick = setInterval(() => {
+            n = Math.min(1840, n + 80);
+            est.textContent = `R ${n.toLocaleString("en-ZA")}`;
+            if (n >= 1840) clearInterval(tick);
+          }, 20);
+        }
+      }
+    }, { threshold: 0.18 });
+    document.querySelectorAll(".rise, .stage, .bill, .waste").forEach((el) => io.observe(el));
   </script>
 </body>
 </html>
