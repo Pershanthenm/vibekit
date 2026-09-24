@@ -44,6 +44,16 @@ export default function Hero() {
       ? { initial: false, animate: { opacity: 1, y: 0, scale: 1 } }
       : extra;
 
+  function jump(event, href) {
+    if (!href.startsWith("#")) return;
+    event.preventDefault();
+    setOpen(false);
+    const el = document.querySelector(href);
+    if (!el) return;
+    el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    history.replaceState(null, "", href);
+  }
+
   return (
     <section className="hero" id="home">
       <div className="video-stage">
@@ -71,7 +81,7 @@ export default function Hero() {
         })}
       >
         <div className="nav-left">
-          <a className="brand" href="#home">
+          <a className="brand" href="#home" onClick={(event) => jump(event, "#home")}>
             <LogoMark />
             <span className="brand-text">VibeKit</span>
           </a>
@@ -92,7 +102,7 @@ export default function Hero() {
             {open && (
               <div className="menu-panel" id="site-menu">
                 {LINKS.map((link) => (
-                  <a key={link.href} href={link.href} onClick={() => setOpen(false)}>
+                  <a key={link.href} href={link.href} onClick={(event) => jump(event, link.href)}>
                     {link.label}
                   </a>
                 ))}
@@ -161,7 +171,7 @@ export default function Hero() {
             <a className="btn solid" href={ALPHA}>
               Get Alpha
             </a>
-            <a className="btn ghost" href="#coverage">
+            <a className="btn ghost" href="#coverage" onClick={(event) => jump(event, "#coverage")}>
               How it works
             </a>
           </motion.div>
