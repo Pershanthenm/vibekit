@@ -1,141 +1,44 @@
-# Multi-editor — one project, many agent tools
+# One project, every agent
 
-- **Product:** VibeKit
-- **Status:** Claude Code, Cursor, Antigravity and Windsurf implemented; Codex works through `AGENTS.md`. `editors` selection not built.
-- **Date:** 2026-09-11
+Specification §4, §25 and §56.
 
-## 1. Problem
-
-The specs and the workflow are the product. The editor is not. A team should be able to use
-Claude Code, Cursor or Google Antigravity — or move between them mid-project — without
-re-scaffolding anything or maintaining a second copy of the same rules.
-
-Until now `vibekit sync` generated adapters for two editors. A developer opening the project in
-Antigravity got the root `AGENTS.md` and nothing else: no workflow gate, no slash commands, no
-architecture or security rules. The workflow was enforced for two thirds of the team.
-
-## 2. Design
-
-**`AGENTS.md` is the neutral spine.** It carries stack, standards, testing rules, the spec-driven
-workflow, the security baseline and the evidence rules. It is an open convention read by
-Antigravity, Cursor and Claude Code alike, so it is written once and never duplicated.
-
-**Each editor gets a thin adapter** that points back at the spine and adds whatever that editor
-uniquely needs — an always-on gate, scoped rules, slash commands, subagents. Adapters live one per
-file under `src/generators/`, so adding an editor is additive.
+Three pointer files send every agent to the same folder, so one rulebook reaches Claude Code, Cursor, Codex and OpenCode without four copies of it. Each is under 150 tokens and contains no rules of its own.
 
 ```
-AGENTS.md                     neutral spine — every editor reads this
-├── CLAUDE.md, .claude/       Claude Code
-├── .cursor/                  Cursor: rules, commands, agents, worktrees
-├── .agents/                  Antigravity: rules, workflows
-├── .windsurf/                Windsurf: compact pointer rules
-└── (Codex needs nothing)     OpenAI's Codex reads the root AGENTS.md directly
+CLAUDE.md          Claude Code        read status.md first; the load order; the folder path
+AGENTS.md          Codex, OpenCode    the same
+.cursorrules       Cursor             the same, in Cursor's form
+.gitattributes     git, GitHub        generated paths collapse in diffs; memory/ never does
+.env.example       developers         variable names only
+.claude/commands/  Claude Code        one-liners that run vibekit sprint run
+.githooks/         git                the §50 commit rules, via core.hooksPath
 ```
 
-`AGENTS.md` is not a VibeKit invention: OpenAI created it and contributed it to the
-Agentic AI Foundation under the Linux Foundation in December 2025. Anything that reads it —
-Codex included — gets the full brief with no adapter at all.
+All are generated and carry the header. A team's own extras go below a `<!-- local -->` marker, which regeneration preserves.
 
-### Windsurf's budget is the tight one
+## The load order every agent follows
 
-Windsurf caps each rule file at 6,000 characters **and all rules combined at 12,000**
-([Windsurf docs](https://docs.windsurf.com/windsurf/cascade/agents-md)). Mirroring the full
-Cursor rule set would blow that, so the Windsurf adapter deliberately emits three short
-pointer rules and leans on the root `AGENTS.md`, which Cascade already treats as an always-on
-rule. A test asserts both limits, because the alternative is rules that silently stop loading.
+1. `vibekit/workflow/status.md` — which stage and which prompt file apply
+2. `vibekit/standards/*` in full
+3. `vibekit/product/context.md`, `glossary.md`, `map.md` in full
+4. The one requirement and the entities the task names
+5. `vibekit/skills/index.yml` and `vibekit/memory/index.md`, then a body only when a trigger or topic matches
 
-## 3. What a new project gets
+## How each tool reaches the rules
 
-`vibekit init` (or `adopt`, then `sync`) creates the whole structure up front:
+| Runner | Reaches the folder via | Enforcement |
+|---|---|---|
+| Claude Code | `CLAUDE.md`, the plugin's hooks, `vibekit serve --stdio` (MCP) | Hooks refuse generated files, denied paths and other agents' requirements; the turn ends on `vibekit check`; MCP re-sends rules after compaction |
+| Cursor | `.cursorrules` + MCP | Instruction and git hooks; MCP where attached |
+| Codex, OpenCode | `AGENTS.md` + MCP | Instruction and git hooks |
+| Anything else | `AGENTS.md` | Instruction only; `vibekit check --runners` reports it as unsandboxed |
 
-```
-AGENTS.md                     stack, standards, workflow, security, evidence rules
-CLAUDE.md                     Claude Code pointer to the spine
-.claude/settings.json         hooks and plugin wiring
-.cursor/rules/*.mdc           workflow gate, architecture, specs, tests, security, docs, per-language
-.cursor/commands/*.md         the workflow skills as slash commands
-.cursor/agents/*.md           architect, test-engineer, implementer, reviewer
-.cursor/worktrees.json        parallel lane config
-.agents/rules/*.md            the same rule set, in Antigravity's format
-.agents/workflows/*.md        the workflow skills as Antigravity slash commands
-specs/
-├── project.json              the source of truth
-├── 00-product.md … 04-nfr.md
-├── decisions/                ADRs
-└── features/NNN-name/        spec.md, plan.md, tasks.md
-docs/
-├── architecture.md, data-model.md, roadmap.md
-└── design/
-.github/workflows/            CI, including the security workflow
-```
+`vibekit serve --stdio` is the runner that enforces the stage's loads manifest, the writes list and the allowed commands mechanically; `--sandbox` adds a container per session. It also exposes `vibekit_call`, the one door to the MCP servers a project declares in `agents/servers.yml`: the allow-list of tools, the role, read-only, the budget and the data classification are enforced there, for remote servers over HTTP and local ones launched on stdio alike. `agents/runners.md` says which runner takes which role, and `vibekit check --runners` verifies each can reach the folder.
 
-Every one of these is regenerated by `vibekit sync`. Generated files carry a notice and are
-protected by the pre-edit hook: edit `specs/project.json` and re-sync instead.
+## Slash commands
 
-## 4. Antigravity adapter
+The plugin ships `/vibekit.status`, `/vibekit.next`, `/vibekit.new-feature`, `/vibekit.hotfix`, `/vibekit.clarify`, `/vibekit.build`, `/vibekit.review` and `/vibekit.why`. Each runs the CLI and points the agent at the stage prompt in `vibekit/workflow/stages/`; the prompts are the product's actual prompts, versioned in the repository, and a team can edit them.
 
-Confirmed against Google's documentation before implementing, not assumed:
+## Switching mid-task
 
-| Fact | Source |
-|---|---|
-| Workspace rules live in `.agents/rules` (with `.agent/rules` kept for backward compatibility) | [Antigravity docs — Rules](https://antigravity.google/docs/rules-workflows/) |
-| Rules are capped at **12,000 characters each** | [Antigravity docs — Rules](https://antigravity.google/docs/rules-workflows/) |
-| A rule is "simply a Markdown file"; activation is set per rule (Always On, Glob, Model Decision, Manual) | [Antigravity docs — Rules](https://antigravity.google/docs/rules-workflows/) |
-| Global rules live in `~/.gemini/GEMINI.md`, applied before `AGENTS.md` | [Antigravity docs — Rules](https://antigravity.google/docs/rules-workflows/) |
-| Custom slash commands live in `.agents/workflows/<name>.md` with `description` frontmatter | [Google Codelab](https://codelabs.developers.google.com/autonomous-ai-developer-pipelines-antigravity) |
-| `AGENTS.md` is a cross-tool foundation file read by Antigravity | [Antigravity docs — Rules](https://antigravity.google/docs/rules-workflows/) |
-
-**Two deliberate restraints.** Google documents no frontmatter schema for *rules*, so none is
-invented: each rule is plain Markdown opening with an `**Applies to:** …` line that tells the
-reader its scope, and activation is set inside Antigravity. Workflow frontmatter (`description`)
-*is* documented, so it is emitted. Emitting a plausible-looking rule schema would produce files
-that render correctly and do nothing — the exact failure the evidence rules exist to prevent.
-
-The 12,000-character limit is enforced by a test, because the security rule grows with the number
-of controls a project selects and is the one most likely to cross it.
-
-**Not implemented:** `~/.gemini/GEMINI.md` is global to the user rather than the project, so
-VibeKit does not write it. Antigravity's own agent/persona concept (`.agents/agents.md` in
-Google's codelab) is not generated; the four subagents are currently emitted for Claude Code and
-Cursor only.
-
-## 5. Acceptance criteria
-
-- **AC-1** ✅ Given any project, when `vibekit sync` runs, then `.agents/rules/` and
-  `.agents/workflows/` are written alongside the Claude Code and Cursor adapters.
-- **AC-2** ✅ Given a generated rule set, then no rule file exceeds 12,000 characters.
-- **AC-3** ✅ Given a workflow file, then it carries `description` frontmatter; given a rule file,
-  then it carries no frontmatter, because no schema is documented.
-- **AC-4** ✅ Given a project with no security controls and docs disabled, then the security and
-  docs rules are not generated; given both, then they are.
-- **AC-5** ✅ Given one `specs/project.json`, when files are generated for all three editors, then
-  no two adapters claim the same path.
-- **AC-6** ✅ Given a newly created project, then `AGENTS.md`, `CLAUDE.md`, `.claude/`, `.cursor/`,
-  `.agents/rules/` and `.agents/workflows/` all exist on disk, and the Antigravity gate points
-  back at `AGENTS.md`.
-- **AC-7** ⬜ Given `specs/project.json` lists `editors: ["claude", "antigravity"]`, when sync
-  runs, then only those adapters are written. *(Not built — see below.)*
-
-## 6. Choosing editors — not built
-
-Every project currently gets all three adapters. That mirrors the existing behaviour for Cursor,
-which was always generated whether or not the team used it, and it keeps a project portable: a
-developer who opens it in an editor nobody planned for still gets the workflow.
-
-The cost is clutter for teams that use a single editor. The fix is an `editors` array in
-`specs/project.json`, defaulting to every supported editor, with `vibekit sync` writing only
-those adapters and removing the others. This is small — the adapters are already separate modules
-behind one interface — but it needs a migration path for projects created before the field
-existed, so it is specified here rather than rushed.
-
-## 7. Adding another editor
-
-1. Add `src/generators/<editor>.js` exporting `<editor>Files(project)`, returning
-   `{ path, content }` entries. Reuse `bullets`, `markdown`, `frontMatter` and `file` from
-   `shared.js`, and the rule bodies already shared with the other adapters.
-2. Register it in `buildManagedFiles` in `src/generators/index.js`.
-3. Add a test asserting the paths, any format limits that editor documents, and that it claims no
-   path another adapter already owns.
-4. **Confirm the conventions from that editor's own documentation first.** Paths, file formats and
-   limits are facts to be looked up, not guessed.
+Start in Claude Code, resume in Cursor: same files, same checkpoint. `vibekit start REQ --as implementer` on an unheld in-progress requirement picks up from `## Checkpoint` and logs the change of runner. This is the case the file-driven design exists for, and the recovery fixture (`npm run recovery`) tests it on every CI run.
