@@ -1,4 +1,6 @@
 .DS_Store
+site/node_modules
+site/dist
 * 2.js
 * 2.mjs
 * 2.md
