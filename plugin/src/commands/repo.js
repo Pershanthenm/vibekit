@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { loadProject } from '../project.js';
 import { register } from '../projects.js';
-import { PIPELINE_FILES, createRepository, providerSettings, push, registerPipeline, setOrigin, whoAmI, writePipeline } from '../providers.js';
+import { PIPELINE_FILES, createRepository, providerOfUrl, providerSettings, push, registerPipeline, setOrigin, whoAmI, writePipeline } from '../providers.js';
 import { folderName } from './folder.js';
 
 /**
@@ -11,11 +11,19 @@ import { folderName } from './folder.js';
  *   vibekit new repo                 create it, write the pipeline file, push main, register the pipeline (Azure DevOps)
  *   vibekit new repo --check         only say who the token is, and where repositories would go
  *   vibekit new repo --pipeline      only (re)write the pipeline file from delivery/pipeline.spec.md
+ *   vibekit new repo --link <url>    a repository you already have: origin, and the pipeline file for its host
  *   --public · --no-push · --force (replace an existing origin) · --allow-private (a self-hosted address inside the network)
  */
 export async function newRepo(options) {
   const { root, json } = options;
   const log = (line) => { if (!json) console.log(line); };
+  if (options.link) {
+    const linked = await linkRepository(root, options.link, { force: Boolean(options.force) });
+    if (json) return void console.log(JSON.stringify(linked, null, 2));
+    console.log(`✔ origin → ${linked.url}${linked.pipeline ? ` · ${linked.pipeline} written for ${linked.provider}` : ''}`);
+    console.log('  Push when ready: git push -u origin main');
+    return linked;
+  }
   const settings = await providerSettings();
   if (settings.missing.length) {
     throw new Error(`The repository needs these settings first, once per machine:\n  ${settings.missing.join('\n  ')}\nIn Claude Code, /vibekit:setup asks for them.`);
@@ -83,4 +91,23 @@ function commitIfNeeded(root, file) {
   // The tool's own scaffolding commit. The commit-msg hook refuses work committed straight onto
   // main, rightly; a generated pipeline file is not work, so this one commit says so.
   if (staged) git('-c', 'user.name=VibeKit', '-c', 'user.email=vibekit@localhost', 'commit', '-q', '--no-verify', '-m', `ci: ${file} from delivery/pipeline.spec.md`);
+}
+
+/**
+ * A repository that already exists: origin points at it, and when the host says which provider
+ * it is, the pipeline file is written in that dialect. Nothing is pushed; the person's own git
+ * credentials do that.
+ */
+export async function linkRepository(root, url, { force = false } = {}) {
+  setOrigin(root, url, { force });
+  const provider = providerOfUrl(url);
+  const config = await loadProject(root).catch(() => null);
+  let pipeline = null;
+  if (provider) {
+    const folder = await folderName(root);
+    pipeline = await writePipeline(root, provider, { commands: config?.project?.commands ?? {}, folder });
+    commitIfNeeded(root, pipeline);
+  }
+  await register(root, { name: config?.project?.name ?? null }).catch(() => {});
+  return { url, provider, pipeline };
 }

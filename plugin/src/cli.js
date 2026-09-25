@@ -97,6 +97,8 @@ const OPTIONS = {
   reason: { type: 'string' },
   plain: { type: 'string' },
   option: { type: 'string', multiple: true },
+  remote: { type: 'string' },
+  link: { type: 'string' },
   public: { type: 'boolean' },
   'no-push': { type: 'boolean' },
   pipeline: { type: 'boolean' },

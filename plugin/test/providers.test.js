@@ -228,3 +228,27 @@ test('pipeline dialects carry the project commands and the gate; slugs are safe 
   assert.equal(slugOf('  Ledger / App!!  '), 'ledger-app');
   assert.equal(slugOf('---'), 'project');
 });
+
+test('new project --remote links a repository you already have and writes the pipeline for its host', async () => {
+  const original = isolated();
+  try {
+    const root = tempDir('vibekit-link-');
+    const out = await capture(() => run(['new', 'project', 'Ledger', '--yes', '--describe', 'Books.', '--platform', 'web', '--remote', 'git@github.com:acme/ledger.git', '--dir', root]));
+    assert.match(out, /origin → git@github\.com:acme\/ledger\.git/);
+    assert.equal(origin(root), 'git@github.com:acme/ledger.git');
+    assert.match(await readFile(join(root, PIPELINE_FILES.github), 'utf8'), /vibekit check --ci/);
+    const other = tempDir('vibekit-link-');
+    await capture(() => run(['new', 'project', 'Ledger', '--yes', '--describe', 'Books.', '--platform', 'web', '--remote', 'https://dev.azure.com/acme/Ledger/_git/ledger', '--dir', other]));
+    assert.match(await readFile(join(other, 'azure-pipelines.yml'), 'utf8'), /NodeTool@0/);
+    // The same, for a project that already exists.
+    const later = tempDir('vibekit-link-');
+    await capture(() => run(['new', 'project', 'Ledger', '--yes', '--describe', 'Books.', '--platform', 'web', '--dir', later]));
+    assert.match(await capture(() => run(['new', 'repo', '--link', 'https://gitlab.com/acme/ledger.git', '--dir', later])), /origin → https:\/\/gitlab\.com\/acme\/ledger\.git · \.gitlab-ci\.yml written for gitlab/);
+    assert.equal(origin(later), 'https://gitlab.com/acme/ledger.git');
+    const unknown = tempDir('vibekit-link-');
+    await capture(() => run(['new', 'project', 'Ledger', '--yes', '--describe', 'Books.', '--platform', 'web', '--remote', 'https://git.example.com/acme/ledger.git', '--dir', unknown]));
+    assert.equal(origin(unknown), 'https://git.example.com/acme/ledger.git');
+  } finally {
+    restoreEnv(original);
+  }
+});

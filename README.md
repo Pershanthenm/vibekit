@@ -98,7 +98,7 @@ Nineteen slash commands, one per CLI verb you would type yourself. Type `/vibeki
 | Helper | What it does |
 |---|---|
 | `/vibekit:setup` | Once, after install: where projects live, who you are, which provider and token |
-| `/vibekit:new-project` | Start here. Name, platforms, a description or a BRS: four questions, one screen |
+| `/vibekit:new-project` | Start here. Name, platforms, what it is; then the repository, created for you or linked |
 | `/vibekit:use-project` | Pick the project to work on from the ones on this machine |
 | `/vibekit:answer` | Everything waiting on you, one question at a time, by picking |
 | `/vibekit:show-status` | Where everything stands, in words, then what to do about it |

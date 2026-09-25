@@ -68,24 +68,26 @@ async function projectNew(options) {
     const name = options.name ?? typed ?? (asker ? await asker.text('Project name', basename(root)) : basename(root));
     // The name becomes a folder under `--where local`; one that climbs or hides is not a name.
     if (!/^[\w][\w .-]{0,79}$/.test(name) || name.split(/[\\/]/).length > 1) throw new Error(`"${name}" is not a project name: letters, digits, dots, dashes and spaces, no slashes.`);
-    const where = options.where ?? (asker ? await asker.choose({ id: 'where', title: 'Where does it live?', noOther: true, options: [
-      { id: 'here', label: 'this folder' }, { id: 'local', label: 'a new local folder' }, { id: 'remote', label: 'a repository on GitHub, Azure DevOps or GitLab' },
-    ] }) : 'here');
-    // `--where local`: under the projects folder setup recorded, or beside the current one.
-    const { readConfig } = await import('../prompts.js');
-    const target = where === 'local' ? resolve((await readConfig())['projects-root'] ?? root, name) : root;
-    if (where === 'local') await mkdir(target, { recursive: true });
-    if (where === 'remote' && !json) console.log('  The repository is created at your provider once the folder is written (vibekit settings git-provider, git-org, git-token).');
-
-    if (!(await exists(join(target, '.git')))) {
-      try { execFileSync('git', ['init', '-q', '-b', 'main'], { cwd: target, stdio: 'ignore' }); } catch { /* no git: the folder is still written */ }
-    }
-
+    // What it is and where it runs come before where the folder goes: a person thinks about the
+    // product first and the filing second, and the repository question comes last, once there is
+    // something to put in it.
     const describe = options.describe ?? (options.from ? null : asker ? await asker.text('What are you building? A sentence or two, or the path to a requirements document') : null);
-    const fromFile = options.from ?? (describe && (await exists(resolve(target, describe))) ? resolve(target, describe) : null);
+    const fromFile = options.from ?? (describe && (await exists(resolve(root, describe))) ? resolve(root, describe) : null);
     const platforms = options.platform
       ? String(options.platform).split(',').map((item) => item.trim()).filter(Boolean)
       : asker ? [await asker.choose({ id: 'platform', title: 'Where does it run?', multi: true, noOther: true, options: PLATFORMS })].flat() : ['web'];
+
+    const { readConfig } = await import('../prompts.js');
+    const machine = await readConfig();
+    const where = options.where ?? (asker ? await asker.choose({ id: 'where', title: 'Where does it live?', noOther: true, options: [
+      { id: 'here', label: 'this folder' }, { id: 'local', label: machine['projects-root'] ? `a new folder in ${machine['projects-root']}` : 'a new folder beside this one' },
+    ] }) : 'here');
+    // `--where local`: under the projects folder setup recorded, or beside the current one. `--where remote` (older scripts) means: here, and create the repository.
+    const target = where === 'local' ? resolve(machine['projects-root'] ?? root, name) : root;
+    if (where === 'local') await mkdir(target, { recursive: true });
+    if (!(await exists(join(target, '.git')))) {
+      try { execFileSync('git', ['init', '-q', '-b', 'main'], { cwd: target, stdio: 'ignore' }); } catch { /* no git: the folder is still written */ }
+    }
 
     // The config the folder is generated from. Platform is asked here because it changes the
     // architecture, the test kinds and whether a design stage exists at all.
@@ -118,14 +120,7 @@ async function projectNew(options) {
 
     // `--where remote`: the repository at the provider, the pipeline file, the first push. A
     // failure here is reported and leaves the folder intact; `vibekit new repo` retries it.
-    if (where === 'remote') {
-      const { newRepo } = await import('./repo.js');
-      try {
-        await newRepo({ ...options, root: target, args: [] });
-      } catch (error) {
-        if (!json) console.log(`  ✖ repository not created: ${error.message}\n  Fix the setting and run: vibekit new repo`);
-      }
-    }
+    await repositoryStep({ ...options, root: target, where, machine, asker, json });
 
     const { next } = await import('./folder.js');
     if (json) return void console.log(JSON.stringify({ root: target, name, platforms, source: fromFile ? basename(fromFile) : describe ? 'DESC-001' : null }, null, 2));
@@ -141,6 +136,47 @@ async function projectNew(options) {
     if (asker) await offerCompletion(asker).catch(() => {});
   } finally {
     asker?.close();
+  }
+}
+
+/**
+ * The last question: the repository. Create it at the provider setup recorded, link one that
+ * already exists, or not now. Flags for scripts: `--where remote` creates, `--remote <url>` links.
+ * A failure is reported and leaves the folder intact; `vibekit new repo` retries.
+ */
+async function repositoryStep({ root, where, machine, asker, json, ...options }) {
+  const provider = machine['git-provider'] && machine['git-provider'] !== 'none' ? machine['git-provider'] : null;
+  let choice = where === 'remote' ? 'create' : options.remote ? 'link' : null;
+  if (!choice && asker) {
+    choice = await asker.choose({ id: 'repository', title: 'Link it to a remote repository?', noOther: true, options: [
+      ...(provider ? [{ id: 'create', label: `create one at ${provider}${machine['git-org'] ? ` under ${machine['git-org']}` : ''} and push` }] : []),
+      { id: 'link', label: 'link a repository I already have' },
+      { id: 'later', label: provider ? 'not now' : 'not now — vibekit settings git-provider first, then vibekit new repo' },
+    ] });
+  }
+  if (!choice || choice === 'later') return null;
+  if (choice === 'create') {
+    const { newRepo } = await import('./repo.js');
+    try {
+      return await newRepo({ ...options, root, json, args: [] });
+    } catch (error) {
+      if (!json) console.log(`  ✖ repository not created: ${error.message}\n  Fix the setting and run: vibekit new repo`);
+      return null;
+    }
+  }
+  const url = options.remote ?? (asker ? await asker.text('Repository URL (https or ssh)') : null);
+  if (!url) return null;
+  const { linkRepository } = await import('./repo.js');
+  try {
+    const linked = await linkRepository(root, url, { force: Boolean(options.force) });
+    if (!json) {
+      console.log(`✔ origin → ${url}${linked.pipeline ? ` · ${linked.pipeline} written` : ''}`);
+      console.log('  Push when ready: git push -u origin main');
+    }
+    return linked;
+  } catch (error) {
+    if (!json) console.log(`  ✖ not linked: ${error.message}`);
+    return null;
   }
 }
 

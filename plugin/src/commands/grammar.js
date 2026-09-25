@@ -74,9 +74,10 @@ function previewProject(options, name) {
   const { PLATFORMS } = optionsPlatforms();
   const rows = [
     ['Project name', name || '(asked)'],
-    ['Where does it live?', 'this folder · a new local folder · a repository on GitHub, Azure DevOps or GitLab'],
     ['What are you building?', 'a sentence or two, or the path to a requirements document'],
     ['Where does it run?', PLATFORMS.map((platform) => platform.label).join(' · ')],
+    ['Where does it live?', 'this folder · a new folder in your projects folder'],
+    ['Link it to a remote repository?', 'create one at your provider (GitHub, GitLab, Azure DevOps) and push · link one you already have · not now'],
     ['Then', 'the analyst\'s questions land in vibekit show status, ten a round; three approvals follow: architecture, design, plan'],
   ];
   if (options.json) return void console.log(JSON.stringify({ questions: rows.map(([question, answers]) => ({ question, answers })), writes: [] }, null, 2));

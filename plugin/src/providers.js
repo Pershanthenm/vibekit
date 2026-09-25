@@ -19,6 +19,15 @@ export const PROVIDERS = Object.freeze(['github', 'azure-devops', 'gitlab']);
 /** The package the pipeline installs; a pipeline variable overrides it for a fork or a pin. */
 export const VIBEKIT_PACKAGE = 'https://github.com/Pershanthenm/vibekit/releases/download/v0.1.0-alpha/vibekit-0.1.0-alpha.tgz';
 
+/** Which provider a clone URL belongs to, from its host; null when the host says nothing. */
+export function providerOfUrl(url) {
+  const host = String(url).replace(/^git@/, '').replace(/^[a-z+]+:\/\//, '').split(/[/:]/)[0].toLowerCase();
+  if (/(^|\.)github\.com$/.test(host)) return 'github';
+  if (/(^|\.)gitlab\./.test(host)) return 'gitlab';
+  if (/(^|\.)dev\.azure\.com$/.test(host) || /\.visualstudio\.com$/.test(host)) return 'azure-devops';
+  return null;
+}
+
 export const slugOf = (name) => String(name).trim().toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64) || 'project';
 
 /** The settings a repository needs, read once and checked in one place so every command says the same thing. */

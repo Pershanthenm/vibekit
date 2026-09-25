@@ -1,16 +1,24 @@
 ---
 name: new-project
-description: Start a project. Four questions on one screen, then the folder is written.
+description: Start a project. Name, platforms, what it is; then the repository; then the analyst's first questions.
 argument-hint: ["<name>"]
 ---
 
-Do not read or explore anything first. Ask four questions in one AskUserQuestion call:
+Do not read or explore anything first. Choices go through the AskUserQuestion tool: list the options, the person picks one. Never make them type what you could have listed.
+
+**Screen 1**, one AskUserQuestion call, four questions:
 
 1. **Project name.** Options: the current folder's name (recommended) and, if given, `$ARGUMENTS`. Other for their own.
-2. **Where it lives.** Options: "This folder" (recommended), "A new folder in my projects folder" (the `projects-root` from `/vibekit:setup`, or beside this folder if none is set; named after the project), "A new repository at my provider" (created for them on GitHub, GitLab or Azure DevOps with the settings from `/vibekit:setup`, pipeline file written, first push done: `--where remote`), "A repository I already have" (they paste the URL under Other).
-3. **Platforms**, multi-select: Web browser (web), iOS (ios), Android (android), Desktop (desktop), API only (api), Command line (cli).
-4. **What is it?** Options: "I'll describe it" and "I have a requirements document (BRS)". Either way the text they give under Other is the answer; if they only picked an option, ask once more for the sentence or the file path.
+2. **Where does it run?** Multi-select: Web browser (web), iOS (ios), Android (android), Desktop (desktop), API only (api), Command line (cli).
+3. **What is it?** Options: "I'll describe it" and "I have a requirements document (BRS)". The text under Other is the answer; if they only picked an option, ask once more for the sentence or the file path.
+4. **Where does the folder go?** Options: "This folder" (recommended), "A new folder in my projects folder" (the `projects-root` from `/vibekit:setup`, or beside this folder if none is set).
 
-Then one command: `vibekit new project "<name>" --where here|local|remote --describe "<their words>" --platform <ids> --yes`, or `--from <path>` for a document. It runs `git init` itself when there is no repository. For a repository they already have, use `--where here` and then `git remote add origin <url>` in the project folder. If `--where remote` reports the repository was not created, the message names the missing setting; `/vibekit:setup` fixes it and `vibekit new repo` retries. If `vibekit` is not on PATH, say so and stop (`npm install -g vibekit`).
+Run `vibekit new project "<name>" --where here|local --describe "<their words>" --platform <ids> --yes` (or `--from <path>`). If `vibekit` is not on PATH, say so and stop (`npm install -g vibekit`).
 
-Read back its last lines in two sentences: what was written, where, and what comes next. Then offer: "Answer the analyst's first questions" (`/vibekit:run-sprint`, then `/vibekit:answer`) or "Stop here". Nothing else.
+**Screen 2**, one question, after the folder is written. Run `vibekit settings git-provider` first to know whether a provider is set.
+
+- **Link it to a remote repository?** Options, in this order: "Create one at <provider> and push" (recommended; only when a provider is set; runs `vibekit new repo` in the project folder, which creates it, writes the pipeline file, pushes, and on Azure DevOps registers the pipeline), "Link a repository I already have" (Other: the URL; run `vibekit new repo --link <url>` in the project folder, which sets origin and writes the pipeline file for its host; say that `git push -u origin main` pushes it), "Set up my provider first" (only when none is set; `/vibekit:setup`, then `vibekit new repo`), "Not now" (`vibekit new repo` works any time).
+
+Read back two sentences: what was written and where, and the repository URL if there is one.
+
+**Screen 3**, one question: "Answer the analyst's first questions" (recommended: `/vibekit:run-sprint`, then `/vibekit:answer`) or "Stop here". Nothing else.
