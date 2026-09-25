@@ -118,6 +118,16 @@ Twenty slash commands, one per CLI verb you would type yourself. Type `/vibekit:
 | `/vibekit:show-why` | Why this line of code exists |
 | `/vibekit:analyze` | Explain a codebase back. Changes nothing. |
 
+## The first run
+
+In an empty folder, `vibekit` opens with one question: what are you building? Not a logo, not a menu, not a list of tools to pick from. Type a sentence or two, or drop a requirements document on it.
+
+It then works out which coding tools you have — Claude Code, Cursor, Codex, Gemini, Copilot, Windsurf, Cline, Zed, Aider, Amazon Q — and writes a pointer file for every one of them, plus `AGENTS.md` for the ones you have not installed yet. Setup is something it tells you about afterwards, in three lines, not something it asks you to configure. `--tools claude,cursor` restricts it; a tool that appears later gets one line, once, and no question.
+
+Then the questions that change the shape of the app, one per screen, with options where they exist and "I don't know" always among them. A don't-know is recorded as an assumption with a confidence and a blast radius, which is a better outcome than a silent guess.
+
+Inside Claude Code or any coding agent it never blocks: each run prints one question as Markdown and exits, and the next run carries the answer (`vibekit 2`, or `vibekit "in your own words"`). In CI or a pipe it prints one fact per line. `--mode agent|plain|full` forces a surface so you can see what an agent sees.
+
 ## Two commands a day
 
 ```bash

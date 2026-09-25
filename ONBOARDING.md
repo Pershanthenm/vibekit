@@ -55,8 +55,10 @@ Cursor, Codex and the rest need nothing extra as a plugin: `vibekit new project`
 
 ```bash
 mkdir ~/projects/my-app && cd ~/projects/my-app
-vibekit new project
+vibekit
 ```
+
+It opens with one question — what are you building? — sets up every coding tool it finds on the machine (and `AGENTS.md` for the rest), and asks the six questions that change the shape of the app, one per screen. `vibekit new project` is the same thing with the name, folder and repository questions first.
 
 Or, on a repository you already have: `vibekit new project --import .`.
 

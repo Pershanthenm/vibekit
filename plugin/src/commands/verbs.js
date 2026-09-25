@@ -183,5 +183,6 @@ export async function review(options) {
 
 export async function version() {
   const pkg = JSON.parse(await readFile(fileURLToPath(new URL('../../package.json', import.meta.url)), 'utf8'));
-  console.log(`vibekit ${pkg.version}`);
+  const { wordmark } = await import('../tui/init-screens.js');
+  console.log(wordmark(pkg.version));
 }
