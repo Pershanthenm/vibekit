@@ -240,7 +240,7 @@ export async function budgetReportFor(root, folder = DEFAULT_FOLDER) {
   return {
     kind: 'budget',
     sections: [
-      section('Forecast', 'vibekit plan --cost', [
+      section('Forecast', 'vibekit show plan --cost', [
         ['estimated total', `${forecast.total.toLocaleString()} tokens`],
         ...forecast.phases.map((phase) => [`phase ${phase.phase}`, `${phase.estimate.toLocaleString()} tokens`]),
       ], forecast.learned.measured
@@ -257,7 +257,7 @@ export async function budgetReportFor(root, folder = DEFAULT_FOLDER) {
         ['sessions that ended blocked', String(blocked.length)],
         ['escalations', String(sessions.filter((session) => session.escalated).length)],
       ]),
-      section('Context health', 'vibekit check --budget', context
+      section('Context health', 'vibekit run check --budget', context
         ? [
           ['always-loaded', `${context.alwaysLoaded} of ${context.ceiling} tokens${context.passes ? '' : ' — over the ceiling'}`],
           ['files nearest the ceiling', context.rows.filter((row) => row.budget && row.tokens > row.budget).map((row) => row.path).slice(0, 3).join(', ') || 'none over'],

@@ -68,7 +68,7 @@ const writeWorkflowState = (root, state, folder) => writeAtomic(statePath(root, 
  * Every sprint with its requirements and where each stands. A requirement listed nowhere in the
  * plan is `unplanned` — it exists, it is real work, and the plan does not say when.
  */
-export async function sprintBoard(root, folder = DEFAULT_FOLDER) {
+export async function sprintBoard(root, folder = DEFAULT_FOLDER, { current: chosen = null } = {}) {
   const [plan, requirements, state, tasks] = await Promise.all([
     readText(planPath(root, folder)),
     listRequirements(root, folder),
@@ -98,7 +98,10 @@ export async function sprintBoard(root, folder = DEFAULT_FOLDER) {
   const bugs = requirements.filter((entry) => entry.kind === 'bug' && !listed.has(entry.id));
   // The current sprint is the first with work left; one that has no requirements listed (a
   // skeleton phase described in prose) counts as passed once anything after it has started.
-  const current = rows.find((row) => row.total && !row.complete && !row.closed) ?? rows.find((row) => row.total && !row.closed) ?? null;
+  // `use sprint N` (CLI Spec §2) chooses the working sprint; a closed one cannot be chosen, and a
+  // choice the plan no longer has falls back to what the files say.
+  const picked = chosen !== null && chosen !== undefined ? rows.find((row) => row.n === Number(chosen) && !row.closed) ?? null : null;
+  const current = picked ?? rows.find((row) => row.total && !row.complete && !row.closed) ?? rows.find((row) => row.total && !row.closed) ?? null;
   return { sprints: rows, deferred, unplanned, bugs, current, held: tasks.held };
 }
 

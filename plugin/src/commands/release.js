@@ -81,6 +81,8 @@ export async function ship(options) {
     return release({ ...options, args: [], rollback: args[1] ?? lastTag(root), why: options.why ?? 'smoke failed against the deployed application' });
   }
   if (action === 'release') return release({ ...options, args: args.slice(1) });
+  // CLI Spec §2 — `ship undo REQ-014`: remove a shipped feature; dependants go to review.
+  if (action === 'undo') return revert({ ...options, args: args.slice(1) });
 
   const { smoke, smokeCommand, verdict } = await import('../smoke.js');
   const tag = lastTag(root);
@@ -112,9 +114,10 @@ export async function ship(options) {
   const command = await smokeCommand(root, folder);
   console.log(`vibekit ship · ${tag ? `last release ${tag}` : 'nothing released yet'}`);
   console.log('');
-  console.log('  ship release [version]        cut and tag a release from the base branch');
+  console.log('  ship release [version]        tag, changelog, documents, evidence bundle');
+  console.log('  ship rollback [tag]           put the previous release back; a hotfix opens with the incident note');
+  console.log('  ship undo <id>                remove a shipped feature; dependants go to review');
   console.log('  ship smoke --url <address>    run the smoke against what is deployed there');
-  console.log('  ship rollback [tag]           record a rollback and open a pre-filled hotfix requirement');
   console.log('');
   console.log(`  smoke command: ${command ?? `none in ${folder}/product/map.md — add a \`smoke\` line to the Commands block`}`);
   console.log('');
@@ -146,7 +149,7 @@ export async function revert(options) {
   const { root, args, folder: chosen, why, json } = options;
   const folder = chosen ?? (await folderName(root));
   const [id] = args.filter((argument) => !argument.startsWith('-'));
-  if (!id) throw new Error('Usage: vibekit revert REQ-014 [--why "<reason>"]');
+  if (!id) throw new Error('Usage: vibekit ship undo REQ-014 [--why "<reason>"]');
 
   const result = await revertRequirement(root, id, { folder, reason: why ?? null });
   if (json) return void console.log(JSON.stringify(result, null, 2));

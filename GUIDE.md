@@ -17,18 +17,18 @@ The roles are files in `vibekit/agents/`. `vibekit serve` enforces them over MCP
 ## 2. Start
 
 ```bash
-vibekit project new
+vibekit new project
 ```
 
 Name it, choose where it lives, describe it or hand over the document, tick the platforms. The folder is written, the hooks installed, and your words kept verbatim as the first source. `--yes --name --describe --platform` answers everything from flags.
 
-Have code already? `vibekit project import .` reads it and explains it back — in plain language, every line with a confidence — before `--convert` writes the folder. Nothing in the existing code is changed. See [docs/BROWNFIELD.md](docs/BROWNFIELD.md).
+Have code already? `vibekit analyze .` reads it and explains it back — in plain language, every line with a confidence — and changes nothing. `vibekit new project --import .` writes the folder from that reading; the existing code is not touched. See [docs/BROWNFIELD.md](docs/BROWNFIELD.md).
 
 Not sure it should be built at all? `vibekit ext add assess`, then `vibekit project assess "<idea>"`: five files, a decision record, no code.
 
 ## 3. The gates
 
-`vibekit sprint run` reads the gate and prints the stage prompt to run. Each gate is a line you write:
+`vibekit run` reads the gate and prints the stage prompt to run. Each gate is a line you write:
 
 | Stage | The line | Where |
 |---|---|---|
@@ -42,11 +42,11 @@ The tracker's approve button writes exactly the same line. Nothing in VibeKit wr
 ## 4. Answering asks
 
 ```bash
-vibekit action                       # every project, most blocking first
-vibekit action answer                # walk through them: each question, the agent's options as a menu, type your own, skip, reject
-vibekit action answer 1 "a CSV export uploaded when the take starts" 3 "Stripe"   # one or several, by number or id
-vibekit action export --out answers.md   # a file to fill in offline …
-vibekit action answer --from answers.md  # … and apply; `reject: <reason>` on a line sends that one back
+vibekit show status                       # every project, most blocking first
+vibekit show status answer                # walk through them: each question, the agent's options as a menu, type your own, skip, reject
+vibekit show status answer 1 "a CSV export uploaded when the take starts" 3 "Stripe"   # one or several, by number or id
+vibekit show status export --out answers.md   # a file to fill in offline …
+vibekit show status answer --from answers.md  # … and apply; `reject: <reason>` on a line sends that one back
 vibekit tracker stock                # the same inbox on your phone: finds the project by name, opens a tunnel, prints a QR code
 ```
 
@@ -57,13 +57,13 @@ Every ask leads with `## In plain terms`. Blocking asks wait for a person; nobod
 ## 5. Sprints
 
 ```bash
-vibekit sprint plan --cost           # the sprints and the token forecast, before you approve
-vibekit sprint run --lanes 2         # hand out independent work: never two agents on one entity
-vibekit sprint status                # progress, lanes, what is blocked — as work, not ids
-vibekit sprint close --by "<name>"   # the gate, then your name
+vibekit show plan --cost           # the sprints and the token forecast, before you approve
+vibekit run --lanes 2         # hand out independent work: never two agents on one entity
+vibekit show sprint                # progress, lanes, what is blocked — as work, not ids
+vibekit new sprint --by "<name>"   # the gate, then your name
 ```
 
-`run` hands out; it does not run a model. A seat (Claude Code, Cursor) opens the branch and runs the prompt `vibekit sprint start` prints; `vibekit serve --stdio` is the MCP server for anything else, `--sandbox` for a container per session. `--until blocked` is the overnight setting.
+`run` hands out; it does not run a model. A seat (Claude Code, Cursor) opens the branch and runs the prompt `vibekit run` prints; `vibekit serve --stdio` is the MCP server for anything else, `--sandbox` for a container per session. `--until blocked` is the overnight setting.
 
 The sprint gate: every piece of work `done`, nothing held, no open asks, no high-severity bug, `vibekit check` green, the security scan clean of high findings, documents regenerated, all three reports produced, lessons proposed. Then `--by`.
 
@@ -76,16 +76,16 @@ vibekit req checkpoint REQ-014 --done "…" --in-hand "…" --next "…" --step 
 git commit -m "feat(REQ-014): …" -m "VibeKit-Requirement: REQ-014"
 vibekit verify                           # exit codes into ## Evidence
 vibekit req tested REQ-014 --as implementer
-vibekit review REQ-014                   # the mechanical half; a reviewer session does the rest
+vibekit run review REQ-014                   # the mechanical half; a reviewer session does the rest
 vibekit req done REQ-014                 # a person
 ```
 
-A killed session resumes from the checkpoint: `vibekit sprint start` prints it; `vibekit start REQ --as implementer` on an unheld in-progress requirement picks it up and logs the change of hands.
+A killed session resumes from the checkpoint: `vibekit run` prints it; `vibekit start REQ --as implementer` on an unheld in-progress requirement picks it up and logs the change of hands.
 
 ## 7. Bugs
 
 ```bash
-vibekit bug "due dates show a day early" --test tests/dates.test.js --severity high --found-on REQ-014
+vibekit new bug "due dates show a day early" --test tests/dates.test.js --severity high --found-on REQ-014
 vibekit bug assess BUG-001 --cause "UTC date rendered in local time"
 vibekit bug fix BUG-001                  # a branch, the same loop as any requirement
 vibekit bug test BUG-001                 # verified · partial · failed
@@ -107,8 +107,8 @@ Spacing, density, type scale and colour relationships are borrowed as design alw
 ## 9. Security
 
 ```bash
-vibekit security scan [--url https://staging.example.com]
-vibekit check --security --deps
+vibekit run scan [--url https://staging.example.com]
+vibekit run check --security --deps
 ```
 
 The scan measures against the frameworks that apply (the classifications decide the defaults; `vibekit settings frameworks` chooses), counts what needs a person honestly, writes `docs/security-scan-<date>.md`, and opens a bug per finding. It is not a penetration test and says so.
@@ -116,25 +116,25 @@ The scan measures against the frameworks that apply (the classifications decide 
 ## 10. Shipping
 
 ```bash
-vibekit release                          # refused until every requirement in the sprint is done
-vibekit rollback v1.2.0                  # previous release back, hotfix opened with the incident note
-vibekit undo REQ-014                     # spec back to ready; dependants to review
-vibekit hotfix "refund double-charged"   # S bug on hotfix/*, compliance pass, patch release
+vibekit ship release                          # refused until every requirement in the sprint is done
+vibekit ship rollback v1.2.0                  # previous release back, hotfix opened with the incident note
+vibekit ship undo REQ-014                     # spec back to ready; dependants to review
+vibekit new hotfix "refund double-charged"   # S bug on hotfix/*, compliance pass, patch release
 ```
 
 ## 11. Stopping
 
-`vibekit project stop --reason "month end"` checkpoints, releases holds, writes the resume note. `vibekit project resume` re-establishes ground truth before anything restarts: checks, dependencies, prompt versions, sources, open asks.
+`vibekit stop --reason "month end"` checkpoints, releases holds, writes the resume note. `vibekit resume` re-establishes ground truth before anything restarts: checks, dependencies, prompt versions, sources, open asks.
 
 ## 12. Outside knowledge and tools
 
 ```bash
 vibekit settings server jira <token>          # the credential; the declaration is in vibekit/agents/servers.yml
-vibekit check --servers                       # declared well, authenticated, reachable — before a sprint starts
+vibekit run check --servers                       # declared well, authenticated, reachable — before a sprint starts
 vibekit tools skills import git@github.com:youragency/skills --dry-run
 vibekit ext add git@github.com:youragency/kit  # shows what it adds and its budget, asks, pins the commit
 vibekit ext update                            # fetch, show the diff, move the pin only when you say so
-vibekit check --budget                        # the always-loaded cost by source: repo, each extension, imported, team, vibekit
+vibekit run check --budget                        # the always-loaded cost by source: repo, each extension, imported, team, vibekit
 ```
 
 **Publishing your own kit.** An extension is a git repository with an `extension.yml` (name, version, `requires: vibekit >= 1.2`, licence, what it adds, the declared always-loaded budget) and folders of data: `skills/`, `checks/` (declarative, six kinds), `stages/`, `documents/`, `reports/`, `templates/`, `servers.yml`, `always/`, `pipeline.md`. Never code. Before a release:
@@ -175,24 +175,24 @@ A stock-taking app for three warehouses, from nothing to a first release, with t
 
 ```bash
 mkdir stock-take && cd stock-take && git init
-vibekit project new --name stock-take --describe "Staff count stock on a phone; supervisors review variances" --platform web,api
+vibekit new project "stock-take" --describe "Staff count stock on a phone; supervisors review variances" --platform web,api
 vibekit ingest brief.md            # if there is a requirements document: redacted, split into sections, obligations extracted
-vibekit sprint run                 # prints the clarify prompt; your agent runs it and writes asks
-vibekit action answer              # you answer them, one at a time
-vibekit sprint run                 # the analyst finishes; assumptions.md waits for `reviewed: … by <you>`
+vibekit run                 # prints the clarify prompt; your agent runs it and writes asks
+vibekit show status answer              # you answer them, one at a time
+vibekit run                 # the analyst finishes; assumptions.md waits for `reviewed: … by <you>`
 ```
 
 Each gate is a line you write, or the approve button on the tracker. Architecture, design and plan follow the same shape: the agent proposes with reasons, you read, you approve.
 
 ```bash
-vibekit sprint plan --cost         # sprints in dependency order, walking skeleton first, with the token forecast
-vibekit sprint run --lanes 2       # two agents, never on the same entity; each holds one requirement on req/REQ-nnn
-vibekit sprint status              # where each lane is, in words
-vibekit action                     # whenever an agent stops on a question
-vibekit review REQ-003             # the mechanical half of the review; the reviewer session writes the verdict
+vibekit show plan --cost         # sprints in dependency order, walking skeleton first, with the token forecast
+vibekit run --lanes 2       # two agents, never on the same entity; each holds one requirement on req/REQ-nnn
+vibekit show sprint              # where each lane is, in words
+vibekit show status                     # whenever an agent stops on a question
+vibekit run review REQ-003             # the mechanical half of the review; the reviewer session writes the verdict
 vibekit req done REQ-003           # a person
-vibekit sprint close --by "Sam"    # every row of the gate true, then your name
-vibekit release 0.1.0              # changelog, tag, evidence bundle
+vibekit new sprint --by "Sam"    # every row of the gate true, then your name
+vibekit ship release 0.1.0              # changelog, tag, evidence bundle
 ```
 
-From then on: `vibekit feature add` for new work, `vibekit bug … --test` for anything broken, `vibekit hotfix` when production is down, `vibekit tracker stock-take` to carry the whole thing on your phone.
+From then on: `vibekit new feature` for new work, `vibekit new bug … --test` for anything broken, `vibekit new hotfix` when production is down, `vibekit tracker stock-take` to carry the whole thing on your phone.

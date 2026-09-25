@@ -84,7 +84,7 @@ export async function decide(root, idea, { decision, why, by = null, now = () =>
     '', '## Decision', '',
     `**${decision === 'build' ? 'Build' : decision === 'no-build' ? 'Do not build' : 'Find out more first'}** · ${now().toISOString().slice(0, 10)}${by ? ` · ${by}` : ''}`,
     '', String(why).trim(), '',
-    decision === 'build' ? 'Next: `vibekit project new --describe "<the shaped option>"` — this assessment becomes the first source.' : decision === 'more' ? 'Next: the research file names what could not be found; find it, then decide again.' : 'Kept as a record. When somebody proposes this again, this file is worth as much as it is now.', '',
+    decision === 'build' ? 'Next: `vibekit new project --describe "<the shaped option>"` — this assessment becomes the first source.' : decision === 'more' ? 'Next: the research file names what could not be found; find it, then decide again.' : 'Kept as a record. When somebody proposes this again, this file is worth as much as it is now.', '',
   ].join('\n');
   await writeText(path, `${existing.replace(/\n## Decision[\s\S]*$/, '').trimEnd()}\n${record}`);
   const readme = join(dir, 'README.md');

@@ -7,12 +7,12 @@ Specification §18, §41 and §58.
 ## 1. Understand
 
 ```bash
-vibekit project import .            # or a path, or a git url
+vibekit analyze .                   # or a path, or a git url: read-only, nothing written
 ```
 
 Reads the tree, the build and dependency files, migrations and schema, routes, tests, CI, Dockerfiles, any existing `CLAUDE.md`/`.cursorrules`/`AGENTS.md`, and the last 200 commits — manifests first, then one representative file per layer, then whatever a question sends it to. Budget: 40,000 tokens of reading, reported.
 
-It writes `vibekit/understanding.md`, every line with a confidence and the file it came from:
+It prints the understanding (`--out <file>` keeps it), every line with a confidence and the file it came from:
 
 - **In plain terms** — what this is, for a person who did not build it
 - **How it is built** — layers, patterns actually in use, the commands that build and test it
@@ -23,15 +23,15 @@ It writes `vibekit/understanding.md`, every line with a confidence and the file 
 - **Conventions nobody wrote down** — candidate rules and skills
 - **What I could not tell** — asks, ten at most
 
-Read-only. Correct anything wrong in the file; answer the asks.
+Read-only. Nothing is written to the repository.
 
 ## 2. Convert
 
 ```bash
-vibekit project import . --convert
+vibekit new project --import .
 ```
 
-Writes only the pointer files and the folder, from the corrected understanding: `context.md` and a glossary, `architecture.md` as observed, `map.md` with the real commands, `entities.md` with classifications, `access.md` skeleton, `guardrails.md` with the risky areas denied, `standards/rules.md` from the conventions, decision memories from the ten most-referenced decisions in commit history. Existing `CLAUDE.md`-style files are kept below the `<!-- local -->` marker. `vibekit check` must be green before any agent starts.
+Reads the same way, writes `vibekit/understanding.md` — yours to correct; answer the asks it raises — and writes only the pointer files and the folder from it: `context.md` and a glossary, `architecture.md` as observed, `map.md` with the real commands, `entities.md` with classifications, `access.md` skeleton, `guardrails.md` with the risky areas denied, `standards/rules.md` from the conventions, decision memories from the ten most-referenced decisions in commit history. Existing `CLAUDE.md`-style files are kept below the `<!-- local -->` marker. `vibekit check` must be green before any agent starts.
 
 Then `vibekit reverse` drafts one requirement per existing test class — acceptance criteria inferred from test names, entities from the types touched — all `confidence: low` and `status: draft`. A legacy codebase gets a spec it never had, and every change after goes through the same loop as new work.
 

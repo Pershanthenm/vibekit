@@ -91,11 +91,11 @@ export const parseEvidence = (block) => {
 };
 
 /** Record the evidence into the requirement. Returns what was written and whether it is green. */
-export async function recordEvidence(root, id, { folder = DEFAULT_FOLDER, runner = runCommand } = {}) {
+export async function recordEvidence(root, id, { folder = DEFAULT_FOLDER, runner = runCommand, suites = EVIDENCE_SUITES } = {}) {
   const path = requirementPath(root, id, folder);
   if ((await readText(path)) === null) throw new Error(`No requirement ${id} in ${folder}/product/requirements/.`);
 
-  const { results, ran, commands } = await runEvidence(root, { folder, runner });
+  const { results, ran, commands } = await runEvidence(root, { folder, runner, suites });
   const state = repoState(root);
   const block = renderEvidence(results, state);
   await writeSection(root, id, 'Evidence', block, folder);

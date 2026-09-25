@@ -48,11 +48,11 @@ export async function understand(options) {
     if (!hasFolder) {
       console.log('');
       console.log('Nothing was written: there is no folder yet, and this reads before it writes.');
-      console.log('  Correct anything wrong above, then: vibekit project import . --convert');
+      console.log('  Correct anything wrong above, then: vibekit new project --import .');
     } else {
       console.log('');
       console.log(`  Correct ${folder}/${UNDERSTANDING_FILE} — everything the folder is built from comes from it.`);
-      console.log('  Then: vibekit project import . --convert');
+      console.log('  Then: vibekit new project --import .');
     }
     return;
   }
@@ -89,7 +89,7 @@ async function convertToFolder(root, repo, folder, understanding, report) {
 
   console.log('');
   console.log('  Next: vibekit check must be green before any agent starts.');
-  console.log('  Then vibekit sprint run continues at the plan stage; the first requirements are usually the gaps above.');
+  console.log('  Then vibekit run continues at the plan stage; the first requirements are usually the gaps above.');
 }
 
 async function reportRefresh(repo, root, folder, json) {

@@ -19,7 +19,7 @@ export async function security(options) {
 
   const posture = await readPosture(root, folder);
   if (json) return void console.log(JSON.stringify(posture, null, 2));
-  if (!posture?.last) return void console.log('No scan yet. `vibekit security scan` measures the application against the frameworks that apply.');
+  if (!posture?.last) return void console.log('No scan yet. `vibekit run scan` measures the application against the frameworks that apply.');
   console.log(`Posture · last scan ${posture.last.date}`);
   for (const framework of posture.last.frameworks) console.log(`  ${framework.id.padEnd(18)} ${String(framework.met).padStart(3)} of ${String(framework.applicable).padEnd(3)} met · ${framework.failed} failed · ${framework.human} need a person`);
   console.log(`  ${posture.last.high} high · ${posture.last.medium} medium · ${posture.last.low} low`);

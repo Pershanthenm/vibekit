@@ -228,6 +228,7 @@ export const CONFIG_KEYS = Object.freeze({
   'tunnel-token': 'the Cloudflare tunnel token used by `serve --tracker --tunnel`',
   'rates-file': 'a path to rates.yml, which converts tokens to currency in the budget report',
   'require-signed': 'true to refuse an unsigned or untrusted extension (§5.1); false lets a team\'s own kit install with a warning',
+  'completion-offered': 'true once `new project` has offered to install shell completion, so it asks only once',
 });
 
 export async function readConfig() {

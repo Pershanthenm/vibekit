@@ -136,7 +136,7 @@ export async function nextAction(root, folder = DEFAULT_FOLDER, { holdTimeout = 
       return {
         kind: 'stage', stage: stage.n, name: stage.name, role: stage.role, prompt: `${folder}/${stage.prompt}`,
         forHuman: /approved|reviewed/.test(gate.detail) || Boolean(gate.by === null && stage.n > 0),
-        detail: gate.detail, command: 'vibekit sprint run',
+        detail: gate.detail, command: 'vibekit run',
       };
     }
   }

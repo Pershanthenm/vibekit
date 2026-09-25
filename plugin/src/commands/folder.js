@@ -182,7 +182,7 @@ export async function init(options) {
   console.log('');
   console.log(renderBudget(result.budget, result.folder));
   console.log('');
-  console.log('Next: vibekit sprint run');
+  console.log('Next: vibekit run');
 }
 
 // ---------------------------------------------------------------- vibekit sprint run
@@ -328,9 +328,15 @@ export async function check(options) {
     if (!json) console.log(`Parity · ${parity.covered.length} command(s) with a page action, ${parity.missing.length} without${parity.missing.length ? `: ${parity.missing.join(', ')}` : ''}\n`);
   }
 
+  // CLI Spec §6 — stale completion is worse than none, so `run check` reports a mismatch.
+  const { completionStatus } = await import('../completion.js');
+  const completion = await completionStatus().catch(() => ({ stale: [] }));
+  for (const stale of completion.stale) result.findings.push({ code: 'completion.stale', message: `${stale.path} is completion for vibekit ${stale.version ?? 'unknown'}, and this is ${completion.version}. Stale completion is worse than none.`, fix: `vibekit completion install ${stale.shell}`, severity: 'warning' });
+
   if (done) {
     const requirement = await requireOne(root, folder, done);
-    const reasons = doneBlockers(requirement, result);
+    const { migrationBlockers } = await import('../migration.js');
+    const reasons = [...doneBlockers(requirement, result), ...(await migrationBlockers(root, requirement.id, folder))];
     if (reasons.length) {
       console.log(`✖ ${requirement.id} is not done:`);
       for (const reason of reasons) console.log(`  - ${reason}`);
@@ -517,6 +523,12 @@ export async function req(options) {
           'A test you cannot make pass is an ask against the criterion, not a test to skip.',
         ].join('\n'));
       }
+    }
+    // CLI Spec (`verify`) — a migration slice with an unresolved real difference cannot be marked done.
+    if (action === 'done') {
+      const { migrationBlockers } = await import('../migration.js');
+      const blockers = await migrationBlockers(root, requirement.id, folder);
+      if (blockers.length) throw new Error(`${requirement.id} cannot be done:\n${blockers.map((line) => `  - ${line}`).join('\n')}`);
     }
     const moved = await setStatus(root, requirement.id, action, {
       by: role ? 'agent' : 'human',

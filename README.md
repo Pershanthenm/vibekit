@@ -33,7 +33,7 @@ Other tools help you write a spec and then leave you alone. VibeKit is the opera
 
 Both are good. VibeKit borrows from both and maps onto the same steps. **The difference is how far each one takes you.** Spec Kit and Agent OS hand you a first version. VibeKit stays for the whole life of the project.
 
-Already using either? `vibekit project import .` reads what you have. Nothing is lost. From Spec Kit, `vibekit project import . --speckit` reads `memory/constitution.md`, `specs/`, `plan.md` and `tasks.md`.
+Already using either? `vibekit new project --import .` reads what you have. Nothing is lost. From Spec Kit, `vibekit new project --import . --speckit` reads `memory/constitution.md`, `specs/`, `plan.md` and `tasks.md`.
 
 **✓** does it · **◐** partly · **—** doesn't, and isn't trying to
 
@@ -103,7 +103,7 @@ No ids, no step counters. "Creating a list", not `REQ-007 step 4/5`. You can act
 
 ## Several agents. No collisions.
 
-One agent at a time is a waiting game. `vibekit sprint run` works several pieces at once, across whatever tools you've got.
+One agent at a time is a waiting game. `vibekit run` works several pieces at once, across whatever tools you've got.
 
 ```
 Lane A  Creating a list           Claude Code (seat)
@@ -142,23 +142,23 @@ Spec Kit’s slash commands and `.specify` helper scripts walk specify → plan 
 | Spec Kit | VibeKit | What changes |
 |---|---|---|
 | `/speckit.constitution` | `standards/` + `vibekit check` | Principles become rules that fire |
-| `/speckit.specify` | `/vibekit.new-feature` · `project new` | The brief is a source, not a one-shot prompt |
-| `/speckit.clarify` | `/vibekit.clarify` · `vibekit action` | An inbox, not a single pass |
+| `/speckit.specify` | `/vibekit.new-feature` · `new project` | The brief is a source, not a one-shot prompt |
+| `/speckit.clarify` | `/vibekit.clarify` · `vibekit show status` | An inbox, not a single pass |
 | `/speckit.plan` | architecture and plan gates | You approve with a line in the file |
-| `/speckit.tasks` | `vibekit sprint plan` | Sizes, walking skeleton, cost forecast |
-| `/speckit.implement` | `/vibekit.build` · `sprint run` | One requirement per agent; evidence required |
+| `/speckit.tasks` | `vibekit plan project` | Sizes, walking skeleton, cost forecast |
+| `/speckit.implement` | `/vibekit.build` · `run` | One requirement per agent; evidence required |
 | `/speckit.analyze` | `vibekit check` · `vibekit drift` | Mechanical, and it runs in CI |
-| `/speckit.converge` | `/vibekit.review` · sprint close | Second model; a person sets `done` |
-| — | `/vibekit.why` | The chain Spec Kit does not keep |
-| — | `/vibekit.hotfix` · `/vibekit.status` · `/vibekit.next` | Small work stays small; the next step is a command |
+| `/speckit.converge` | `/vibekit.run-review` · `new sprint` (the gate) | Second model; a person sets `done` |
+| — | `/vibekit.show-why` | The chain Spec Kit does not keep |
+| — | `/vibekit.new-hotfix` · `/vibekit.show-status` · `/vibekit.run-sprint` | Small work stays small; the next step is a command |
 
 The slash commands are a thin layer over the CLI, so Claude Code, Cursor, Codex and an MCP client are never on different workflows.
 
 ## Two commands a day
 
 ```bash
-vibekit action        # everything waiting on you, across every project, most blocking first
-vibekit sprint run    # work the current sprint with several agents at once
+vibekit show status   # what needs you, across every project, most blocking first
+vibekit run           # work the current sprint with several agents at once
 ```
 
 `vibekit action answer` walks you through the questions one at a time. Or none of this, and the tracker on your phone.
@@ -167,18 +167,18 @@ vibekit sprint run    # work the current sprint with several agents at once
 
 ```mermaid
 flowchart LR
-  A[project new] --> B[Clarify<br/>asks, assumptions]
+  A[new project] --> B[Clarify<br/>asks, assumptions]
   B -->|you approve| C[Architecture]
   C -->|you approve| D[Design system]
   D -->|you approve| E[Plan<br/>sprints]
   E -->|you approve| F[Build<br/>one requirement per agent]
   F --> G[Test<br/>reviewer on a second model]
   G -->|you set done| H[Sprint gate<br/>you close it]
-  F -. asks .-> I[vibekit action]
+  F -. asks .-> I[vibekit show status]
   I -. answers .-> F
 ```
 
-1. **Start.** `vibekit project new` — name it, say where it lives, say what you want or hand over the requirements document. It is redacted before it touches git.
+1. **Start.** `vibekit new project` — name it, say where it lives, say what you want or hand over the requirements document. It is redacted before it touches git.
 2. **Clarify.** The analyst asks about everything the source does not settle, ten questions a round, in plain terms. What it cannot ask becomes an assumption with an id and a confidence.
 3. **Architecture, design, plan.** Each proposed with reasons; you approve each with a line in the file. The plan is sprints in dependency order, walking skeleton first.
 4. **Build.** One requirement per agent per branch. Approach before code, failing tests per criterion, `vibekit verify` captures the exit codes, `tested` is refused without them.
@@ -186,18 +186,24 @@ flowchart LR
 
 ## The commands
 
-| Group | Commands |
-|---|---|
-| **Projects** | `project new` · `project select` · `project status [--all]` · `project import <repo>` · `project assess "<idea>"` · `project stop` · `project resume` |
-| **Sprints** | `sprint plan [--cost]` · `sprint start` · `sprint run [--lanes N] [--until blocked]` · `sprint status` · `sprint close --by "<name>"` |
-| **Action needed** | `action` · `action answer` (a walk-through) · `action answer <n> "<answer>" …` · `action export` / `action answer --from answers.md` · `tracker <project>` |
-| **Work** | `feature add "<text>"` · `bug "<text>" --test <path>` · `bug assess|fix|test BUG-001` · `hotfix "<text>"` · `review` · `why <file:line>` |
-| **Design** | `design` · `design add <url|image>` · `design preview` · `design apply` · `design feedback "<text>"` |
-| **Quality** | `security scan [--url]` · `check [--ci] [--security] [--deps] [--parity] [--servers] [--budget]` · `docs` · `report build|budget|security` |
-| **Shipping** | `release [<version>]` · `rollback <tag>` · `undo <id>` |
-| **Setup** | `init [--no-library]` · `skills [catalogue | enable | disable | adopt | reference]` · `team` · `cost` · `settings [<key> <value> | tiers | frameworks | server | trust]` · `ext add|list|update|remove|verify|sign|keygen` · `tools skills import <repo>` · `tools rates` |
+Eight verbs, each followed by what you want it to act on. Verb first, always. The name is optional: after `use project`, everything applies there. A bare verb lists what it takes.
 
-Every older verb (`next`, `pause`, `understand`, `arch-docs`, `quick`, `revert`, `config`) still works as an alias of the command above. `vibekit --help` lists everything; bare `vibekit` says what to do next in this folder.
+| Verb | Means | Takes |
+|---|---|---|
+| `new` | Start something that did not exist | `new project "Hello World"` · `new sprint` · `new feature "…"` · `new bug "…" --test <path>` · `new hotfix "…"` |
+| `use` | Switch what I am working on | `use project "Hello World 2"` · `use sprint 2` · `use` (pick from a list) |
+| `show` | Tell me something, change nothing | `show` · `show project` · `show plan` · `show sprint` · `show status` · `show cost` · `show security` · `show backlog` · `show docs` · `show why src/x.js:12` · `show team` · `show migration` · `show differences` — all take `--all` and `--json` |
+| `plan` | Decide the order of work | `plan project [--approve --by "<name>"]` · `plan sprint [--order …] [--defer …]` |
+| `run` | Do work now | `run sprint [--lanes N] [--until blocked\|gate] [--headless]` · `run check` · `run scan` · `run review` · `run docs` · `run` |
+| `analyze` | Tell me about a codebase, change nothing | `analyze .` · `analyze <git url>` · `--depth quick\|standard\|deep` · `--focus security\|cost\|migration\|quality` · `--compare <path>` · `--pdf --brand <site>` |
+| `migrate` | Move software you already have | `migrate upgrade "…"` · `migrate replatform "…"` · `migrate decompose "…"` · `migrate status` · `migrate next` |
+| `verify` | Prove the new behaves like the old | `verify` · `verify --live` · `verify --replay <log>` · `verify --data` · `verify --report` |
+
+Plus three more: `stop`, `resume`, and `ship release 1.2.0` · `ship rollback v1.1.0` · `ship undo REQ-014`. And the extras: `settings`, `design add <url>`, `tracker`, `ext add <name>`, `completion <shell>`.
+
+The folder's own verbs (`req`, `ask`, `start`, `verify`, `check`, `init`, `ingest`, `skills`, `tools`, `serve`) are what agents, hooks and CI call, and are unchanged. The earlier grammar (`project new`, `sprint run`, `action`) still works as an alias of the command above, so nothing that a script or a hook already calls breaks. `vibekit --help` lists everything; bare `vibekit` says where you are and what needs you.
+
+Shell completion completes your projects, sprints, releases and files, not just the grammar: `vibekit completion install`.
 
 ## What it enforces, mechanically
 
@@ -214,7 +220,7 @@ Every older verb (`next`, `pause`, `understand`, `arch-docs`, `quick`, `revert`,
 
 Everything from outside adds capability and never weakens a guarantee:
 
-- **MCP servers a project consumes** — declared in `vibekit/agents/servers.yml` as an allow-list of tools, the roles that may call them, the highest data class they may see, a per-session budget. A remote server has a `url:`; a local one has a `command:` (words, never a shell string) and is launched on stdio for each call with its credential in the one variable `token-env:` names. Agents reach both through `vibekit serve`'s `vibekit_call`, which enforces all of it at the boundary and logs every call; credentials live in machine settings (`vibekit settings server <id> <token>`), never in the folder. `vibekit check --servers` before a sprint.
+- **MCP servers a project consumes** — declared in `vibekit/agents/servers.yml` as an allow-list of tools, the roles that may call them, the highest data class they may see, a per-session budget. A remote server has a `url:`; a local one has a `command:` (words, never a shell string) and is launched on stdio for each call with its credential in the one variable `token-env:` names. Agents reach both through `vibekit serve`'s `vibekit_call`, which enforces all of it at the boundary and logs every call; credentials live in machine settings (`vibekit settings server <id> <token>`), never in the folder. `vibekit run check --servers` before a sprint.
 - **Skills that ship** — 27 short engineering skills (test-driven development, adversarial review, API design, schema design, zero-downtime migration, Docker, CI pipelines, observability, SLOs, feature flags, secrets hygiene, threat modelling, incident response and more) are written into every new project under `skills/lib/vibekit/` as generated files: indexed by trigger, tested, 100 to 400 tokens each, and refused to agents that try to edit them. They are the lowest rung of the override chain, so a team's own copy always wins: `vibekit skills adopt <name>` makes that copy. `vibekit skills reference <name>` prints the full source each was distilled from (claude-skills, MIT; see `library/SOURCES.md`). `vibekit init --no-library` opts out.
 - **The catalogue** — the other 374 skills from the same repository, in 16 domains (engineering, marketing, product, finance, compliance, research and more), ship as data in `library/catalogue/` and are indexed only when a project enables them: `vibekit skills catalogue` lists the domains, `vibekit skills catalogue <word>` searches, `vibekit skills enable <name|domain>` writes the chosen ones into the folder with a short lead as the body and the full text as the reference, and refuses an enable that would put the always-loaded folder over its cap. `vibekit skills disable` takes them out again.
 - **Skills from a repository** — `vibekit tools skills import <repo>`: identity dropped, opinions that govern code flagged rather than imported, substantial code lifted into pattern files, triggers guessed and marked low confidence, provenance and licence recorded, near-duplicates made disjoint.
@@ -227,7 +233,7 @@ Everything from outside adds capability and never weakens a guarantee:
 
 ## Security
 
-Redaction on ingest; entropy-scored secret detection on ingest, commit, memory and workflow; an SSRF guard on everything that fetches; dependency audit with licence and registry policy; prompt-injection shapes flagged; owner-only file modes for tokens and registries; a sandbox per session with an egress proxy option; and `vibekit security scan`, which measures the application against OWASP ASVS, Top 10, API Top 10, CIS Docker, POPIA/GDPR, PCI DSS and NIST SSDF, counts what needs a person honestly, and turns findings into bugs. Extensions are data only — never code.
+Redaction on ingest; entropy-scored secret detection on ingest, commit, memory and workflow; an SSRF guard on everything that fetches; dependency audit with licence and registry policy; prompt-injection shapes flagged; owner-only file modes for tokens and registries; a sandbox per session with an egress proxy option; and `vibekit run scan`, which measures the application against OWASP ASVS, Top 10, API Top 10, CIS Docker, POPIA/GDPR, PCI DSS and NIST SSDF, counts what needs a person honestly, and turns findings into bugs. Extensions are data only — never code.
 
 ## Install
 
@@ -249,11 +255,11 @@ git clone https://github.com/Pershanthenm/vibekit.git
 npm install -g ./vibekit/plugin
 ```
 
-Then, in a project: `vibekit project new`. On a repo you already have: `vibekit project import .`.
+Then, in a project: `vibekit new project`. On a repo you already have: `vibekit new project --import .`.
 
 ### Claude Code
 
-The plugin adds slash commands (`/vibekit.status`, `/vibekit.next`, `/vibekit.new-feature`, `/vibekit.hotfix`, `/vibekit.clarify`, `/vibekit.build`, `/vibekit.review`, `/vibekit.why`) and hooks. The CLI still has to be on PATH.
+The plugin adds slash commands (`/vibekit.show-status`, `/vibekit.run-sprint`, `/vibekit.new-feature`, `/vibekit.new-hotfix`, `/vibekit.clarify`, `/vibekit.build`, `/vibekit.run-review`, `/vibekit.show-why`) and hooks. The CLI still has to be on PATH.
 
 ```text
 /plugin marketplace add Pershanthenm/vibekit
@@ -261,11 +267,11 @@ The plugin adds slash commands (`/vibekit.status`, `/vibekit.next`, `/vibekit.ne
 /reload-plugins
 ```
 
-Then `cd your-project && vibekit project new`.
+Then `cd your-project && vibekit new project`.
 
 ### Cursor and Cursor CLI
 
-`project new` writes `.cursorrules`. Attach the MCP server so reads, writes and commands are enforced — in the Cursor app and in the Cursor CLI (`cursor-agent`).
+`new project` writes `.cursorrules`. Attach the MCP server so reads, writes and commands are enforced — in the Cursor app and in the Cursor CLI (`cursor-agent`).
 
 ```json
 {
@@ -282,7 +288,7 @@ Save that as `~/.cursor/mcp.json`. Add `--sandbox` to the args if you want a con
 
 ### Codex
 
-Codex reads `AGENTS.md`, which `project new` writes. Point its MCP config at:
+Codex reads `AGENTS.md`, which `new project` writes. Point its MCP config at:
 
 ```bash
 vibekit serve --stdio
@@ -293,7 +299,7 @@ vibekit serve --stdio
 OpenCode, Aider, or any MCP client: they read `AGENTS.md`, or they speak JSON-RPC on stdio. Git hooks still apply.
 
 ```bash
-cd your-project && vibekit project new
+cd your-project && vibekit new project
 vibekit serve --stdio
 ```
 
