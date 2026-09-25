@@ -11,6 +11,7 @@ import { createRequirement, listRequirements } from './requirements.js';
 import { STAGE_PROMPTS } from './stages.js';
 import * as T from './templates.js';
 import { SERVERS_STARTER } from '../servers.js';
+import { SHIPPED_SUBDIR, catalogueFiles, shippedFiles, shippedIndexEntries } from '../library.js';
 import { renderStatus } from './workflow.js';
 
 /**
@@ -25,13 +26,24 @@ import { renderStatus } from './workflow.js';
 
 const EMPTY_DIRS = ['product/requirements', 'product/sources', 'product/design', 'skills/lib', 'workflow/asks', 'workflow/answers', 'memory/repo', 'memory/sessions'];
 
-/** Skills are indexed from the bodies that exist, not from config, so a body someone drops in is found. */
+/**
+ * Skills are indexed from the bodies that exist, not from config, so a body someone drops in is
+ * found. Triggers come from config when it declares them, else from the body's own front matter —
+ * an adopted or hand-written skill that carries `triggers:` keeps them across a regeneration.
+ */
 async function skillsFrom(base, config) {
   const names = (await readdir(join(base, 'skills/lib')).catch(() => []))
     .filter((name) => name.endsWith('.md') && !name.endsWith('.test.md'))
     .map((name) => name.replace(/\.md$/, ''));
   const declared = new Map((config.skills ?? []).map((skill) => [skill.name, skill]));
-  return names.map((name) => declared.get(name) ?? { name, triggers: [] }).sort((a, b) => a.name.localeCompare(b.name));
+  const skills = [];
+  for (const name of names) {
+    if (declared.has(name)) { skills.push(declared.get(name)); continue; }
+    const meta = readFrontMatter((await readText(join(base, 'skills/lib', `${name}.md`))) ?? '');
+    const triggers = String(meta.triggers ?? '').replace(/^\[|\]$/g, '').split(',').map((item) => item.trim()).filter(Boolean);
+    skills.push({ name, triggers });
+  }
+  return skills.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 async function memoriesFrom(base) {
@@ -156,12 +168,23 @@ export async function generateFolder(root, config, options = {}) {
       manifest[`${folder}/${file.path}`] = { hash: sha256(file.content), kind: Kind.Authored, source: 'starter' };
     }
 
-    const [skills, memories, sources] = await Promise.all([skillsFrom(staged, config), memoriesFrom(staged), sourcesFrom(staged)]);
+    // §56 — the shipped library. On by default for a project made through the CLI (`library: false`
+    // in the project file, or `vibekit init --no-library`, turns it off); a config that says nothing
+    // gets nothing, so a folder generated from a bare config is exactly what the config describes.
+    const library = options.library ?? config.library ?? false;
+    const chosen = options.catalogue ?? config.catalogue ?? [];
+    const catalogue = chosen.length ? await catalogueFiles(chosen) : { files: [], entries: [] };
+    const shipped = [...(library ? await shippedFiles() : []), ...catalogue.files];
+    // Everything under lib/vibekit comes from the library, so it is rebuilt from nothing each run:
+    // a skill disabled since the last run must not linger as a file the index no longer names.
+    await rm(join(staged, 'skills', SHIPPED_SUBDIR), { recursive: true, force: true }).catch(() => {});
+    const [own, memories, sources] = await Promise.all([skillsFrom(staged, config), memoriesFrom(staged), sourcesFrom(staged)]);
+    const skills = [...own, ...(library ? await shippedIndexEntries() : []), ...catalogue.entries];
     // Requirements are read through the staged copy by pointing the reader at the staging root.
     const requirements = await requirementsFrom(staging, 'folder', config);
     const status = await renderStatus(staging, 'folder').catch(() => '# Workflow status\n\nstage: 0 intake\n');
 
-    for (const file of generatedFiles(config, folder, { skills, memories, sources, requirements, delivery, status })) {
+    for (const file of [...generatedFiles(config, folder, { skills, memories, sources, requirements, delivery, status }), ...shipped]) {
       const target = join(staged, file.path);
       const existing = await readText(target);
       if (!options.force && decide({ kindIsGenerated: true, existing }) === 'skip') {

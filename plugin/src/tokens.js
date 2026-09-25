@@ -13,8 +13,10 @@
  * instead; these are what stands in when it is not.
  */
 
+const normalize = (text) => String(text ?? '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
 /** Conservative. Code tokenises densely: short identifiers, punctuation, little whitespace. */
-export const estimateCodeTokens = (text) => Math.ceil(String(text).length / 3);
+export const estimateCodeTokens = (text) => Math.ceil(normalize(text).length / 3);
 
 /** Calibrated for prose and Markdown, which run close to four characters per token. */
-export const estimateProseTokens = (text) => Math.ceil(String(text).length / 4);
+export const estimateProseTokens = (text) => Math.ceil(normalize(text).length / 4);

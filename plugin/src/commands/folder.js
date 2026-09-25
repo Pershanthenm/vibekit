@@ -75,6 +75,10 @@ export async function folderConfig(root) {
     // template never saw a brand a team had set and printed its TODO forever.
     design: project.design ?? {},
     template: project.template ?? null,
+    // §56 — the shipped skills library, on unless the project file says `"library": false`.
+    library: project.library !== false,
+    // Catalogue domains or skill names the project enabled (`vibekit skills enable …`).
+    catalogue: Array.isArray(project.catalogue) ? project.catalogue : [],
   };
 }
 
@@ -157,6 +161,10 @@ export async function init(options) {
     await saveProject(root, normalize({ project: { name: options.name ?? basename(root), description: options.describe ?? null } }));
   }
 
+  if (options['no-library']) {
+    const project = await loadProject(root);
+    await saveProject(root, { ...project, library: false });
+  }
   const config = await folderConfig(root);
   const result = await generateFolder(root, config, { folder, delivery: delivery ?? (adopt ? 'none' : undefined) });
 

@@ -8,6 +8,8 @@ import { ask, unavailable } from '../agent.js';
 import { CONFIG_KEYS, readConfig, replay as replayStage, upgrade, upgradePlan, writeConfig } from '../prompts.js';
 import { convertSource, detect, extractStatements, extractTerms, redact, splitSections, briefGaps } from '../sources.js';
 import { importSkill, listSkills, loadFor, overlaps, overrideChain, promote, testSkills } from '../skills.js';
+import { adopt, catalogueDomains, disableCatalogue, enableCatalogue, referenceFor, searchCatalogue } from '../library.js';
+import { folderConfig } from './folder.js';
 import { exists, readText } from '../fsutil.js';
 import { folderName } from './folder.js';
 
@@ -228,6 +230,61 @@ export async function skills(options) {
     return;
   }
 
+  // §56 — the shipped library. `adopt` makes a repo copy the team can edit (it wins the chain);
+  // `reference` prints the full source a shipped skill was distilled from.
+  if (action === 'adopt') {
+    if (!name) throw new Error('Usage: vibekit skills adopt <shipped skill name>');
+    const result = await adopt(root, name, { folder });
+    if (json) return void console.log(JSON.stringify(result, null, 2));
+    for (const file of result.written) console.log(`✔ ${file}`);
+    console.log(`  ${name} is now the project's own; it wins over the shipped copy. \`vibekit skills\` shows the chain.`);
+    return;
+  }
+  if (action === 'catalogue' || action === 'catalog') {
+    const query = args.slice(1).join(' ');
+    const found = await searchCatalogue(query, { domain: options.domain ?? null });
+    if (json) return void console.log(JSON.stringify(found.map(({ path, ...rest }) => rest), null, 2));
+    if (!query && !options.domain) {
+      const domains = await catalogueDomains();
+      console.log(`The catalogue: ${domains.reduce((sum, entry) => sum + entry.count, 0)} skills in ${domains.length} domains, none indexed until enabled.`);
+      console.log('');
+      for (const entry of domains) console.log(`  ${entry.domain.padEnd(20)} ${String(entry.count).padStart(4)}   vibekit skills enable ${entry.domain}`);
+      console.log('');
+      console.log('  vibekit skills catalogue <word> [--domain d]   search · vibekit skills enable <name|domain>… · vibekit skills reference <name>');
+      console.log('  An indexed skill costs about 40 always-loaded tokens; enable what the project is about, not everything.');
+      return;
+    }
+    if (!found.length) return void console.log(`Nothing in the catalogue matches "${query}"${options.domain ? ` in ${options.domain}` : ''}.`);
+    const width = Math.max(...found.map((skill) => skill.name.length));
+    for (const skill of found) console.log(`  ${skill.name.padEnd(width)}  ${skill.domain.padEnd(18)} ${skill.description.slice(0, 96)}${skill.description.length > 96 ? '…' : ''}`);
+    console.log('');
+    console.log(`  ${found.length} match(es) · vibekit skills enable <name> · vibekit skills reference <name> prints one in full`);
+    return;
+  }
+  if (action === 'enable' || action === 'disable') {
+    const items = args.slice(1);
+    if (!items.length) throw new Error(`Usage: vibekit skills ${action} <skill name | domain> [more…]`);
+    const result = action === 'enable' ? await enableCatalogue(root, items, { folder, force: Boolean(options.force) }) : await disableCatalogue(root, items);
+    await generateFolder(root, await folderConfig(root), { folder });
+    if (json) return void console.log(JSON.stringify(result, null, 2));
+    if (action === 'enable') {
+      console.log(`✔ ${result.added.length} skill(s) enabled${result.added.length && result.added.length <= 12 ? `: ${result.added.join(', ')}` : ''} · ${result.total} from the catalogue in ${folder}/skills/lib/vibekit/`);
+      console.log(`  always-loaded now about ${result.projected} tokens of ${result.cap}. vibekit skills disable <name|domain> takes one back out.`);
+    } else {
+      console.log(result.removed.length ? `✔ ${result.removed.join(', ')} disabled and removed from ${folder}/skills/lib/vibekit/` : 'Nothing changed.');
+      for (const item of result.notEnabled) console.log(`  · ${item} was not enabled`);
+    }
+    return;
+  }
+  if (action === 'reference') {
+    if (!name) throw new Error('Usage: vibekit skills reference <shipped skill name>');
+    const { skill, text } = await referenceFor(name);
+    if (json) return void console.log(JSON.stringify({ name: skill.name, source: skill.source, reference: text }, null, 2));
+    if (!text) return void console.log(`${name} ships without a reference file. Its source: ${skill.source ?? 'not recorded'}.`);
+    process.stdout.write(text.endsWith('\n') ? text : `${text}\n`);
+    return;
+  }
+
   if (action === 'import') {
     if (!name) throw new Error('Usage: vibekit skills import <path to a SKILL.md or its folder>');
     const result = await importSkill(root, resolve(root, name), { folder });
@@ -252,6 +309,11 @@ export async function skills(options) {
   for (const skill of found) {
     const state = skill.missing ? 'no body' : `${skill.tokens} tokens`;
     console.log(`${skill.name.padEnd(width)}  ${skill.scope.padEnd(7)} ${state.padEnd(11)} ${skill.test ? 'tested' : 'NO TEST'}  [${skill.triggers.join(', ')}]`);
+  }
+  if (found.some((skill) => skill.scope === 'vibekit')) {
+    console.log('');
+    console.log('  vibekit: ships with VibeKit, regenerated by init. `vibekit skills adopt <name>` makes a copy you own; `vibekit skills reference <name>` prints its full source.');
+    console.log('  vibekit skills catalogue: 374 more, by domain, indexed only when enabled.');
   }
 
   for (const clash of overlaps(found)) {
