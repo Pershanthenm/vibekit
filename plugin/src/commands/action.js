@@ -30,7 +30,7 @@ export async function decisionsIn(root, folder) {
   for (const stage of STAGES.slice(0, 5)) {
     const gate = gates[stage.n];
     if (gate && !gate.passed && /approved|reviewed|approve/.test(gate.detail) && !gate.skipped) {
-      items.push({ kind: 'gate', id: `stage ${stage.n}`, blocks: requirements.filter((entry) => entry.status !== 'done').length, blocking: true, plain: `The ${stage.name} stage is waiting for your approval: ${gate.detail}`, command: 'vibekit sprint run' });
+      items.push({ kind: 'gate', id: `stage ${stage.n}`, blocks: requirements.filter((entry) => entry.status !== 'done').length, blocking: true, plain: `The ${stage.name} stage is waiting for your approval: ${gate.detail}`, command: `vibekit action approve ${stage.n} --by "<name>"` });
       break;
     }
   }
@@ -56,6 +56,18 @@ export async function action(options) {
   //   vibekit action export > answers.md          a fill-in file; then
   //   vibekit action answer --from answers.md     every line that has an answer
   if (verb === 'export') return exportQueue(await gather(root, only), options);
+  // Approving. The gate is listed in the same queue as the asks; until now it could only be
+  // approved from the tracker or by writing the line in the file by hand. A picker in Claude Code
+  // needs one command to call once the person has chosen.
+  if (verb === 'approve') {
+    const [stage] = rest;
+    if (!stage) throw new Error('Usage: vibekit action approve <stage 1-4> --by "<name>"   ·   the gate the queue shows as waiting');
+    const { apply } = await import('../control.js');
+    const result = await apply(root, null, { action: 'gate.approve', stage, by: options.by });
+    if (json) return void console.log(JSON.stringify(result, null, 2));
+    console.log(`✔ ${result.message}`);
+    return;
+  }
   if (verb === 'answer' || verb === 'reject') {
     const queue = await gather(root, only);
     if (options.from) return fromFile(queue, options);

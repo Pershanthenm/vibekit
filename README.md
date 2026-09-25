@@ -93,18 +93,28 @@ VibeKit is an alpha built by one person. Parts of it are rough. The bet is that 
 
 ## The helpers
 
-Slash commands in Claude Code. They stop the agent when a person is needed, and they keep going after the code is written. The same verbs as the CLI, so Cursor, Codex and an MCP client are never on a different workflow.
+Eighteen slash commands, one per CLI verb you would type yourself. Type `/vibekit:` in Claude Code and the list completes. Each one asks with a picker, not a prompt: where a project lives, which project to work on, which answer to an analyst's question, whether to approve a gate. You choose; you type only what nobody could have listed. They stop the agent when a person is needed, and they keep going after the code is written. The same verbs as the CLI, so Cursor, Codex and an MCP client are never on a different workflow.
 
 | Helper | What it does |
 |---|---|
-| `/vibekit.clarify` | Asks first. Assumptions get ids. |
-| `/vibekit.run-sprint` | Whatever the current gate allows |
-| `/vibekit.build` | One requirement, one branch, evidence |
-| `/vibekit.run-review` | Second model. A person sets done. |
-| `/vibekit.show-status` | Where everything stands, in words |
-| `/vibekit.show-why` | Why this line of code exists |
-| `/vibekit.new-hotfix` | Production is down. Stay small. |
-| `/vibekit.new-feature` | Add work without a new planning pile |
+| `/vibekit:new-project` | Start here. Pick where it lives and where it runs; describe it once |
+| `/vibekit:use-project` | Pick the project to work on from the ones on this machine |
+| `/vibekit:answer` | Everything waiting on you, one question at a time, by picking |
+| `/vibekit:show-status` | Where everything stands, in words, then what to do about it |
+| `/vibekit:run-sprint` | Whatever the current gate allows |
+| `/vibekit:clarify` | Asks first, with the choices. Assumptions get ids. |
+| `/vibekit:plan-project` | The sprints, in dependency order, for a person to approve |
+| `/vibekit:plan-sprint` | What runs in which lane, and why |
+| `/vibekit:new-sprint` | Begin the next sprint; the last one closes at its gate |
+| `/vibekit:build` | One requirement, one branch, evidence |
+| `/vibekit:run-check` | Every rule the standards state, mechanically |
+| `/vibekit:run-review` | Second model. A person sets done. |
+| `/vibekit:new-feature` | Add work without a new planning pile |
+| `/vibekit:new-bug` | A defect is a requirement with its failing test |
+| `/vibekit:new-hotfix` | Production is down. Stay small. |
+| `/vibekit:show-plan` | Sprints, pieces of work, pace, approval |
+| `/vibekit:show-why` | Why this line of code exists |
+| `/vibekit:analyze` | Explain a codebase back. Changes nothing. |
 
 ## Two commands a day
 
@@ -211,13 +221,15 @@ Then, in a project: `vibekit new project`. On a repo you already have: `vibekit 
 
 ### Claude Code
 
-The plugin adds slash commands (`/vibekit.show-status`, `/vibekit.run-sprint`, `/vibekit.new-feature`, `/vibekit.new-hotfix`, `/vibekit.clarify`, `/vibekit.build`, `/vibekit.run-review`, `/vibekit.show-why`) and hooks. The CLI still has to be on PATH.
+The plugin adds the slash commands (`/vibekit:new-project`, `/vibekit:use-project`, `/vibekit:answer`, `/vibekit:show-status`, `/vibekit:run-sprint`, `/vibekit:clarify`, `/vibekit:plan-project`, `/vibekit:plan-sprint`, `/vibekit:new-sprint`, `/vibekit:build`, `/vibekit:run-check`, `/vibekit:run-review`, `/vibekit:new-feature`, `/vibekit:new-bug`, `/vibekit:new-hotfix`, `/vibekit:show-plan`, `/vibekit:show-why`, `/vibekit:analyze`) and hooks. The CLI still has to be on PATH.
 
 ```text
 /plugin marketplace add Pershanthenm/vibekit
 /plugin install vibekit
 /reload-plugins
 ```
+
+Later, `/plugin update vibekit` pulls a new release; `/reload-plugins` alone re-reads what is already installed.
 
 Then `cd your-project && vibekit new project`.
 

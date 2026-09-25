@@ -12,14 +12,24 @@ const IDEAS = [
 ];
 
 const HELPERS = [
-  ["/vibekit.clarify", "Asks first. Assumptions get ids."],
-  ["/vibekit.run-sprint", "Whatever the current gate allows"],
-  ["/vibekit.build", "One requirement, one branch, evidence"],
-  ["/vibekit.run-review", "Second model. A person sets done."],
-  ["/vibekit.show-status", "Where everything stands, in words"],
-  ["/vibekit.show-why", "Why this line of code exists"],
-  ["/vibekit.new-hotfix", "Production is down. Stay small."],
-  ["/vibekit.new-feature", "Add work without a new planning pile"],
+  ["/vibekit:new-project", "Start here. Pick where it lives and where it runs; describe it once"],
+  ["/vibekit:use-project", "Pick the project to work on from the ones on this machine"],
+  ["/vibekit:answer", "Everything waiting on you, one question at a time, by picking"],
+  ["/vibekit:show-status", "Where everything stands, in words, then what to do about it"],
+  ["/vibekit:run-sprint", "Whatever the current gate allows"],
+  ["/vibekit:clarify", "Asks first, with the choices. Assumptions get ids."],
+  ["/vibekit:plan-project", "The sprints, in dependency order, for a person to approve"],
+  ["/vibekit:plan-sprint", "What runs in which lane, and why"],
+  ["/vibekit:new-sprint", "Begin the next sprint; the last one closes at its gate"],
+  ["/vibekit:build", "One requirement, one branch, evidence"],
+  ["/vibekit:run-check", "Every rule the standards state, mechanically"],
+  ["/vibekit:run-review", "Second model. A person sets done."],
+  ["/vibekit:new-feature", "Add work without a new planning pile"],
+  ["/vibekit:new-bug", "A defect is a requirement with its failing test"],
+  ["/vibekit:new-hotfix", "Production is down. Stay small."],
+  ["/vibekit:show-plan", "Sprints, pieces of work, pace, approval"],
+  ["/vibekit:show-why", "Why this line of code exists"],
+  ["/vibekit:analyze", "Explain a codebase back. Changes nothing."],
 ];
 
 const COMMANDS = [
@@ -120,7 +130,7 @@ export default function Content() {
       <section className="block" id="helpers">
         <p className="kicker">03 · Helpers</p>
         <h2>The helpers</h2>
-        <p className="prose">Slash commands in Claude Code. They are a thin layer over the CLI, so Cursor, Codex and an MCP client stay on the same workflow.</p>
+        <p className="prose">Eighteen slash commands in Claude Code, one per CLI verb: type <code>/vibekit:</code> and the list completes. Each asks with a picker, so you choose rather than type. They are a thin layer over the CLI, so Cursor, Codex and an MCP client stay on the same workflow.</p>
         <div className="helpers">
           {HELPERS.map(([name, desc]) => (
             <div className="helper" key={name}><b>{name}</b><span>{desc}</span></div>

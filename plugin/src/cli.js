@@ -96,6 +96,7 @@ const OPTIONS = {
   why: { type: 'string' },
   reason: { type: 'string' },
   plain: { type: 'string' },
+  option: { type: 'string', multiple: true },
   about: { type: 'string' },
   by: { type: 'string' },
   stage: { type: 'string' },
