@@ -98,6 +98,8 @@ const OPTIONS = {
   plain: { type: 'string' },
   option: { type: 'string', multiple: true },
   remote: { type: 'string' },
+  answer: { type: 'string', multiple: true },
+  'no-ingest': { type: 'boolean' },
   link: { type: 'string' },
   public: { type: 'boolean' },
   'no-push': { type: 'boolean' },

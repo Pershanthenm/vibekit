@@ -71,7 +71,19 @@ async function projectNew(options) {
     // What it is and where it runs come before where the folder goes: a person thinks about the
     // product first and the filing second, and the repository question comes last, once there is
     // something to put in it.
-    const describe = options.describe ?? (options.from ? null : asker ? await asker.text('What are you building? A sentence or two, or the path to a requirements document') : null);
+    let describe = options.describe ?? null;
+    // Three ways to say what it is: a sentence, a document, or — for the person with neither — a
+    // requirements document built from eight questions once the folder exists.
+    let buildBrs = Boolean(options.answer?.length);
+    if (!describe && !options.from && asker) {
+      const how = await asker.choose({ id: 'source', title: 'What are you building?', noOther: true, options: [
+        { id: 'describe', label: 'a sentence or two — the analyst asks the rest' },
+        { id: 'brs', label: 'build a requirements document with me — eight questions, in your words' },
+        { id: 'file', label: 'I have a requirements document' },
+      ] });
+      if (how === 'brs') buildBrs = true;
+      else describe = await asker.text(how === 'file' ? 'Path to the document' : 'What are you building? A sentence or two');
+    }
     const fromFile = options.from ?? (describe && (await exists(resolve(root, describe))) ? resolve(root, describe) : null);
     const platforms = options.platform
       ? String(options.platform).split(',').map((item) => item.trim()).filter(Boolean)
@@ -105,7 +117,10 @@ async function projectNew(options) {
     // The source of record: the document, or the words a person typed, verbatim.
     const folder = await folderName(target);
     const { ingest } = await import('./ingest.js');
-    if (fromFile) {
+    if (buildBrs) {
+      const { newBrs } = await import('./brs.js');
+      await newBrs({ ...options, root: target, asker, json: false, from: undefined });
+    } else if (fromFile) {
       await ingest({ ...options, root: target, folder, args: [fromFile], yes: true });
     } else if (describe) {
       const path = join(target, folder, 'product/sources/DESC-001/source.md');

@@ -37,7 +37,7 @@ All are generated and carry the header. A team's own extras go below a `<!-- loc
 
 ## Slash commands
 
-The plugin ships `/vibekit:setup`, `/vibekit:new-project`, `/vibekit:use-project`, `/vibekit:answer`, `/vibekit:show-status`, `/vibekit:run-sprint`, `/vibekit:clarify`, `/vibekit:plan-project`, `/vibekit:plan-sprint`, `/vibekit:new-sprint`, `/vibekit:build`, `/vibekit:run-check`, `/vibekit:run-review`, `/vibekit:new-feature`, `/vibekit:new-bug`, `/vibekit:new-hotfix`, `/vibekit:show-plan`, `/vibekit:show-why`, `/vibekit:analyze`: one per CLI verb, namespaced `vibekit:` the way Claude Code names every plugin's commands, so `/vibekit:` completes the list. Each runs the CLI and points the agent at the stage prompt in `vibekit/workflow/stages/`; the prompts are the product's actual prompts, versioned in the repository, and a team can edit them.
+The plugin ships `/vibekit:setup`, `/vibekit:new-project`, `/vibekit:new-brs`, `/vibekit:use-project`, `/vibekit:answer`, `/vibekit:show-status`, `/vibekit:run-sprint`, `/vibekit:clarify`, `/vibekit:plan-project`, `/vibekit:plan-sprint`, `/vibekit:new-sprint`, `/vibekit:build`, `/vibekit:run-check`, `/vibekit:run-review`, `/vibekit:new-feature`, `/vibekit:new-bug`, `/vibekit:new-hotfix`, `/vibekit:show-plan`, `/vibekit:show-why`, `/vibekit:analyze`: one per CLI verb, namespaced `vibekit:` the way Claude Code names every plugin's commands, so `/vibekit:` completes the list. Each runs the CLI and points the agent at the stage prompt in `vibekit/workflow/stages/`; the prompts are the product's actual prompts, versioned in the repository, and a team can edit them.
 
 ## Switching mid-task
 

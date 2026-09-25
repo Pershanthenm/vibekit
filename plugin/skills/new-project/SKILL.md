@@ -10,10 +10,10 @@ Do not read or explore anything first. Choices go through the AskUserQuestion to
 
 1. **Project name.** Options: the current folder's name (recommended) and, if given, `$ARGUMENTS`. Other for their own.
 2. **Where does it run?** Multi-select: Web browser (web), iOS (ios), Android (android), Desktop (desktop), API only (api), Command line (cli).
-3. **What is it?** Options: "I'll describe it" and "I have a requirements document (BRS)". The text under Other is the answer; if they only picked an option, ask once more for the sentence or the file path.
+3. **What is it?** Options: "I'll describe it in a sentence" (Other: the sentence), "Build a requirements document with me" (recommended when they have nothing written: eight questions after the folder exists), "I have a requirements document (BRS)" (Other: the file path). If they picked the first or last without text, ask once more for the sentence or the path.
 4. **Where does the folder go?** Options: "This folder" (recommended), "A new folder in my projects folder" (the `projects-root` from `/vibekit:setup`, or beside this folder if none is set).
 
-Run `vibekit new project "<name>" --where here|local --describe "<their words>" --platform <ids> --yes` (or `--from <path>`). If `vibekit` is not on PATH, say so and stop (`npm install -g vibekit`).
+Run `vibekit new project "<name>" --where here|local --describe "<their words>" --platform <ids> --yes` (or `--from <path>`; for "build with me", pass `--describe "<one line from what they said>"` and, after this screen, run the `/vibekit:new-brs` flow in the project folder before screen 2). If `vibekit` is not on PATH, say so and stop (`npm install -g vibekit`).
 
 **Screen 2**, one question, after the folder is written. Run `vibekit settings git-provider` first to know whether a provider is set.
 
