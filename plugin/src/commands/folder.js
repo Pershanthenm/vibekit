@@ -545,7 +545,7 @@ export async function req(options) {
 
 // ---------------------------------------------------------------- vibekit ask
 
-export async function ask({ root, args, folder: chosen, kind, for: forRequirement, about, blocking, why, plain, by, stage }) {
+export async function ask({ root, args, folder: chosen, kind, for: forRequirement, about, blocking, why, plain, by, stage, option }) {
   const VERBS = ['list', 'show', 'answer', 'accept', 'reject'];
   const [first, ...rest] = args;
   const action = VERBS.includes(first) ? first : null;
@@ -594,10 +594,10 @@ export async function ask({ root, args, folder: chosen, kind, for: forRequiremen
     return;
   }
 
-  if (!body) throw new Error('Usage: vibekit ask [list | show <id> | answer <id> "<answer>" | reject <id> "<reason>"] or vibekit ask "<question>" --plain "<plain terms>"  (both are required: plain language first, §12)');
+  if (!body) throw new Error('Usage: vibekit ask [list | show <id> | answer <id> "<answer>" | reject <id> "<reason>"] or vibekit ask "<question>" --plain "<plain terms>" [--option "<choice>" …]  (both are required: plain language first, §12; options let a person pick instead of type)');
   const result = await openAsk(root, {
     kind: kind ?? 'question', ask: body, forRequirement: forRequirement ?? null, about,
-    blocking: blocking ?? false, why, plain, by: by ?? 'agent', stage: stage ?? null,
+    blocking: blocking ?? false, why, plain, by: by ?? 'agent', stage: stage ?? null, options: option ?? [],
   }, folder);
   if (forRequirement && blocking) {
     await setStatus(root, forRequirement, 'blocked', { by: 'agent', folder }).catch(() => {});

@@ -34,7 +34,7 @@ In Claude Code:
 /reload-plugins
 ```
 
-The plugin adds the slash commands (`/vibekit.show-status`, `/vibekit.run-sprint`, `/vibekit.new-feature`, `/vibekit.new-hotfix`, `/vibekit.clarify`, `/vibekit.build`, `/vibekit.run-review`, `/vibekit.show-why`) and three hooks: at session start it hands the agent the load order and `status.md`; before a write it refuses generated files, denied paths and other agents' requirements; at the end of a turn it runs `vibekit check`.
+The plugin adds the slash commands (`/vibekit:new-project`, `/vibekit:use-project`, `/vibekit:answer`, `/vibekit:show-status`, `/vibekit:run-sprint`, `/vibekit:clarify`, `/vibekit:plan-project`, `/vibekit:plan-sprint`, `/vibekit:new-sprint`, `/vibekit:build`, `/vibekit:run-check`, `/vibekit:run-review`, `/vibekit:new-feature`, `/vibekit:new-bug`, `/vibekit:new-hotfix`, `/vibekit:show-plan`, `/vibekit:show-why`, `/vibekit:analyze`; type `/vibekit:` and Claude Code completes the list, and each one asks with a picker rather than making you type) and three hooks: at session start it hands the agent the load order and `status.md`; before a write it refuses generated files, denied paths and other agents' requirements; at the end of a turn it runs `vibekit check`.
 
 Cursor, Codex and the rest need nothing extra as a plugin: `vibekit new project` writes the pointer files (`.cursorrules`, `AGENTS.md`, `CLAUDE.md`) they read. Attach `vibekit serve --stdio` as an MCP server when you want the runner to enforce what they may read, write and run. For Cursor and the Cursor CLI, that is `~/.cursor/mcp.json`:
 
@@ -107,4 +107,4 @@ The tracker is where you answer questions, approve gates and close reviewed work
 
 ## Keeping up to date
 
-`git pull` in `~/tools/vibekit`, `npm install -g ~/tools/vibekit/plugin`, then `/reload-plugins`. `vibekit upgrade-prompts` shows the diff before a project's stage prompts change, and `vibekit ext update` shows the diff before an extension moves its pin — a project's agents never change behaviour because of an update nobody saw.
+`git pull` in `~/tools/vibekit`, `npm install -g ~/tools/vibekit/plugin` for the CLI, then `/plugin update vibekit` in Claude Code for the slash commands and hooks (`/reload-plugins` only re-reads what is already installed; it does not fetch new commits). `vibekit upgrade-prompts` shows the diff before a project's stage prompts change, and `vibekit ext update` shows the diff before an extension moves its pin — a project's agents never change behaviour because of an update nobody saw.
