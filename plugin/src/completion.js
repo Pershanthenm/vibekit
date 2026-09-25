@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { dirname, join, resolve, sep } from 'node:path';
+import { dirname, join, posix, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { exists, readText, writeText } from './fsutil.js';
 
@@ -170,17 +170,21 @@ export async function refreshCompletionIndex(root, { folder = null } = {}) {
 
 const FILES = '\t__files';
 
+/** Compare index paths to cwd on every OS: Windows resolve() adds a drive letter to `/p/hello`. */
+const asPosix = (path) => String(path).replace(/\\/g, '/').replace(/^[A-Za-z]:/, '');
+
 /** The project the completion is for: the directory we stand in if it is indexed, else the one `use project` chose. */
 function projectFor(index, cwd) {
-  const here = resolve(cwd);
-  let candidate = here;
+  const byNorm = new Map(Object.entries(index.byPath).map(([path, project]) => [asPosix(path), project]));
+  let candidate = asPosix(resolve(cwd));
   while (candidate) {
-    if (index.byPath[candidate]) return index.byPath[candidate];
-    const parent = dirname(candidate);
+    if (byNorm.has(candidate)) return byNorm.get(candidate);
+    const parent = posix.dirname(candidate);
     if (parent === candidate) break;
     candidate = parent;
   }
-  return index.current ? index.byPath[index.current] ?? null : null;
+  if (!index.current) return null;
+  return index.byPath[index.current] ?? byNorm.get(asPosix(index.current)) ?? null;
 }
 
 const matching = (entries, partial) => entries.filter((entry) => String(entry.value).toLowerCase().startsWith(String(partial ?? '').toLowerCase()));
