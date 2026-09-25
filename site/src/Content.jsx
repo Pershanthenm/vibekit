@@ -2,70 +2,13 @@ import "./Content.css";
 
 const ALPHA = "https://github.com/Pershanthenm/vibekit/releases/tag/v0.1.0-alpha";
 
-const MARK = { yes: "✓", part: "◐", no: "—" };
-
-function Table({ rows }) {
-  return (
-    <div className="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th></th>
-            <th>Spec Kit</th>
-            <th>Agent OS</th>
-            <th>VibeKit</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.label}>
-              <td>{row.label}</td>
-              {["sk", "ao", "vk"].map((key) => (
-                <td key={key}>
-                  <b className={`m ${row[key]}`}>{MARK[row[key]]}</b>
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-const BEFORE = [
-  { label: "Turn an idea into a spec", sk: "yes", ao: "part", vk: "yes" },
-  { label: "Read a real requirements document", sk: "no", ao: "no", vk: "yes" },
-  { label: "Ask before assuming", sk: "part", ao: "part", vk: "yes" },
-  { label: "Track every guess and what's riding on it", sk: "no", ao: "no", vk: "yes" },
-  { label: "Learn your team's conventions", sk: "no", ao: "yes", vk: "yes" },
-  { label: "Decide whether to build it at all", sk: "no", ao: "no", vk: "yes" },
-  { label: "Work on a codebase you already have", sk: "no", ao: "yes", vk: "yes" },
-];
-
-const DURING = [
-  { label: "Break work into tasks", sk: "yes", ao: "part", vk: "yes" },
-  { label: "Write the code", sk: "yes", ao: "part", vk: "yes" },
-  { label: "Run several agents at once", sk: "no", ao: "no", vk: "yes" },
-  { label: "Watch it live, from your phone", sk: "no", ao: "no", vk: "yes" },
-  { label: "Prove the tests actually passed", sk: "no", ao: "no", vk: "yes" },
-  { label: "Review on a second model", sk: "no", ao: "no", vk: "yes" },
-  { label: "Survive a crash or a tool switch", sk: "no", ao: "no", vk: "yes" },
-  { label: "Keep small changes small", sk: "no", ao: "part", vk: "yes" },
-  { label: "Use cheap models where they're enough", sk: "no", ao: "no", vk: "yes" },
-  { label: "Cap what it spends", sk: "no", ao: "no", vk: "yes" },
-];
-
-const AFTER = [
-  { label: "Say why any line exists", sk: "no", ao: "no", vk: "yes" },
-  { label: "Catch the spec drifting from the code", sk: "no", ao: "no", vk: "yes" },
-  { label: "Score security against OWASP, POPIA, CIS", sk: "no", ao: "no", vk: "yes" },
-  { label: "Generate HLD, LLD and diagrams in your brand", sk: "no", ao: "no", vk: "yes" },
-  { label: "Hand a client something to approve", sk: "no", ao: "no", vk: "yes" },
-  { label: "Undo a shipped feature cleanly", sk: "no", ao: "no", vk: "yes" },
-  { label: "Show what the agents cost, and what was wasted", sk: "no", ao: "no", vk: "yes" },
-  { label: "Learn from what went wrong", sk: "no", ao: "no", vk: "yes" },
-  { label: "Onboard someone without you in the room", sk: "part", ao: "part", vk: "yes" },
+const IDEAS = [
+  ["Asks, not guesses", "An agent that lacks a fact writes an ask with an id and stops. It does not invent a refund policy so the build can keep going."],
+  ["Gates only you close", "Between every stage is a line a person writes. Nothing advances itself. A tap on the phone is still a commit with your name on it."],
+  ["Evidence on the commit", "vibekit verify writes the exit code into the requirement. tested is refused without it. A second model reviews; a person sets done."],
+  ["Why any line exists", "show why src/x.js:12 walks the chain: the requirement, the ask, the assumption, the review. Chat history is not the record."],
+  ["Several agents, one folder", "run works lanes in parallel. One job, one branch, one folder each. A crash or a tool switch picks up the same checkpoint."],
+  ["The live board in your pocket", "tracker puts the sprint behind a QR code. Creating a list, not REQ-007 step 4/5. Answer, approve, reorder from anywhere."],
 ];
 
 const HELPERS = [
@@ -147,9 +90,9 @@ export default function Content() {
             <p>A coding agent that lacks a fact will pick one. Refunds go to a store credit. Auth is “good enough”. The code compiles. The decision was never yours.</p>
           </article>
           <article>
-            <p className="over">Specs die after generation one</p>
+            <p className="over">The first version is not the product</p>
             <h3>The chain breaks at the first PR.</h3>
-            <p>Constitution, specify, plan, tasks, implement — then the loop ends. Review, evidence, drift, a hotfix, “why is this here?” are left to chat history.</p>
+            <p>A spec that is not bound to the next commit is a souvenir. Review, evidence, drift, a hotfix, “why is this here?” get left in chat history.</p>
           </article>
           <article className="wide">
             <p className="over">What VibeKit does instead</p>
@@ -160,18 +103,18 @@ export default function Content() {
       </section>
 
       <section className="block" id="coverage">
-        <p className="kicker">02 · Coverage</p>
-        <h2>Why not just Spec Kit?</h2>
-        <p className="prose"><a href="https://github.com/github/spec-kit">Spec Kit</a> gets you to a first version fast, and that's genuinely the hard part starting out. <a href="https://github.com/buildermethods/agent-os">Agent OS</a> learns how your team already writes code. Both are good. The difference is how far each one takes you.</p>
-        <p className="prose">Already using either? <code>vibekit new project --import .</code> reads what you have. Nothing is lost.</p>
-        <p className="legend"><b className="m yes">✓</b> does it · <b className="m part">◐</b> partly · <b className="m no">—</b> doesn't, and isn't trying to</p>
-        <h3 className="stage">Before you build</h3>
-        <Table rows={BEFORE} />
-        <h3 className="stage">While you build</h3>
-        <Table rows={DURING} />
-        <h3 className="stage">After it ships</h3>
-        <Table rows={AFTER} />
-        <p className="prose">The pattern is the point. Nobody loses the first table by much. The third one is empty for everything except VibeKit — they're first-pass tools, and they say so.</p>
+        <p className="kicker">02 · What it does</p>
+        <h2>A loop that stays after the first version.</h2>
+        <p className="prose">VibeKit is the folder agents have to read, the ask they have to write, and the gate only you can close. The first version is the start of the project, not the end of the tool.</p>
+        <div className="cards">
+          {IDEAS.map(([title, body]) => (
+            <article key={title}>
+              <h3>{title}</h3>
+              <p>{body}</p>
+            </article>
+          ))}
+        </div>
+        <p className="prose">Already have a folder? <code>vibekit new project --import .</code> reads it. Nothing is thrown away so you can start again.</p>
       </section>
 
       <section className="block" id="helpers">
@@ -226,8 +169,8 @@ vibekit tracker stock   # QR code; approve gates from your phone`}</pre>
       <section className="block" id="honest">
         <p className="kicker">08 · Honest</p>
         <h2>The honest version</h2>
-        <p className="prose">Spec Kit is free, mature and backed by GitHub. Agent OS is the best thing going for standards. Both have real users today. VibeKit is an alpha built by one person and parts of it are rough.</p>
-        <p className="prose strong">VibeKit is for the project where somebody asks, a year later, why a line is there — and you'd like to answer in a second rather than an afternoon.</p>
+        <p className="prose">VibeKit is an alpha built by one person. Parts of it are rough. The bet is that a year from now you can still say why a line is there, what it cost, and who closed the gate.</p>
+        <p className="prose strong">That is the product. Not a first-pass spec. The chain that survives the morning after.</p>
       </section>
 
       <section className="block" id="install">
