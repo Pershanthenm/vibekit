@@ -31,6 +31,7 @@ export const newUsage = () => list([
   ['new feature', 'add one thing to a project already running'],
   ['new bug', 'log a defect — assess, fix, verify'],
   ['new hotfix', 'production is broken; skip the ceremony'],
+  ['new repo', 'the repository at your provider — GitHub, GitLab or Azure DevOps — with its pipeline, pushed'],
 ], 'vibekit new <thing> --help  for more');
 
 export async function newVerb(options) {
@@ -45,6 +46,10 @@ export async function newVerb(options) {
     return project({ ...options, args: ['new'], name: options.name ?? (name || undefined) });
   }
   if (noun === 'sprint') return newSprint(options);
+  if (noun === 'repo') {
+    const { newRepo } = await import('./repo.js');
+    return newRepo(options);
+  }
   if (noun === 'feature') {
     if (options.preview) return previewFeature(options, name);
     const { feature } = await import('./verbs.js');

@@ -97,7 +97,7 @@ Nineteen slash commands, one per CLI verb you would type yourself. Type `/vibeki
 
 | Helper | What it does |
 |---|---|
-| `/vibekit:setup` | Once, after install: where projects live, who you are, where the repositories are |
+| `/vibekit:setup` | Once, after install: where projects live, who you are, which provider and token |
 | `/vibekit:new-project` | Start here. Name, platforms, a description or a BRS: four questions, one screen |
 | `/vibekit:use-project` | Pick the project to work on from the ones on this machine |
 | `/vibekit:answer` | Everything waiting on you, one question at a time, by picking |
@@ -153,7 +153,7 @@ Eight verbs, each followed by what you want it to act on. Verb first, always. Th
 
 | Verb | Means | Takes |
 |---|---|---|
-| `new` | Start something that did not exist | `new project "Hello World"` · `new sprint` · `new feature "…"` · `new bug "…" --test <path>` · `new hotfix "…"` |
+| `new` | Start something that did not exist | `new project "Hello World"` · `new sprint` · `new feature "…"` · `new bug "…" --test <path>` · `new hotfix "…"` · `new repo` |
 | `use` | Switch what I am working on | `use project "Hello World 2"` · `use sprint 2` · `use` (pick from a list) |
 | `show` | Tell me something, change nothing | `show` · `show project` · `show plan` · `show sprint` · `show status` · `show cost` · `show security` · `show backlog` · `show docs` · `show why src/x.js:12` · `show team` · `show migration` · `show differences` — all take `--all` and `--json` |
 | `plan` | Decide the order of work | `plan project [--approve --by "<name>"]` · `plan sprint [--order …] [--defer …]` |
@@ -230,7 +230,7 @@ The plugin adds the slash commands (`/vibekit:setup`, `/vibekit:new-project`, `/
 /reload-plugins
 ```
 
-Then `/vibekit:setup` once: it records where your projects live, your name for approvals and where your repositories are, so no helper asks again. Later, `/plugin update vibekit` pulls a new release; `/reload-plugins` alone re-reads what is already installed.
+Then `/vibekit:setup` once: it records where your projects live, your name for approvals, and your GitHub, GitLab or Azure DevOps organisation and token, so no helper asks again. From then on `vibekit new repo` (or `new project --where remote`) creates the repository at the provider, writes the pipeline in that provider's dialect, pushes, and on Azure DevOps registers the pipeline; branch policies, permissions and secrets stay at the provider. Later, `/plugin update vibekit` pulls a new release; `/reload-plugins` alone re-reads what is already installed.
 
 Then `cd your-project && vibekit new project`.
 

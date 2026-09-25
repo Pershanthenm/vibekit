@@ -235,6 +235,7 @@ export const CONFIG_KEYS = Object.freeze({
   'name': 'who you are on approvals and gates; `--by` defaults to it',
   'git-provider': 'github, azure-devops, gitlab or none: where `new project --where remote` expects the repository',
   'git-org': 'the organisation or account URL at the provider, such as https://dev.azure.com/acme or https://github.com/acme',
+  'git-token': 'a token from the provider with repository create and write; `new repo` and `new project --where remote` use it, never the folder',
 });
 
 export const GIT_PROVIDERS = Object.freeze(['github', 'azure-devops', 'gitlab', 'none']);

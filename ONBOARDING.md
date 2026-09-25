@@ -34,7 +34,7 @@ In Claude Code:
 /reload-plugins
 ```
 
-Then `/vibekit:setup` once. It asks where your projects live, your name for approvals, and where your repositories are, and writes them to machine settings so no helper asks again.
+Then `/vibekit:setup` once. It asks where your projects live, your name for approvals, your git provider (GitHub, GitLab or Azure DevOps), its organisation URL and a token, and writes them to machine settings so no helper asks again. With those set, `vibekit new repo` creates the repository at the provider, writes its pipeline file and pushes; `vibekit new repo --check` says whose token it is.
 
 The plugin adds the slash commands (`/vibekit:setup`, `/vibekit:new-project`, `/vibekit:use-project`, `/vibekit:answer`, `/vibekit:show-status`, `/vibekit:run-sprint`, `/vibekit:clarify`, `/vibekit:plan-project`, `/vibekit:plan-sprint`, `/vibekit:new-sprint`, `/vibekit:build`, `/vibekit:run-check`, `/vibekit:run-review`, `/vibekit:new-feature`, `/vibekit:new-bug`, `/vibekit:new-hotfix`, `/vibekit:show-plan`, `/vibekit:show-why`, `/vibekit:analyze`; type `/vibekit:` and Claude Code completes the list, and each one asks with a picker rather than making you type) and three hooks: at session start it hands the agent the load order and `status.md`; before a write it refuses generated files, denied paths and other agents' requirements; at the end of a turn it runs `vibekit check`.
 

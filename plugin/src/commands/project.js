@@ -75,11 +75,7 @@ async function projectNew(options) {
     const { readConfig } = await import('../prompts.js');
     const target = where === 'local' ? resolve((await readConfig())['projects-root'] ?? root, name) : root;
     if (where === 'local') await mkdir(target, { recursive: true });
-    if (where === 'remote' && !json) {
-      // Honest about what this build does: creating the repository through a provider's API is
-      // app-side (§51 "configured in app settings, never in the folder") and is not here.
-      console.log('  Creating the repository at the provider is not built into this CLI. Create it there, then `git remote add origin <url>`; everything else is the same.');
-    }
+    if (where === 'remote' && !json) console.log('  The repository is created at your provider once the folder is written (vibekit settings git-provider, git-org, git-token).');
 
     if (!(await exists(join(target, '.git')))) {
       try { execFileSync('git', ['init', '-q', '-b', 'main'], { cwd: target, stdio: 'ignore' }); } catch { /* no git: the folder is still written */ }
@@ -119,6 +115,17 @@ async function projectNew(options) {
     // Where you are, from now on: this project. Machine settings, never the folder.
     const { setCurrentProject } = await import('../current.js');
     await setCurrentProject(target, { name }).catch(() => {});
+
+    // `--where remote`: the repository at the provider, the pipeline file, the first push. A
+    // failure here is reported and leaves the folder intact; `vibekit new repo` retries it.
+    if (where === 'remote') {
+      const { newRepo } = await import('./repo.js');
+      try {
+        await newRepo({ ...options, root: target, args: [] });
+      } catch (error) {
+        if (!json) console.log(`  ✖ repository not created: ${error.message}\n  Fix the setting and run: vibekit new repo`);
+      }
+    }
 
     const { next } = await import('./folder.js');
     if (json) return void console.log(JSON.stringify({ root: target, name, platforms, source: fromFile ? basename(fromFile) : describe ? 'DESC-001' : null }, null, 2));

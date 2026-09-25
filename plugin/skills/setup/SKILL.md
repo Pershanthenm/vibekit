@@ -20,4 +20,6 @@ vibekit settings git-org "<url>"
 vibekit project select --rescan "<projects-root>"
 ```
 
+If they chose a provider, ask one more question: **the token**. Options: "I'll paste it here" (Other: the token; a personal access token with repository create and write, and on Azure DevOps also project create and build) and "I'll set it in a terminal myself" (`vibekit settings git-token "<token>"`). Write it with `vibekit settings git-token "<token>"`; never repeat it back. Then `vibekit new repo --check` and read back whose account it is.
+
 Read back `vibekit settings` in three lines: where projects go, who approves, where the repositories are, and how many projects the rescan found. Then offer: "Start a project" (`/vibekit:new-project`), "Pick one I already have" (`/vibekit:use-project`), or "Done". If `vibekit` is not on PATH, say so and stop (`npm install -g vibekit`).
