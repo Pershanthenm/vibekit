@@ -70,65 +70,57 @@ const AFTER = [
 
 const HELPERS = [
   ["/vibekit.clarify", "Asks first. Assumptions get ids."],
-  ["/vibekit.next", "Whatever the current gate allows"],
+  ["/vibekit.run-sprint", "Whatever the current gate allows"],
   ["/vibekit.build", "One requirement, one branch, evidence"],
-  ["/vibekit.review", "Second model. A person sets done."],
-  ["/vibekit.status", "Where everything stands, in words"],
-  ["/vibekit.why", "Why this line of code exists"],
-  ["/vibekit.hotfix", "Production is down. Stay small."],
+  ["/vibekit.run-review", "Second model. A person sets done."],
+  ["/vibekit.show-status", "Where everything stands, in words"],
+  ["/vibekit.show-why", "Why this line of code exists"],
+  ["/vibekit.new-hotfix", "Production is down. Stay small."],
   ["/vibekit.new-feature", "Add work without a new planning pile"],
 ];
 
 const COMMANDS = [
-  ["Projects", [
-    ["project new", "Starts a project. --name, --describe, --from, --platform"],
-    ["project select", "Lists your projects and picks one"],
-    ["project status", "Where this project is, or every project on one screen"],
-    ["project import <repo>", "Reads an existing codebase"],
-    ["project assess", "Asks whether it should be built at all"],
-    ["project stop / resume", "Stops cleanly and restarts after re-checking"],
+  ["new · start something that did not exist", [
+    ["new project \"Hello World\"", "Name it, choose where it lives, describe it, answer the questions"],
+    ["new sprint", "Begins the next sprint in the plan; closes the finished one at its gate"],
+    ["new feature \"…\"", "One feature, mid-project, sized and slotted"],
+    ["new bug \"…\" --test <path>", "A bug is a requirement with its failing test"],
+    ["new hotfix \"…\"", "Production is broken; skip the ceremony"],
   ]],
-  ["Sprints", [
-    ["sprint plan", "Turns the spec into sprints in dependency order"],
-    ["sprint start", "Works the current sprint one piece at a time"],
-    ["sprint run", "Several agents at once. --lanes 2"],
-    ["sprint status", "Progress, lanes and what is blocked"],
-    ["sprint close --by", "The one step VibeKit cannot do for you"],
+  ["use · switch what I am working on", [
+    ["use project \"Hello World 2\"", "Everything after applies there, until you switch again"],
+    ["use sprint 2", "Switch the working sprint"],
+    ["use", "Pick from a list"],
   ]],
-  ["Action needed", [
-    ["action", "Everything waiting on you, most blocking first"],
-    ["action answer", "Answers from anywhere and writes it in"],
-    ["tracker", "The same inbox on your phone. QR code"],
+  ["show · tell me something, change nothing", [
+    ["show project", "Where we are, on one screen: needs you first"],
+    ["show plan", "The sprints, in order, dependencies as English"],
+    ["show status", "What needs you, across every project"],
+    ["show cost · security · backlog · docs · team", "Spend, findings, unplanned work, documents, approvers"],
+    ["show why src/x.js:12", "Why this line of code exists"],
   ]],
-  ["Work", [
-    ["feature add", "Adds one feature mid-project"],
-    ["bug", "A bug is a requirement with its failing test"],
-    ["hotfix", "Branches from the live tag, fixes, tests, releases"],
-    ["review", "Runs the reviewer. A person still approves"],
-    ["why <file:line>", "Explains why a line of code exists"],
+  ["plan · run", [
+    ["plan project", "Turn the spec into sprints; approve with --approve --by"],
+    ["plan sprint", "Re-order or re-scope the current sprint"],
+    ["run", "Work the current sprint with several agents. --lanes 2 --until blocked"],
+    ["run check · scan · review · docs", "Every mechanical check; security; the reviewer; the documents"],
   ]],
-  ["Design", [
-    ["design", "What the app looks like now and the intent"],
-    ["design add", "A URL, image or PDF"],
-    ["design preview", "Renders your real screens"],
-    ["design apply", "Turns references into tokens"],
+  ["analyze · migrate · verify", [
+    ["analyze . | <git url>", "Read-only: what it is, how it is built, what would worry you. --focus, --compare, --pdf"],
+    ["migrate upgrade | replatform | decompose", "Five stages, each ending at a gate you approve"],
+    ["migrate status · next", "Where the migration is; move the next slice"],
+    ["verify", "The current slice against the characterisation suite. --live, --replay, --data, --report"],
   ]],
-  ["Quality", [
-    ["security scan", "OWASP, CIS, POPIA and whatever else applies"],
-    ["check", "Every mechanical check. This is what CI runs"],
-    ["docs", "HLD, LLD, API, data, runbook"],
-    ["report", "build, budget or security as documents"],
+  ["stop · resume · ship", [
+    ["stop", "Stop cleanly; everything checkpointed, nothing billed"],
+    ["resume", "Re-check the ground, then carry on"],
+    ["ship release 1.2.0", "Tag, changelog, documents, evidence bundle"],
+    ["ship rollback v1.1.0 · ship undo REQ-014", "Put the previous release back; remove a shipped feature"],
   ]],
-  ["Shipping", [
-    ["release", "Verifies, writes the changelog, tags"],
-    ["rollback <tag>", "Restores the previous release"],
-    ["undo <id>", "Removes a shipped feature cleanly"],
-  ]],
-  ["Setup", [
-    ["init", "Creates the folder"],
-    ["team", "People and CODEOWNERS"],
-    ["cost", "Spend against forecast"],
-    ["settings", "Machine settings, tokens, publishers"],
+  ["Extras", [
+    ["tracker", "The live board, and a QR code for your phone"],
+    ["settings · design add · ext add", "Models and tiers; a design reference; an extension"],
+    ["completion <shell>", "Completes your projects, sprints and files, not just the grammar"],
   ]],
 ];
 
@@ -171,7 +163,7 @@ export default function Content() {
         <p className="kicker">02 · Coverage</p>
         <h2>Why not just Spec Kit?</h2>
         <p className="prose"><a href="https://github.com/github/spec-kit">Spec Kit</a> gets you to a first version fast, and that's genuinely the hard part starting out. <a href="https://github.com/buildermethods/agent-os">Agent OS</a> learns how your team already writes code. Both are good. The difference is how far each one takes you.</p>
-        <p className="prose">Already using either? <code>vibekit project import .</code> reads what you have. Nothing is lost.</p>
+        <p className="prose">Already using either? <code>vibekit new project --import .</code> reads what you have. Nothing is lost.</p>
         <p className="legend"><b className="m yes">✓</b> does it · <b className="m part">◐</b> partly · <b className="m no">—</b> doesn't, and isn't trying to</p>
         <h3 className="stage">Before you build</h3>
         <Table rows={BEFORE} />
@@ -196,9 +188,9 @@ export default function Content() {
       <section className="block" id="commands">
         <p className="kicker">04 · Commands</p>
         <h2>The command surface</h2>
-        <p className="prose">Grouped the way <code>vibekit --help</code> prints it. A working day is still <code>vibekit action</code>, then <code>vibekit sprint run</code>.</p>
-        <pre>{`vibekit action          # everything waiting on you, most blocking first
-vibekit sprint run      # the current sprint, several agents at once
+        <p className="prose">Grouped the way <code>vibekit --help</code> prints it. A working day is still <code>vibekit show status</code>, then <code>vibekit run</code>.</p>
+        <pre>{`vibekit show status     # what needs you, most blocking first
+vibekit run             # the current sprint, several agents at once
 vibekit tracker stock   # QR code; approve gates from your phone`}</pre>
         <div className="cmd-grid">
           {COMMANDS.map(([title, rows]) => (
@@ -222,7 +214,7 @@ vibekit tracker stock   # QR code; approve gates from your phone`}</pre>
       <section className="block" id="lanes">
         <p className="kicker">06 · Lanes</p>
         <h2>Several agents. No collisions.</h2>
-        <p className="prose">One agent at a time is a waiting game. <code>vibekit sprint run</code> works several pieces at once, across whatever tools you've got. Two lanes is the default. Four is about the limit.</p>
+        <p className="prose">One agent at a time is a waiting game. <code>vibekit run</code> works several pieces at once, across whatever tools you've got. Two lanes is the default. Four is about the limit.</p>
       </section>
 
       <section className="block" id="cost">
@@ -241,7 +233,7 @@ vibekit tracker stock   # QR code; approve gates from your phone`}</pre>
       <section className="block" id="install">
         <p className="kicker">09 · Install</p>
         <h2>Install</h2>
-        <p className="prose">Node.js 20+ and Git. The CLI is the same on every tool. Claude Code also gets a plugin; Cursor, Codex and the rest read the pointer files <code>vibekit project new</code> writes.</p>
+        <p className="prose">Node.js 20+ and Git. The CLI is the same on every tool. Claude Code also gets a plugin; Cursor, Codex and the rest read the pointer files <code>vibekit new project</code> writes.</p>
         <pre>{`npm install -g https://github.com/Pershanthenm/vibekit/releases/download/v0.1.0-alpha/vibekit-0.1.0-alpha.tgz
 git clone https://github.com/Pershanthenm/vibekit.git
 npm install -g ./vibekit/plugin
@@ -251,22 +243,22 @@ vibekit version`}</pre>
             <h3>Claude Code</h3>
             <pre>{`/plugin marketplace add Pershanthenm/vibekit
 /plugin install vibekit
-cd your-project && vibekit project new`}</pre>
+cd your-project && vibekit new project`}</pre>
           </article>
           <article>
             <h3>Cursor and Cursor CLI</h3>
-            <p><code>project new</code> writes <code>.cursorrules</code>. Attach MCP in <code>~/.cursor/mcp.json</code>.</p>
+            <p><code>new project</code> writes <code>.cursorrules</code>. Attach MCP in <code>~/.cursor/mcp.json</code>.</p>
             <pre>{`{ "mcpServers": { "vibekit": { "command": "vibekit", "args": ["serve", "--stdio"] } } }`}</pre>
           </article>
           <article>
             <h3>Codex</h3>
-            <pre>{`cd your-project && vibekit project new
+            <pre>{`cd your-project && vibekit new project
 vibekit serve --stdio`}</pre>
           </article>
           <article>
             <h3>Other CLI agents</h3>
-            <pre>{`vibekit project new
-vibekit project import .
+            <pre>{`vibekit new project
+vibekit new project --import .
 vibekit serve --stdio --sandbox`}</pre>
           </article>
         </div>

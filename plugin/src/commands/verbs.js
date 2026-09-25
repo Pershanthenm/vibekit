@@ -31,7 +31,7 @@ export const hotfix = (options) => quick({ ...options, hotfix: true });
 /** `vibekit rollback <tag>` — put the previous release back and open a hotfix with the incident note. */
 export async function rollback(options) {
   const [tag] = options.args;
-  if (!tag) throw new Error('Usage: vibekit rollback <tag> [--why "<incident note>"]');
+  if (!tag) throw new Error('Usage: vibekit ship rollback <tag> [--why "<incident note>"]');
   return release({ ...options, args: [], rollback: tag });
 }
 

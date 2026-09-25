@@ -10,7 +10,7 @@ AGENTS.md          Codex, OpenCode    the same
 .cursorrules       Cursor             the same, in Cursor's form
 .gitattributes     git, GitHub        generated paths collapse in diffs; memory/ never does
 .env.example       developers         variable names only
-.claude/commands/  Claude Code        one-liners that run vibekit sprint run
+.claude/commands/  Claude Code        one-liners that run vibekit run
 .githooks/         git                the §50 commit rules, via core.hooksPath
 ```
 
@@ -31,13 +31,13 @@ All are generated and carry the header. A team's own extras go below a `<!-- loc
 | Claude Code | `CLAUDE.md`, the plugin's hooks, `vibekit serve --stdio` (MCP) | Hooks refuse generated files, denied paths and other agents' requirements; the turn ends on `vibekit check`; MCP re-sends rules after compaction |
 | Cursor | `.cursorrules` + MCP | Instruction and git hooks; MCP where attached |
 | Codex, OpenCode | `AGENTS.md` + MCP | Instruction and git hooks |
-| Anything else | `AGENTS.md` | Instruction only; `vibekit check --runners` reports it as unsandboxed |
+| Anything else | `AGENTS.md` | Instruction only; `vibekit run check --runners` reports it as unsandboxed |
 
-`vibekit serve --stdio` is the runner that enforces the stage's loads manifest, the writes list and the allowed commands mechanically; `--sandbox` adds a container per session. It also exposes `vibekit_call`, the one door to the MCP servers a project declares in `agents/servers.yml`: the allow-list of tools, the role, read-only, the budget and the data classification are enforced there, for remote servers over HTTP and local ones launched on stdio alike. `agents/runners.md` says which runner takes which role, and `vibekit check --runners` verifies each can reach the folder.
+`vibekit serve --stdio` is the runner that enforces the stage's loads manifest, the writes list and the allowed commands mechanically; `--sandbox` adds a container per session. It also exposes `vibekit_call`, the one door to the MCP servers a project declares in `agents/servers.yml`: the allow-list of tools, the role, read-only, the budget and the data classification are enforced there, for remote servers over HTTP and local ones launched on stdio alike. `agents/runners.md` says which runner takes which role, and `vibekit run check --runners` verifies each can reach the folder.
 
 ## Slash commands
 
-The plugin ships `/vibekit.status`, `/vibekit.next`, `/vibekit.new-feature`, `/vibekit.hotfix`, `/vibekit.clarify`, `/vibekit.build`, `/vibekit.review` and `/vibekit.why`. Each runs the CLI and points the agent at the stage prompt in `vibekit/workflow/stages/`; the prompts are the product's actual prompts, versioned in the repository, and a team can edit them.
+The plugin ships `/vibekit.show-status`, `/vibekit.run-sprint`, `/vibekit.new-feature`, `/vibekit.new-hotfix`, `/vibekit.clarify`, `/vibekit.build`, `/vibekit.run-review` and `/vibekit.show-why`. Each runs the CLI and points the agent at the stage prompt in `vibekit/workflow/stages/`; the prompts are the product's actual prompts, versioned in the repository, and a team can edit them.
 
 ## Switching mid-task
 

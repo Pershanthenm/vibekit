@@ -13,6 +13,12 @@
 
 /** Command → what on the page does it. `read` means a card shows it; `action` names the control action. */
 export const PAGE = Object.freeze({
+  // CLI Spec — the verbs. Each is a call into the commands below, and reads or acts through the same cards.
+  new: { read: 'Where we are card', action: 'req.add' },
+  use: { read: 'Projects list' },
+  show: { read: 'every card: Where we are, Schedule, Needs you, Security, Docs' },
+  plan: { read: 'Schedule card', action: 'plan.reorder' },
+  run: { read: 'Where we are card (lanes)' },
   action: { read: 'Needs you card', action: 'ask.answer' },
   ask: { read: 'Needs you card', action: 'ask.answer' },
   'sprint status': { read: 'Where we are card' },
@@ -50,7 +56,13 @@ export const PAGE = Object.freeze({
 });
 
 /** The machine's own entry points: no page is expected. */
-export const NO_PAGE = Object.freeze(['hook', 'githook', 'serve', 'version', 'tour', 'rescan', 'tools', 'replay', 'test-skills', 'upgrade-prompts', 'ext', 'settings', 'config', 'init', 'ingest', 'clarify', 'reverse', 'spec', 'skills', 'verify', 'drift', 'changelog', 'ship', 'rollback', 'undo', 'revert', 'understand', 'arch-docs', 'pause', 'stop', 'resume', 'next', 'plan', 'project', 'sprint']);
+export const NO_PAGE = Object.freeze([
+  'hook', 'githook', 'serve', 'version', 'tour', 'rescan', 'tools', 'replay', 'test-skills', 'upgrade-prompts', 'ext', 'settings', 'config', 'init', 'ingest', 'clarify', 'reverse', 'spec', 'skills', 'verify', 'drift', 'changelog', 'ship', 'rollback', 'undo', 'revert', 'understand', 'arch-docs', 'pause', 'stop', 'resume', 'next', 'plan-cost', 'project', 'sprint',
+  // `analyze` acts on a repository that is not this project's, and writes nothing; `completion` is the shell's.
+  'analyze', 'analyse', 'completion',
+  // `migrate` reads and writes workflow files like every other verb; its screen (`show migration`) is terminal-only so far. Listed rather than hidden.
+  'migrate',
+]);
 
 export async function parityReport() {
   const { commandNames } = await import('./cli.js');

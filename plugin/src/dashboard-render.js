@@ -271,7 +271,7 @@ export function cardSecurity(state) {
         <div class="stack-bar" title="${framework.met} met · ${framework.failed} failed · ${framework.human} need a person"><i class="ok" style="width:${Math.round((framework.met / total) * 100)}%"></i><i class="danger" style="width:${Math.round((framework.failed / total) * 100)}%"></i><i class="neutral" style="width:${Math.round((framework.human / total) * 100)}%"></i></div>
         <span class="fw-nums">${framework.met}/${framework.applicable}${framework.failed ? ` · ${framework.failed} failed` : ''}${framework.human ? ` · ${framework.human} need a person` : ''}</span></div>`;
     }).join('')}<p class="muted small">${escape(`Measured ${posture.date}. Green is met, red is failed, grey is what only a person can evidence — counted honestly, never as a pass.`)}</p></div>`
-    : `<p class="why">No security scan yet. ${escape('vibekit security scan measures against the frameworks that apply and turns findings into bugs.')}</p>`;
+    : `<p class="why">No security scan yet. ${escape('vibekit run scan measures against the frameworks that apply and turns findings into bugs.')}</p>`;
 
   const findings = open.length
     ? `<ul class="findings">${open.map((finding) => `<li>${escape(finding.message)}</li>`).join('')}</ul>`
@@ -324,7 +324,7 @@ export function cardDocs(state) {
   const docs = state.docs ?? [];
   const body = docs.length
     ? `<ul class="doclist">${docs.map((doc) => `<li>${icon('doc', 'ic-sm')} <b>${escape(doc.title)}</b> <span class="muted small">${escape(doc.path)}${doc.date ? ` · ${escape(doc.date)}` : ''}</span></li>`).join('')}</ul>`
-    : `<p class="plain">No documents generated yet. ${escape('vibekit docs writes the HLD, LLD, API reference, data model and runbook from the folder, with diagrams; they cannot go stale because they are regenerated at every gate.')}</p>`;
+    : `<p class="plain">No documents generated yet. ${escape('vibekit run docs writes the HLD, LLD, API reference, data model and runbook from the folder, with diagrams; they cannot go stale because they are regenerated at every gate.')}</p>`;
   return section('docs', 'doc', 'Docs', 'Generated from the same facts the code is checked against.', body);
 }
 

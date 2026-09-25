@@ -1,7 +1,13 @@
 #!/usr/bin/env node
-import { run } from '../src/cli.js';
+const argv = process.argv.slice(2);
 
-run(process.argv.slice(2)).catch((error) => {
+// Completion is called on every <tab>, so it loads one small module and a cached index — never
+// the CLI, never git. "A completion that takes 400ms is one people disable." (CLI Spec §6)
+const main = argv[0] === '__complete'
+  ? import('../src/completion.js').then(({ complete }) => complete(argv))
+  : import('../src/cli.js').then(({ run }) => run(argv));
+
+main.catch((error) => {
   console.error(`✖ ${error.message}`);
   process.exit(1);
 });

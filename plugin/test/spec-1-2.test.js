@@ -413,9 +413,10 @@ test('a memory proposal accepted from the page becomes a memory file, through th
 // ------------------------------------------------------------------ cli
 
 test('the everyday names route to the same functions as the older verbs, and a typo is refused', async () => {
-  assert.equal(ALIASES.next, 'sprint start');
-  assert.equal(ALIASES.pause, 'project stop');
-  assert.equal(ALIASES.understand, 'project import');
+  assert.equal(ALIASES.next, 'run sprint');
+  assert.equal(ALIASES.pause, 'stop');
+  assert.equal(ALIASES.understand, 'new project --import');
+  assert.equal(ALIASES.action, 'show status');
   const errors = [];
   const original = console.error;
   console.error = (line) => errors.push(line);
@@ -425,6 +426,7 @@ test('the everyday names route to the same functions as the older verbs, and a t
     process.exitCode = 0;
     assert.match(errors.join('\n'), /no such command "nosuchthing"/);
     assert.match(unknownCommand('sprnt', ['sprint', 'project']), /Did you mean: vibekit sprint/);
+    assert.match(unknownCommand('sho', ['show', 'new']), /Did you mean: vibekit show/);
     assert.doesNotMatch(unknownCommand('zzzzzzzz', ['sprint']), /Did you mean/);
   } finally {
     console.error = original;
@@ -451,7 +453,12 @@ test('project new --yes writes the config, the folder, the source and the regist
     assert.match(await readFile(join(root, 'vibekit/product/sources/DESC-001/source.md'), 'utf8'), /Staff count stock/);
     assert.ok((await readRegistry()).some((entry) => entry.path === root));
     assert.match(lines.join('\n'), /Spec started/);
-    assert.match(await startScreen(root), /Every day/);
+    // CLI Spec §3 — bare `vibekit` is one line about where you are and three suggestions.
+    const screen = await startScreen(root);
+    assert.match(screen, /stock · stage \d · \w+ · \d decisions? waiting/);
+    assert.match(screen, /vibekit show status/);
+    assert.match(screen, /vibekit run/);
+    assert.match(screen, /vibekit use project/);
   } finally {
     restoreEnv(original);
   }

@@ -63,7 +63,9 @@ async function projectNew(options) {
   const { root, yes, json } = options;
   const asker = yes ? null : createAsker();
   try {
-    const name = options.name ?? (asker ? await asker.text('Project name', basename(root)) : basename(root));
+    // CLI Spec §2 — `new project "Hello World"`: the name is the first thing after the noun.
+    const typed = (options.args ?? []).join(' ').trim() || null;
+    const name = options.name ?? typed ?? (asker ? await asker.text('Project name', basename(root)) : basename(root));
     // The name becomes a folder under `--where local`; one that climbs or hides is not a name.
     if (!/^[\w][\w .-]{0,79}$/.test(name) || name.split(/[\\/]/).length > 1) throw new Error(`"${name}" is not a project name: letters, digits, dots, dashes and spaces, no slashes.`);
     const where = options.where ?? (asker ? await asker.choose({ id: 'where', title: 'Where does it live?', noOther: true, options: [
@@ -112,20 +114,47 @@ async function projectNew(options) {
       if (!json) console.log(`✔ ${folder}/product/sources/DESC-001/source.md — what you said, kept verbatim`);
     }
 
+    // Where you are, from now on: this project. Machine settings, never the folder.
+    const { setCurrentProject } = await import('../current.js');
+    await setCurrentProject(target, { name }).catch(() => {});
+
     const { next } = await import('./folder.js');
     if (json) return void console.log(JSON.stringify({ root: target, name, platforms, source: fromFile ? basename(fromFile) : describe ? 'DESC-001' : null }, null, 2));
     console.log('');
-    console.log('  Spec started. The analyst\'s questions come next — `vibekit sprint run` prints the prompt for stage 1,');
-    console.log('  and `vibekit action` is where its questions land for you.');
+    console.log('  Spec started. The analyst\'s questions come next — `vibekit run` prints the prompt for stage 1,');
+    console.log('  and `vibekit show status` is where its questions land for you.');
     console.log('');
     console.log('  What now?');
     console.log('    [1] Save and stop here          it is all in the folder; come back any time');
     console.log('    [2] Review the spec first       open the folder and edit anything');
-    console.log('    [3] Start                       vibekit sprint run');
+    console.log('    [3] Start                       vibekit run');
     await next({ ...options, root: target, folder, json: false }).catch(() => {});
+    if (asker) await offerCompletion(asker).catch(() => {});
   } finally {
     asker?.close();
   }
+}
+
+/**
+ * CLI Spec §6 — "`vibekit new project` offers to install it on first run, and says which file it
+ * would write before writing it." Only at a terminal, only when nothing is installed for the
+ * shell in use, and only once: a no is recorded in machine settings.
+ */
+async function offerCompletion(asker) {
+  if (!process.stdin.isTTY) return;
+  const { completionStatus, installCompletion, installPath, shellOf } = await import('../completion.js');
+  const { readConfig, writeConfig } = await import('../prompts.js').catch(() => ({ readConfig: async () => ({}), writeConfig: async () => {} }));
+  const shell = shellOf();
+  if (!shell) return;
+  const status = await completionStatus();
+  if (status.installed.some((entry) => entry.shell === shell)) return;
+  if ((await readConfig())['completion-offered']) return;
+  console.log('');
+  const answer = (await asker.text(`Install shell completion for ${shell}? It completes your projects, sprints and files. It would write ${installPath(shell)} (y/N)`, 'n')).trim().toLowerCase();
+  await writeConfig('completion-offered', 'true').catch(() => {});
+  if (!/^y(es)?$/.test(answer)) return;
+  const result = await installCompletion(shell);
+  console.log(`  ✔ ${result.path} · ${result.note}`);
 }
 
 // ---------------------------------------------------------------- project select
@@ -149,14 +178,14 @@ async function select(options) {
   const rows = await listProjects({ needsMe: Boolean(options['needs-me']), match: query ?? null });
   if (options.last) {
     const latest = [...await readRegistry()].sort((a, b) => Date.parse(b.lastSeen ?? 0) - Date.parse(a.lastSeen ?? 0))[0];
-    if (!latest) return void console.log('No projects yet. `vibekit project new` starts one.');
+    if (!latest) return void console.log('No projects yet. `vibekit new project` starts one.');
     return goTo(latest, options);
   }
   if (json) return void console.log(JSON.stringify(rows, null, 2));
 
   if (query && rows.length === 1) return goTo(rows[0], options);
   if (!rows.length) {
-    console.log(query ? `No project matches "${query}".` : options['needs-me'] ? 'Nothing is waiting on you in any project.' : 'No projects yet. `vibekit project new` starts one, or `vibekit project select --rescan ~/code` finds the ones you have.');
+    console.log(query ? `No project matches "${query}".` : options['needs-me'] ? 'Nothing is waiting on you in any project.' : 'No projects yet. `vibekit new project` starts one, or `vibekit project select --rescan ~/code` finds the ones you have.');
     return;
   }
   console.log(`Your projects${options['needs-me'] ? ' that need you' : ''}`);
@@ -167,7 +196,7 @@ async function select(options) {
   }
   console.log('');
   console.log(`  ${MARKS.active} building  ${MARKS.waiting} waiting on you  ${MARKS.stopped} stopped  ${MARKS.released} released  ${MARKS.attention} needs attention`);
-  console.log('  vibekit project select <name>   go there · --needs-me only what is waiting · --last where you were');
+  console.log('  vibekit use project <name>   go there · --needs-me only what is waiting · --last where you were');
 }
 
 /** A shell cannot be moved from a child process; the next command is printed instead. */
@@ -192,7 +221,7 @@ async function status(options) {
   if (options.all) {
     const rows = await listProjects();
     if (json) return void console.log(JSON.stringify(rows, null, 2));
-    if (!rows.length) return void console.log('No projects registered. `vibekit project select --rescan <dir>` finds them.');
+    if (!rows.length) return void console.log('No projects registered. `vibekit project select --rescan <dir>` finds them; `vibekit new project` starts one.');
     const needsYou = rows.reduce((sum, row) => sum + (row.needsYou ?? 0), 0);
     for (const row of rows) console.log(`  ${String(row.name).padEnd(20)} ${row.mark} ${row.line}`);
     console.log('');

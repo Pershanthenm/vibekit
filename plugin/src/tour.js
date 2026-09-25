@@ -55,7 +55,7 @@ export const STOPS = Object.freeze([
     why: 'Everything downstream cites this. A requirement that cannot point at a sentence you wrote is a requirement somebody invented.',
     produces: 'product/sources/ (what you gave me, sectioned), product/context.md (three sentences: what it is, who uses it, what must not go wrong)',
     rule: 'Context is capped at 300 tokens. If the scope does not fit in three sentences, it is not decided yet.',
-    run: 'vibekit sprint run',
+    run: 'vibekit run',
     stage: 0,
   },
   {
@@ -75,7 +75,7 @@ export const STOPS = Object.freeze([
     why: 'You approve the shape once. After that every requirement inherits it, so nobody re-argues the architecture per feature.',
     produces: 'workflow/architecture.md, product/map.md (where code goes and the exact build and test commands)',
     rule: 'A gate is a line a human writes. Nothing advances until you approve this one.',
-    run: 'vibekit sprint run',
+    run: 'vibekit run',
     stage: 2,
   },
   {
@@ -85,7 +85,7 @@ export const STOPS = Object.freeze([
     why: 'Agents invent spacing, colour and component names otherwise, and the result looks like four people built it.',
     produces: 'product/design/tokens.md, product/design/components.md',
     rule: 'Skip this entirely if there is no interface. An unused design system is a file that drifts.',
-    run: 'vibekit sprint run',
+    run: 'vibekit run',
     stage: 3,
   },
   {
@@ -132,7 +132,7 @@ export const BROWNFIELD_STOPS = Object.freeze([
     why: 'Reading everything costs more than it is worth. Reading nothing means guessing.',
     produces: 'nothing yet — this step is read-only',
     rule: 'A first pass is budgeted at 40,000 tokens of reading, and the budget is reported.',
-    run: 'vibekit project import .',
+    run: 'vibekit analyze .',
   },
   {
     name: 'What I found',
@@ -141,7 +141,7 @@ export const BROWNFIELD_STOPS = Object.freeze([
     why: 'You correct it. A picture you have not checked is not a picture you can build on.',
     produces: 'vibekit/understanding.md (authored — it is yours to fix)',
     rule: 'Every claim cites the file it came from, so `vibekit why` works on the understanding too.',
-    run: 'vibekit project import .',
+    run: 'vibekit analyze .',
   },
   {
     name: 'What I could not tell',
@@ -159,7 +159,7 @@ export const BROWNFIELD_STOPS = Object.freeze([
     why: 'From here the project is worked the VibeKit way, with rules-only mode: no application code is generated.',
     produces: 'the folder and the pointer files',
     rule: 'Existing files are never modified. Your CLAUDE.md is kept below the `<!-- local -->` marker.',
-    run: 'vibekit project import . --convert',
+    run: 'vibekit new project --import .',
   },
 ]);
 
@@ -217,13 +217,13 @@ export function renderStop(stop, index, total) {
   ].join('\n');
 }
 
-export const CLOSING = `  That is the loop. From here on, \`vibekit sprint run\` does whatever comes next -
+export const CLOSING = `  That is the loop. From here on, \`vibekit run\` does whatever comes next -
   you rarely need another command.
 
   Worth knowing:
-    vibekit why <file:line>     why does this line exist
-    vibekit report             progress, cost, security
-    vibekit dashboard --serve  the same view on your phone
+    vibekit show why <file:line>   why does this line exist
+    vibekit show cost              spend, forecast, waste
+    vibekit tracker                the same view on your phone
 
   Tour finished. It will not interrupt you again.`;
 

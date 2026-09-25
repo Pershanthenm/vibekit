@@ -79,7 +79,7 @@ export async function greet({ noTour = false } = {}) {
   console.log('  The seven steps:');
   console.log(framings().join('\n'));
   console.log('');
-  console.log('  Take the tour?  `vibekit tour`   ·   or carry on: `vibekit sprint run`');
+  console.log('  Take the tour?  `vibekit tour`   ·   or carry on: `vibekit run`');
   console.log('  It will not ask again.');
   await writeSettings({ pitchShown: true });
   return true;

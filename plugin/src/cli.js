@@ -1,23 +1,27 @@
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { action } from './commands/action.js';
+import { analyze } from './commands/analyze.js';
 import { archdocs, archdrift } from './commands/archdocs.js';
 import { bug } from './commands/bug.js';
 import { design } from './commands/design.js';
 import { ext } from './commands/ext.js';
 import { ask, check, init, next, req, rescan } from './commands/folder.js';
 import { githook } from './commands/githook.js';
+import { completion, newVerb, planVerb, runVerb, use } from './commands/grammar.js';
 import { hook } from './commands/hook.js';
 import { ingest } from './commands/ingest.js';
 import { clarify, config, replay, skills, testSkillsCommand, upgradePrompts } from './commands/maintain.js';
+import { migrate } from './commands/migrate.js';
 import { pause, resume } from './commands/pause.js';
 import { project, stop } from './commands/project.js';
 import { changelog, evidence, release, revert, ship } from './commands/release.js';
-import { assumptions, plan, report } from './commands/report.js';
+import { assumptions, plan as planCost, report } from './commands/report.js';
 import { distil, reverse } from './commands/reverse.js';
 import { security } from './commands/security.js';
 import { serve } from './commands/serve.js';
 import { add, quick, start, tracker, unhold } from './commands/shortcuts.js';
+import { show } from './commands/show.js';
 import { spec } from './commands/spec.js';
 import { sprint } from './commands/sprint.js';
 import { team } from './commands/team.js';
@@ -27,31 +31,49 @@ import { understand } from './commands/understand.js';
 import { cost, docs, feature, hotfix, review, rollback, settings, undo, version } from './commands/verbs.js';
 import { verify } from './commands/verify.js';
 import { trace, why } from './commands/why.js';
-import { startScreen, unknownCommand } from './guide.js';
+import { currentProject, resolveRoot } from './current.js';
+import { dim, startScreen, unknownCommand } from './guide.js';
 
 /**
- * The command surface. Specification §67 and Appendix A.
+ * The command surface. CLI Spec §1 and §2.
  *
- * Commands are named after what a person is doing, grouped under the noun they act on, so typing
- * `vibekit project` or `vibekit sprint` with nothing after it lists what you can do with it. The
- * older verbs stay as aliases — same function, not a second implementation — so nothing that a
- * script or a hook already calls breaks.
+ *   vibekit <verb> <noun> ["<name>"] [--flags]
+ *
+ * Eight verbs — new, use, show, plan, run, analyze, migrate, verify — plus stop, resume and
+ * ship, each followed by what it acts on. Verb first, always. The name is optional. A bare verb
+ * lists what it takes.
+ *
+ * The earlier grammar (`project new`, `sprint run`, `action`) stays as aliases — the same
+ * function, not a second implementation — so nothing a script, a hook or an agent already calls
+ * breaks. They are hidden from help and never suggested.
  */
 
 const COMMANDS = {
-  // everyday
-  project, sprint, action, feature, bug, hotfix, review, why, design, security, check, docs, report, release, rollback, undo, team, cost, settings, ext, tools,
-  // the folder's own verbs (Appendix A)
-  init, ingest, ask, req, add, start, unhold, tracker, serve, verify, drift: archdrift, trace, assumptions, evidence, changelog, ship, reverse, distil, clarify, skills, 'test-skills': testSkillsCommand, 'upgrade-prompts': upgradePrompts, rescan, githook, tour, spec, hook, version,
-  // aliases: the earlier names, kept so nothing breaks
-  stop, pause, resume, quick, revert, next, plan, understand, 'arch-docs': archdocs, config, replay, track: tracker,
+  // the eight verbs, and the three more
+  new: newVerb, use, show, plan: planVerb, run: runVerb, analyze, migrate, verify, stop, resume, ship,
+  // settings and extras
+  settings, design, tracker, ext, completion,
+  // the folder's own verbs (Appendix A): what agents, hooks and CI call
+  init, ingest, ask, req, add, start, unhold, serve, check, drift: archdrift, trace, assumptions, evidence, changelog, reverse, distil, clarify, skills, 'test-skills': testSkillsCommand, 'upgrade-prompts': upgradePrompts, rescan, githook, tour, spec, hook, version, tools, team, bug, feature, hotfix, review, why, security, docs, report, release, rollback, undo, cost, action,
+  // the earlier grammar, kept so nothing breaks
+  project, sprint, pause, quick, revert, next, understand, 'arch-docs': archdocs, config, replay, track: tracker, analyse: analyze, 'plan-cost': planCost,
 };
 
-/** Which name each alias is shown as in help and in "did you mean". */
+/** Which command each older name is shown as. A name here is hidden from help and never suggested. */
 export const ALIASES = Object.freeze({
-  pause: 'project stop', stop: 'project stop', resume: 'project resume', next: 'sprint start', plan: 'sprint plan',
-  understand: 'project import', 'arch-docs': 'docs', quick: 'hotfix', revert: 'undo', config: 'settings', replay: 'tools replay', track: 'tracker',
+  project: 'new project · use project · show project', sprint: 'run sprint · show sprint · new sprint', action: 'show status',
+  pause: 'stop', next: 'run sprint', understand: 'new project --import', 'arch-docs': 'run docs', quick: 'new hotfix', revert: 'ship undo',
+  config: 'settings', replay: 'tools replay', track: 'tracker', analyse: 'analyze', 'plan-cost': 'show plan --cost',
+  feature: 'new feature', bug: 'new bug', hotfix: 'new hotfix', review: 'run review', why: 'show why', security: 'run scan · show security',
+  docs: 'run docs · show docs', report: 'show cost · show security', cost: 'show cost', team: 'show team', check: 'run check',
+  release: 'ship release', rollback: 'ship rollback', undo: 'ship undo',
 });
+
+/** Commands that act on the directory they are run in, whatever `use project` chose. */
+const ACTS_HERE = new Set(['init', 'project', 'understand', 'analyze', 'analyse', 'ext', 'settings', 'config', 'tools', 'completion', 'version', 'hook', 'githook', 'clarify', 'tour', 'spec', 'tracker', 'track', 'serve', 'replay', 'test-skills']);
+
+/** Commands after which the completion index is refreshed: anything that may have changed state. */
+const CHANGES_STATE = new Set(['new', 'use', 'plan', 'run', 'migrate', 'verify', 'stop', 'resume', 'ship', 'init', 'ingest', 'ask', 'req', 'add', 'start', 'unhold', 'project', 'sprint', 'action', 'bug', 'feature', 'hotfix', 'release', 'rollback', 'undo', 'revert', 'quick', 'next', 'pause', 'understand', 'design', 'team', 'skills', 'ext', 'rescan', 'reverse', 'distil', 'spec', 'security', 'docs', 'arch-docs']);
 
 const OPTIONS = {
   dir: { type: 'string' },
@@ -144,7 +166,6 @@ const OPTIONS = {
   security: { type: 'boolean' },
   static: { type: 'boolean' },
   open: { type: 'boolean' },
-  // §67 sprint / project / bug / design / team
   lanes: { type: 'string' },
   until: { type: 'string' },
   headless: { type: 'boolean' },
@@ -173,109 +194,94 @@ const OPTIONS = {
   quiet: { type: 'boolean' },
   quick: { type: 'boolean' },
   key: { type: 'string' },
+  // CLI Spec: new, plan, analyze, verify, completion
+  preview: { type: 'boolean' },
+  import: { type: 'string' },
+  order: { type: 'string' },
+  defer: { type: 'string' },
+  depth: { type: 'string' },
+  focus: { type: 'string' },
+  compare: { type: 'string' },
+  live: { type: 'boolean' },
+  replay: { type: 'string' },
+  data: { type: 'boolean' },
+  report: { type: 'boolean' },
+  old: { type: 'string' },
+  new: { type: 'string' },
+  slice: { type: 'string' },
+  check: { type: 'boolean' },
+  verbose: { type: 'boolean' },
   help: { type: 'boolean', short: 'h' },
 };
 
-const HELP = `VibeKit — spec-driven development for coding agents, with a person deciding every question that matters
+const HELP = `vibekit <verb> <noun> ["<name>"] [--flags]
 
-On a normal day it is two commands: \`vibekit action\` in the morning, \`vibekit sprint run\` once you have cleared it.
+On a normal day it is two commands: \`vibekit show status\` in the morning, \`vibekit run\` once you have cleared it.
 
-Projects
-  vibekit project new [--name <n>] [--describe "<text>" | --from <file>] [--platform web,api]
-                                                Start something: name it, say where it lives, say what you want
-  vibekit project select [<name>] [--needs-me] [--last] [--rescan <dir>] [--forget <name>]
-                                                Your projects with their state; pick one
-  vibekit project status [--all]                Where this project is, or every project in one screen
-  vibekit project import <repo> [--convert | --refresh | --speckit]
-                                                Read an existing codebase and convert it
-  vibekit project assess "<idea>"               Should this be built at all (vibekit ext add assess)
-  vibekit project stop [--reason "…"] · resume  Stop cleanly; start again, re-checking the ground first
+  new       start something that did not exist      new project "Hello World" · new sprint · new feature "…" · new bug "…" · new hotfix "…"
+  use       switch what I am working on             use project "Hello World 2" · use sprint 2 · use
+  show      tell me something, change nothing       show · show project · show plan · show sprint · show status · show cost · show security
+                                                    show backlog · show docs · show why src/x.js:12 · show team · show migration · show differences
+  plan      decide the order of work                plan project · plan sprint
+  run       do work now                             run sprint · run check · run scan · run review · run docs · run
+  analyze   tell me about a codebase, change nothing   analyze . · analyze <git url> · --depth quick|standard|deep · --focus security|cost|migration|quality · --compare <path>
+  migrate   move software you already have          migrate upgrade "…" · migrate replatform "…" · migrate decompose "…" · migrate status · migrate next
+  verify    prove the new behaves like the old      verify · verify --live · verify --replay <log> · verify --data · verify --report
 
-Sprints
-  vibekit sprint plan [--cost]                  Turn the spec into sprints, in dependency order; a human approves
-  vibekit sprint start                          Work the current sprint one piece at a time, watching
-  vibekit sprint run [--lanes 2] [--until blocked|gate] [--headless]
-                                                Work the current sprint with several agents at once
-  vibekit sprint status                         This sprint: progress, lanes, what is blocked
-  vibekit sprint close [N] --by "<name>"        Close the sprint at its gate — the one step VibeKit cannot do
+  stop      stop cleanly; everything checkpointed, nothing billed
+  resume    re-check the ground, then carry on
+  ship      ship release 1.2.0 · ship rollback v1.1.0 · ship undo REQ-014
 
-Action needed
-  vibekit action [--project <name>]             Everything waiting on you across every project, most blocking first
-  vibekit action answer                         Walk through the questions one at a time, options as a menu
-  vibekit action answer <n> "<answer>" …        One or several by number or id; reject <n> "<reason>" sends one back
-  vibekit action export [--out answers.md]      A file to fill in offline; action answer --from answers.md applies it
-  vibekit tracker [<project>] [--no-tunnel]     The same inbox on your phone: opens a tunnel and prints the QR code
+  settings              models, tiers, runners, caps, brand, frameworks
+  design add <url>      add a design reference
+  tracker               the live board, and a QR code for your phone
+  ext add <name>        install an extension
+  completion <shell>    shell completion: bash, zsh, fish
 
-Work
-  vibekit feature add "<text>"                  Add one feature mid-project
-  vibekit bug "<text>" --test <path> [--severity high|medium|low]
-  vibekit bug assess|fix|test BUG-001           Work out the cause, repair it, prove the symptom is gone: a verdict
-  vibekit hotfix "<text>"                       Production is broken: branch from the live tag, fix, test, release
-  vibekit review [REQ] [--as reviewer | --approve --by "<name>"]
-                                                The reviewer over anything waiting, out of band
-  vibekit why <file[:line]>                     Why does this line of code exist
+Flags that appear on more than one command
+  --all        every show           every project, not just this one
+  --json       every show           machine-readable
+  --until      run sprint           blocked: stop the moment anything needs a human · gate: stop at the sprint gate
+  --lanes N    run sprint           how many agents at once (default 2)
+  --headless   run sprint, run check   CI form; non-zero exit if anything blocked
+  --preview    new feature, new project   show the questions it would ask; write nothing
+  --at <tag>   show docs, show cost, run docs   as things were at that commit
+  --dir <path> anything             act on this directory (default: here, or the project \`use project\` chose)
 
-Design
-  vibekit design                                What the app looks like now, and the intent behind it
-  vibekit design add <url | image | pdf>        Add a reference; it says what it took and asks what it could not tell
-  vibekit design preview [screen]               Render your real screens with the current design
-  vibekit design apply · feedback "<text>"      Turn references into tokens; say what is wrong, against something specific
-
-Quality
-  vibekit security scan [--url <address>]       Measure against OWASP, CIS, POPIA and whatever else applies
-  vibekit check [--ci] [--budget] [--security] [--deps] [--runners] [--done REQ] [--parity]
-                                                Every mechanical check; this is what CI runs
-  vibekit docs [hld lld api data runbook] [--at <tag>] [--diff <a> <b>] [--brand <url>]
-                                                Regenerate the architecture documents and diagrams
-  vibekit report build|budget|security [--all] [--at <sha>]
-                                                Progress, cost and security as documents
-
-Shipping
-  vibekit release [<version>] [--phase N]       Verify, changelog, tag, bundle the evidence
-  vibekit rollback <tag>                        Put the previous release back and open a hotfix with the incident note
-  vibekit undo <id>                             Remove a shipped feature cleanly; dependants go to review
-
-Setup
-  vibekit init [--yes] [--adopt] [--from-speckit] [--delivery none|checks-only|full] [--no-library]
-  vibekit team [add "<Name> <email>" --role "<role>" | codeowners]
-  vibekit cost                                  Spend against forecast by sprint, model and piece of work
-  vibekit settings [<key> <value> | tiers | frameworks | server <id> <token> | trust <name> <pub> | require-signed true]
-  vibekit ext add <name|url> [--yes] · list · update [name] · remove <name> · verify <path> [--quick]
-                                                Extensions: data only, never code; pinned to a commit; budget declared and verified
-                                                against the three fixture briefs and golden outputs (npm run golden refreshes them)
-  vibekit ext keygen [--out <dir>] · ext sign <path> --key <file>
-                                                Signed releases: required before an extension leaves the organisation
-  vibekit tools skills import <repo> [--dry-run] [--division d] [--rules flag|suggest|drop]
-                                                Knowledge from a repository as skills: identity dropped, opinions flagged, provenance kept
-  vibekit tools rates [refresh] · tools policy · tools skills test · tools replay --recovery
-  vibekit check --servers                       Every MCP server in agents/servers.yml declared well, authenticated, reachable
-
-Also
-  vibekit ingest <file> [--yes] · ask · req · start · unhold · tracker [--tunnel] · serve [--stdio | --tracker] [--sandbox]
-  vibekit verify · drift · trace --matrix · assumptions · evidence · changelog · ship · reverse · distil · clarify
-  vibekit skills [catalogue [<word>] | enable <name|domain> | disable | adopt <name> | reference <name> | --for "<task>"]
-  vibekit test-skills
-  vibekit upgrade-prompts · rescan · githook · tour · spec · version
-
-Options
-  --dir <path>   Project root (default: current directory)
-  --json         Machine-readable output where a command has it`;
+A bare verb lists its nouns. Bare \`vibekit\` shows where you are. Every command works with no arguments and asks for what it needs.`;
 
 export async function run(argv) {
   const { values, positionals } = parseArgs({ args: argv, options: OPTIONS, allowPositionals: true });
   const [name, ...args] = positionals;
-  const root = resolve(values.dir ?? '.');
 
   if (values.help) return console.log(HELP);
-  // Bare `vibekit` is a question, not a mistake: answer it with what to do next here.
-  if (!name) return console.log(await startScreen(root));
+  if (name === 'help') return console.log(HELP);
+  // Bare `vibekit` is a question, not a mistake: answer it with where you are and what to do next.
+  if (!name) {
+    const { root, redirected } = await resolveRoot({ dir: values.dir });
+    return console.log(await startScreen(root, { via: redirected }));
+  }
   // A typo used to print the help and exit 0, so a script could not tell it from success.
   if (!COMMANDS[name]) {
     console.error(unknownCommand(name, Object.keys(COMMANDS).filter((key) => !ALIASES[key])));
     process.exitCode = 1;
     return;
   }
+
+  // Where to act: `--dir`; else here, if there is a project here; else the one `use project`
+  // chose. Commands that create or read the directory they are run in are never redirected.
+  const actsHere = ACTS_HERE.has(name) || (name === 'new' && (!args[0] || args[0] === 'project'));
+  const { root, redirected } = actsHere ? { root: resolve(values.dir ?? '.'), redirected: null } : await resolveRoot({ dir: values.dir });
+  if (redirected && !values.json && !values.headless && !['show', 'use'].includes(name)) console.log(dim(`  in ${redirected.name} · ${redirected.path}`));
+
   await COMMANDS[name]({ ...values, args, root });
+
+  if (CHANGES_STATE.has(name) && process.env.VIBEKIT_NO_INDEX !== '1') {
+    const { refreshCompletionIndex } = await import('./completion.js');
+    const target = name === 'use' ? (await currentProject())?.path ?? root : root;
+    await refreshCompletionIndex(target).catch(() => {});
+  }
 }
 
 export const commandNames = () => Object.keys(COMMANDS);
+export const visibleCommandNames = () => Object.keys(COMMANDS).filter((key) => !ALIASES[key]);

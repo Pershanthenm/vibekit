@@ -34,9 +34,9 @@ In Claude Code:
 /reload-plugins
 ```
 
-The plugin adds the slash commands (`/vibekit.status`, `/vibekit.next`, `/vibekit.new-feature`, `/vibekit.hotfix`, `/vibekit.clarify`, `/vibekit.build`, `/vibekit.review`, `/vibekit.why`) and three hooks: at session start it hands the agent the load order and `status.md`; before a write it refuses generated files, denied paths and other agents' requirements; at the end of a turn it runs `vibekit check`.
+The plugin adds the slash commands (`/vibekit.show-status`, `/vibekit.run-sprint`, `/vibekit.new-feature`, `/vibekit.new-hotfix`, `/vibekit.clarify`, `/vibekit.build`, `/vibekit.run-review`, `/vibekit.show-why`) and three hooks: at session start it hands the agent the load order and `status.md`; before a write it refuses generated files, denied paths and other agents' requirements; at the end of a turn it runs `vibekit check`.
 
-Cursor, Codex and the rest need nothing extra as a plugin: `vibekit project new` writes the pointer files (`.cursorrules`, `AGENTS.md`, `CLAUDE.md`) they read. Attach `vibekit serve --stdio` as an MCP server when you want the runner to enforce what they may read, write and run. For Cursor and the Cursor CLI, that is `~/.cursor/mcp.json`:
+Cursor, Codex and the rest need nothing extra as a plugin: `vibekit new project` writes the pointer files (`.cursorrules`, `AGENTS.md`, `CLAUDE.md`) they read. Attach `vibekit serve --stdio` as an MCP server when you want the runner to enforce what they may read, write and run. For Cursor and the Cursor CLI, that is `~/.cursor/mcp.json`:
 
 ```json
 {
@@ -53,10 +53,10 @@ Cursor, Codex and the rest need nothing extra as a plugin: `vibekit project new`
 
 ```bash
 mkdir ~/projects/my-app && cd ~/projects/my-app
-vibekit project new
+vibekit new project
 ```
 
-Or, on a repository you already have: `vibekit project import .`.
+Or, on a repository you already have: `vibekit new project --import .`.
 
 ## 5. Machine settings
 
@@ -77,7 +77,7 @@ Everything here lives in `~/.vibekit/`, owner-only, never in a repository, so a 
 | File | Holds |
 |---|---|
 | `config.json` | the settings above and the per-server credentials |
-| `projects.json` | the projects this machine knows, for `vibekit action` and `vibekit tracker <name>` |
+| `projects.json` | the projects this machine knows, for `vibekit show status` and `vibekit tracker <name>` |
 | `extensions.json`, `ext/` | which extensions are enabled, pinned to a commit, and their files |
 | `trusted-keys.json` | the extension publishers you trust |
 
@@ -88,9 +88,9 @@ Set `VIBEKIT_HOME` to move the directory.
 ```bash
 vibekit                          # in a project: what to do next here
 vibekit check                    # every mechanical check
-vibekit check --runners          # each runner can reach the folder; which are unsandboxed
-vibekit check --servers          # if the project declares MCP servers: declared well, credential present, reachable
-vibekit project select --rescan ~/code   # register the projects you already have, so `vibekit action` sees them
+vibekit run check --runners          # each runner can reach the folder; which are unsandboxed
+vibekit run check --servers          # if the project declares MCP servers: declared well, credential present, reachable
+vibekit project select --rescan ~/code   # register the projects you already have, so `vibekit show status` sees them
 vibekit skills                   # the 27 skills that ship with VibeKit, plus the project's own; `skills adopt <name>` to take one over
 vibekit skills catalogue         # 374 more in 16 domains; `skills enable <name|domain>` indexes the ones this project is about
 ```

@@ -28,7 +28,7 @@ export async function resume({ root, folder: chosen, json }) {
   if (json) return void console.log(JSON.stringify(report, null, 2));
 
   if (!report.pausedAt && !report.requirements.length) {
-    console.log('Nothing is paused. `vibekit sprint run` is what you want.');
+    console.log('Nothing is paused. `vibekit run` is what you want.');
     return;
   }
 

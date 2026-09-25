@@ -56,10 +56,15 @@ const architectureOf = (config) => {
   return { key, meta: ARCHITECTURES[key], layout: ARCHITECTURE_LAYOUTS[key] ?? ARCHITECTURE_LAYOUTS.clean };
 };
 
+// The five a language preset fills in, and `characterise`, which only a migration sets: the suite
+// `verify` holds a slice to (CLI Spec). A preset never names it, so it appears only when a person did.
+const COMMAND_NAMES = ['install', 'build', 'test', 'lint', 'format', 'characterise'];
+
 const commandRows = (commands = {}) => {
-  const rows = [['install', commands.install], ['build', commands.build], ['test', commands.test], ['lint', commands.lint], ['format', commands.format]]
-    .filter(([, value]) => value);
-  return rows.length ? rows.map(([name, value]) => `${name.padEnd(9)} ${value}`).join('\n') : 'No commands recorded. `vibekit check` fails until these are real.';
+  const names = COMMAND_NAMES.filter((name) => commands[name]);
+  // Two spaces at least between name and command: that gap is how map.md's reader splits the line.
+  const width = Math.max(9, ...names.map((name) => name.length + 1));
+  return names.length ? names.map((name) => `${name.padEnd(width)} ${commands[name]}`).join('\n') : 'No commands recorded. `vibekit check` fails until these are real.';
 };
 
 // ---------------------------------------------------------------- pointer files
@@ -127,7 +132,7 @@ export const claudeCommandBody = (folder) => [
   'description: Do whatever VibeKit says comes next',
   '---',
   '',
-  `Run \`vibekit sprint run\`. It reads the gate, regenerates \`${folder}/workflow/status.md\`, and prints the stage prompt to run.`,
+  `Run \`vibekit run\`. It reads the gate, regenerates \`${folder}/workflow/status.md\`, and prints the stage prompt to run.`,
   '',
   'Then open that prompt file and follow it exactly. Load only what its `loads:` manifest names.',
   '',

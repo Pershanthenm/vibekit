@@ -312,7 +312,7 @@ test('at the end it hands over to the commands and records that it is finished',
 
   const end = await capture(() => run(['tour']));
   assert.match(end, /That is the loop/);
-  assert.match(end, /vibekit sprint run/);
+  assert.match(end, /vibekit run/);
   assert.match(end, /It will not interrupt you again/);
   assert.equal((await readSettings()).tourDone, true);
 });
