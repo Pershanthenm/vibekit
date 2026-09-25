@@ -137,12 +137,30 @@ export function questionScreen({ surface, palette: c, question, index, total, sh
   ].join('\n');
 }
 
-/** After the last question. */
+/** After the last question: what was kept, what happens next, and the two commands that matter. */
 export function doneScreen({ surface, palette: c, answered, assumed, next = 'vibekit show status' }) {
-  const summary = `${s(answered, 'answer')} recorded${assumed ? `, ${s(assumed, 'guess')} written down for you to check` : ''}.`;
-  if (surface === 'agent') return [summary, '', `Next: \`${next}\` — where the analyst's questions land, and where each stage waits for your approval.`].join('\n');
+  const kept = `${s(answered, 'answer')} recorded${assumed ? `, ${s(assumed, 'guess')} written down for you to check` : ''}.`;
+  const then = 'That is everything I need to start. The analyst reads your answers next and asks only what they do not cover.';
+  if (surface === 'agent') {
+    return [
+      `That's everything I need to start. ${kept}`,
+      '',
+      'The analyst reads your answers next and asks only what they do not cover; each stage then waits for your approval.',
+      '',
+      `Next: \`${next}\` shows what is waiting on you; \`vibekit run\` hands the first work to an agent.`,
+    ].join('\n');
+  }
   if (surface === 'plain') return [`answered ${answered}`, `assumed ${assumed}`, `next ${next}`].join('\n');
-  return ['', `  ${summary}`, '', `  ${c.muted('Next')}   ${next}`, ''].join('\n');
+  return [
+    '',
+    `  ${kept}`,
+    '',
+    ...wrap(then, 66).map((line) => `  ${c.muted(line)}`),
+    '',
+    `  ${c.muted('Next')}   ${next}${' '.repeat(Math.max(2, 24 - next.length))}${c.muted('what is waiting on you')}`,
+    `  ${' '.repeat(4)}   vibekit run${' '.repeat(13)}${c.muted('hand the first work to an agent')}`,
+    '',
+  ].join('\n');
 }
 
 /** §7. Three parts, always: what happened, why it matters, what to do. */

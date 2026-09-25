@@ -12,14 +12,18 @@ import { DONT_KNOW, KEYS_LINE, OPENING, questionScreen } from './init-screens.js
 /** The opening answer: lines behind a `▏` gutter; Enter on a non-empty answer submits. A pasted document arrives as many lines at once and is kept whole. */
 export async function readDescription({ palette: c, input = stdin, output = stdout }) {
   const gutter = `  ${c.teal('▏')}`;
-  output.write(`${gutter}`);
+  // The keys line sits two lines under the input before anything is typed, and the cursor goes
+  // back up to the gutter; on a pipe there is no cursor to move, so the hint simply precedes.
+  if (input.isTTY) output.write(`\n\n  ${c.muted(OPENING.keys)}\x1b[2A\r${gutter}`);
+  else output.write(`  ${c.muted(OPENING.keys)}\n${gutter}`);
   const rl = createInterface({ input, output, terminal: Boolean(input.isTTY) });
   const lines = [];
   return new Promise((resolve) => {
     let timer = null;
     const finish = () => {
       rl.close();
-      output.write(`\n  ${c.muted(OPENING.keys)}\n`);
+      if (input.isTTY) output.write('\x1b[0J');
+      output.write('\n');
       resolve(lines.join('\n').trim());
     };
     rl.on('line', (line) => {
@@ -83,6 +87,7 @@ export async function askQuestion({ palette: c, question, index, total, shape, i
   if (result.type) {
     const rl = createInterface({ input, output });
     try {
+      output.write(`  ${c.muted('In your own words — Enter to send, empty to go back')}\n`);
       const text = (await rl.question(`  ${c.teal('▏')}`)).trim();
       return text ? { text } : { back: true };
     } finally {

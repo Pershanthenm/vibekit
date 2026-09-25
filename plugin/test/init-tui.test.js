@@ -247,3 +247,28 @@ test('a folder that cannot be written gets a three-part error, not a stack trace
     restoreEnv(original);
   }
 });
+
+test('--where local creates the folder under projects-root and runs the rest there; the finish says what happens next', async () => {
+  const original = isolated();
+  try {
+    const home = tempDir('vibekit-projects-');
+    const { writeConfig } = await import('../src/prompts.js');
+    await writeConfig('projects-root', home);
+    process.env.PATH = tempDir('vibekit-bin-');
+    process.env.HOME = tempDir('vibekit-fakehome-');
+    const elsewhere = tempDir('vibekit-elsewhere-');
+    const out = await capture(() => run(['--mode', 'plain', 'A photo archive for one family.', '--name', 'Family Photos', '--where', 'local', '--platform', 'web', '--dir', elsewhere]));
+    assert.match(out, new RegExp(`project Family Photos at ${join(home, 'Family Photos').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+    assert.ok(await readFile(join(home, 'Family Photos/AGENTS.md'), 'utf8'));
+    assert.ok(!(await readFile(join(elsewhere, 'AGENTS.md'), 'utf8').catch(() => null)), 'nothing written where the command ran');
+    for (const answer of ['1', '1', '1', '1', '1']) await capture(() => run(['--mode', 'plain', answer, '--dir', join(home, 'Family Photos')]));
+    const c = palette({ env: { NO_COLOR: '1' }, surface: 'full' });
+    const done = doneScreen({ surface: 'full', palette: c, answered: 5, assumed: 0 });
+    assert.match(done, /5 answers recorded\./);
+    assert.match(done, /The analyst reads your answers\s+next and asks only what they do not cover\./);
+    assert.match(done, /Next\s+vibekit show status\s+what is waiting on you/);
+    assert.match(doneScreen({ surface: 'agent', palette: c, answered: 5, assumed: 1 }), /^That's everything I need to start\. 5 answers recorded, 1 guess written down for you to check\./);
+  } finally {
+    restoreEnv(original);
+  }
+});

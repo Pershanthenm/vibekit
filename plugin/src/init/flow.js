@@ -64,7 +64,7 @@ export async function initFlow(options) {
   const env = options.env ?? process.env;
   const surface = detectSurface({ env, isTTY: options.isTTY ?? Boolean(process.stdout.isTTY), mode: options.mode ?? null });
   const c = makePalette({ env, surface });
-  const root = options.root;
+  let root = options.root;
   const out = (text) => console.log(text);
 
   let folder = await folderIn(root);
@@ -108,8 +108,16 @@ export async function initFlow(options) {
     }
 
     // The folder. Non-interactive; every answer the wizard would ask for is here or comes next.
-    const name = options.name ?? basename(root);
+    let name = options.name ?? basename(root);
     const platformGiven = Boolean(options.platform);
+    if (options.where === 'local') {
+      // A new folder, under the projects folder setup recorded or beside this one; the rest of the run happens there.
+      const { readConfig } = await import('../prompts.js');
+      const target = resolve((await readConfig())['projects-root'] ?? root, name);
+      await mkdir(target, { recursive: true });
+      root = target;
+      name = options.name ?? basename(target);
+    }
     const { project } = await import('../commands/project.js');
     await capture(() => project({ ...options, root, args: ['new'], name, yes: true, json: true, where: 'here', describe: text ?? undefined, from: from ?? undefined, platform: options.platform ?? 'web', answer: undefined, text: undefined, mode: undefined }));
     folder = await folderIn(root);
