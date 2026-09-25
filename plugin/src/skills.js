@@ -110,7 +110,7 @@ async function walk(dir, prefix = '') {
 /** The shape of a `<name>.test.md`, which §56 gives exactly. */
 export function parseSkillTest(text) {
   // A shipped test is a generated file, so its first line is the header; the front matter is next.
-  const meta = readFrontMatter(String(text ?? '').replace(/^<!--[\s\S]*?-->\n/, ''));
+  const meta = readFrontMatter(String(text ?? '').replace(/\r\n/g, '\n').replace(/^<!--[\s\S]*?-->\n/, ''));
   const list = (value) => {
     const raw = String(value ?? '').trim();
     if (!raw) return [];

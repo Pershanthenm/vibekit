@@ -36,14 +36,14 @@ export async function shippedSkills() {
     .sort();
   const skills = [];
   for (const name of names) {
-    const body = (await readText(join(skillsDir(), `${name}.md`))) ?? '';
+    const body = ((await readText(join(skillsDir(), `${name}.md`))) ?? '').replace(/\r\n/g, '\n');
     const meta = readFrontMatter(body);
     skills.push({
       name: meta.name ?? name,
       triggers: parseList(meta.triggers),
       source: meta.source ?? null,
       body,
-      test: await readText(join(skillsDir(), `${name}.test.md`)),
+      test: ((await readText(join(skillsDir(), `${name}.test.md`))) ?? '').replace(/\r\n/g, '\n') || null,
       tokens: estimateProseTokens(body.replace(FRONT_MATTER, '')),
       reference: (await exists(join(referencesDir(), `${name}.md`))) ? join(referencesDir(), `${name}.md`) : null,
     });
@@ -134,7 +134,7 @@ export async function catalogueSkills() {
     const files = (await readdir(join(catalogueDir(), domain)).catch(() => [])).filter((file) => file.endsWith('.md')).sort();
     for (const file of files) {
       const path = join(catalogueDir(), domain, file);
-      const text = (await readText(path)) ?? '';
+      const text = ((await readText(path)) ?? '').replace(/\r\n/g, '\n');
       const meta = readFrontMatter(text);
       out.push({
         name: meta.name ?? file.replace(/\.md$/, ''), domain: meta.domain ?? domain, triggers: parseList(meta.triggers),
