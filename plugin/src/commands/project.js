@@ -71,7 +71,9 @@ async function projectNew(options) {
     const where = options.where ?? (asker ? await asker.choose({ id: 'where', title: 'Where does it live?', noOther: true, options: [
       { id: 'here', label: 'this folder' }, { id: 'local', label: 'a new local folder' }, { id: 'remote', label: 'a repository on GitHub, Azure DevOps or GitLab' },
     ] }) : 'here');
-    const target = where === 'local' ? resolve(root, name) : root;
+    // `--where local`: under the projects folder setup recorded, or beside the current one.
+    const { readConfig } = await import('../prompts.js');
+    const target = where === 'local' ? resolve((await readConfig())['projects-root'] ?? root, name) : root;
     if (where === 'local') await mkdir(target, { recursive: true });
     if (where === 'remote' && !json) {
       // Honest about what this build does: creating the repository through a provider's API is

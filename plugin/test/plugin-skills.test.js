@@ -24,7 +24,7 @@ const skillDirs = async () => (await readdir(join(PLUGIN, 'skills'), { withFileT
 
 test('every skill directory holds one SKILL.md whose name is the directory, with a description and a body that runs the CLI', async () => {
   const dirs = await skillDirs();
-  assert.ok(dirs.length >= 18, `${dirs.length} skills`);
+  assert.ok(dirs.length >= 19, `${dirs.length} skills`);
   for (const dir of dirs) {
     const files = await readdir(join(PLUGIN, 'skills', dir));
     assert.deepEqual(files, ['SKILL.md'], `${dir} ships only SKILL.md`);
@@ -41,7 +41,7 @@ test('every skill directory holds one SKILL.md whose name is the directory, with
 
 test('one skill per verb a person types on a normal day', async () => {
   const dirs = await skillDirs();
-  for (const name of ['use-project', 'answer', 'new-project', 'new-sprint', 'new-feature', 'new-bug', 'new-hotfix', 'plan-project', 'plan-sprint', 'run-sprint', 'run-check', 'run-review', 'show-status', 'show-plan', 'show-why', 'clarify', 'build', 'analyze']) {
+  for (const name of ['setup', 'use-project', 'answer', 'new-project', 'new-sprint', 'new-feature', 'new-bug', 'new-hotfix', 'plan-project', 'plan-sprint', 'run-sprint', 'run-check', 'run-review', 'show-status', 'show-plan', 'show-why', 'clarify', 'build', 'analyze']) {
     assert.ok(dirs.includes(name), `/vibekit:${name}`);
   }
 });

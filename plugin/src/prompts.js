@@ -1,5 +1,5 @@
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 import { readFrontMatter, setFrontMatterValue } from './frontmatter.js';
 import { isOpen, listAsks } from './folder/asks.js';
 import { DEFAULT_FOLDER } from './folder/layout.js';
@@ -229,7 +229,22 @@ export const CONFIG_KEYS = Object.freeze({
   'rates-file': 'a path to rates.yml, which converts tokens to currency in the budget report',
   'require-signed': 'true to refuse an unsigned or untrusted extension (§5.1); false lets a team\'s own kit install with a warning',
   'completion-offered': 'true once `new project` has offered to install shell completion, so it asks only once',
+  // `vibekit setup` (and /vibekit:setup in Claude Code) writes the four below once, so no helper
+  // asks for them again: where projects go, who is approving, and where the repositories live.
+  'projects-root': 'the folder your projects live in: `new project --where local` creates there, and an empty project list rescans it',
+  'name': 'who you are on approvals and gates; `--by` defaults to it',
+  'git-provider': 'github, azure-devops, gitlab or none: where `new project --where remote` expects the repository',
+  'git-org': 'the organisation or account URL at the provider, such as https://dev.azure.com/acme or https://github.com/acme',
 });
+
+export const GIT_PROVIDERS = Object.freeze(['github', 'azure-devops', 'gitlab', 'none']);
+
+/** The name a human decision is recorded under: `--by` if given, else the `name` setting, else null. */
+export async function personName(by) {
+  if (by) return by;
+  const name = (await readConfig()).name;
+  return typeof name === 'string' && name.trim() ? name.trim() : null;
+}
 
 export async function readConfig() {
   try {
@@ -248,6 +263,9 @@ export async function writeConfig(key, value) {
       throw new Error(`${key} needs a git URL or an absolute path, not "${value}".`);
     }
   }
+  if (key === 'projects-root' && !isAbsolute(String(value))) throw new Error(`projects-root needs an absolute path, not "${value}".`);
+  if (key === 'git-provider' && !GIT_PROVIDERS.includes(String(value))) throw new Error(`git-provider is one of ${GIT_PROVIDERS.join(', ')}, not "${value}".`);
+  if (key === 'git-org' && !/^https?:\/\//.test(String(value))) throw new Error(`git-org needs the organisation's URL, not "${value}".`);
   const config = { ...(await readConfig()), [key]: value };
   await writeText(settingsPath(), `${JSON.stringify(config, null, 2)}\n`);
   // One of these keys is a tunnel token. A settings file another account can read is a token

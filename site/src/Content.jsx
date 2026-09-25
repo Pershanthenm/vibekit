@@ -12,6 +12,7 @@ const IDEAS = [
 ];
 
 const HELPERS = [
+  ["/vibekit:setup", "Once, after install: where projects live, who you are, where the repos are"],
   ["/vibekit:new-project", "Start here. Name, platforms, a description or a BRS: four questions, one screen"],
   ["/vibekit:use-project", "Pick the project to work on from the ones on this machine"],
   ["/vibekit:answer", "Everything waiting on you, one question at a time, by picking"],
@@ -130,7 +131,7 @@ export default function Content() {
       <section className="block" id="helpers">
         <p className="kicker">03 · Helpers</p>
         <h2>The helpers</h2>
-        <p className="prose">Eighteen slash commands in Claude Code, one per CLI verb: type <code>/vibekit:</code> and the list completes. Each asks with a picker, so you choose rather than type. They are a thin layer over the CLI, so Cursor, Codex and an MCP client stay on the same workflow.</p>
+        <p className="prose">Nineteen slash commands in Claude Code, one per CLI verb: type <code>/vibekit:</code> and the list completes. Each asks with a picker, so you choose rather than type. They are a thin layer over the CLI, so Cursor, Codex and an MCP client stay on the same workflow.</p>
         <div className="helpers">
           {HELPERS.map(([name, desc]) => (
             <div className="helper" key={name}><b>{name}</b><span>{desc}</span></div>

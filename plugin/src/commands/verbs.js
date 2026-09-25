@@ -168,8 +168,10 @@ export async function review(options) {
     // A verdict a person types from the terminal, recorded exactly as the reviewer would.
     const result = results[0];
     if (!result.clean) throw new Error(`${only} is not mechanically clean; an approval over red facts would be a sentence, not a verdict.`);
-    await writeSection(root, only, 'Review', `Approved by ${options.by ?? 'reviewer'}: criteria mapped to named tests, evidence green for this commit.`, folder);
-    await appendLog(root, only, `review approved by ${options.by ?? 'reviewer'}`, folder);
+    const { personName } = await import('../prompts.js');
+    const reviewer = (await personName(options.by)) ?? 'reviewer';
+    await writeSection(root, only, 'Review', `Approved by ${reviewer}: criteria mapped to named tests, evidence green for this commit.`, folder);
+    await appendLog(root, only, `review approved by ${reviewer}`, folder);
     console.log(`✔ ${only} review written. A person sets done: vibekit req done ${only}`);
   } else {
     console.log('');

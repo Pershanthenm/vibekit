@@ -250,8 +250,10 @@ async function planProject(options, sprint) {
   const folder = options.folder ?? (await folderName(root));
   if (options.approve) {
     const { apply } = await import('../control.js');
-    if (!options.by) throw new Error('Approving the plan is a human decision: say who with --by "<name>".');
-    const result = await apply(root, null, { action: 'gate.approve', stage: 4, by: options.by });
+    const { personName } = await import('../prompts.js');
+    const by = await personName(options.by);
+    if (!by) throw new Error('Approving the plan is a human decision: say who with --by "<name>", or once with vibekit settings name "<name>".');
+    const result = await apply(root, null, { action: 'gate.approve', stage: 4, by });
     if (options.json) return void console.log(JSON.stringify(result, null, 2));
     console.log(`✔ ${result.message}`);
     console.log('  vibekit run    works the first sprint');

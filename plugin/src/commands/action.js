@@ -5,6 +5,7 @@ import { readText, writeText } from '../fsutil.js';
 import { createAsker } from '../menu.js';
 import { folderIn, listProjects, register } from '../projects.js';
 import { folderName } from './folder.js';
+import { personName } from '../prompts.js';
 
 /**
  * `vibekit action`. Specification §67 ("Answer from anywhere").
@@ -63,7 +64,7 @@ export async function action(options) {
     const [stage] = rest;
     if (!stage) throw new Error('Usage: vibekit action approve <stage 1-4> --by "<name>"   ·   the gate the queue shows as waiting');
     const { apply } = await import('../control.js');
-    const result = await apply(root, null, { action: 'gate.approve', stage, by: options.by });
+    const result = await apply(root, null, { action: 'gate.approve', stage, by: await personName(options.by) });
     if (json) return void console.log(JSON.stringify(result, null, 2));
     console.log(`✔ ${result.message}`);
     return;
@@ -133,7 +134,7 @@ export function pick(queue, which) {
 
 /** Write one answer or rejection into its own project, through the same functions `vibekit ask` uses there. */
 async function settle(target, { answer = null, reject = null }, options) {
-  const by = options.by ?? 'action';
+  const by = (await personName(options.by)) ?? 'action';
   const result = reject !== null
     ? await rejectAsk(target.root, target.id, { reason: reject, by }, target.folder)
     : await answerAsk(target.root, target.id, { answer, by }, target.folder);

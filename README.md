@@ -93,10 +93,11 @@ VibeKit is an alpha built by one person. Parts of it are rough. The bet is that 
 
 ## The helpers
 
-Eighteen slash commands, one per CLI verb you would type yourself. Type `/vibekit:` in Claude Code and the list completes. Each one asks with a picker, not a prompt: where a project lives, which project to work on, which answer to an analyst's question, whether to approve a gate. You choose; you type only what nobody could have listed. They stop the agent when a person is needed, and they keep going after the code is written. The same verbs as the CLI, so Cursor, Codex and an MCP client are never on a different workflow.
+Nineteen slash commands, one per CLI verb you would type yourself. Type `/vibekit:` in Claude Code and the list completes. Each one asks with a picker, not a prompt: where a project lives, which project to work on, which answer to an analyst's question, whether to approve a gate. You choose; you type only what nobody could have listed. They stop the agent when a person is needed, and they keep going after the code is written. The same verbs as the CLI, so Cursor, Codex and an MCP client are never on a different workflow.
 
 | Helper | What it does |
 |---|---|
+| `/vibekit:setup` | Once, after install: where projects live, who you are, where the repositories are |
 | `/vibekit:new-project` | Start here. Name, platforms, a description or a BRS: four questions, one screen |
 | `/vibekit:use-project` | Pick the project to work on from the ones on this machine |
 | `/vibekit:answer` | Everything waiting on you, one question at a time, by picking |
@@ -221,7 +222,7 @@ Then, in a project: `vibekit new project`. On a repo you already have: `vibekit 
 
 ### Claude Code
 
-The plugin adds the slash commands (`/vibekit:new-project`, `/vibekit:use-project`, `/vibekit:answer`, `/vibekit:show-status`, `/vibekit:run-sprint`, `/vibekit:clarify`, `/vibekit:plan-project`, `/vibekit:plan-sprint`, `/vibekit:new-sprint`, `/vibekit:build`, `/vibekit:run-check`, `/vibekit:run-review`, `/vibekit:new-feature`, `/vibekit:new-bug`, `/vibekit:new-hotfix`, `/vibekit:show-plan`, `/vibekit:show-why`, `/vibekit:analyze`) and hooks. The CLI still has to be on PATH.
+The plugin adds the slash commands (`/vibekit:setup`, `/vibekit:new-project`, `/vibekit:use-project`, `/vibekit:answer`, `/vibekit:show-status`, `/vibekit:run-sprint`, `/vibekit:clarify`, `/vibekit:plan-project`, `/vibekit:plan-sprint`, `/vibekit:new-sprint`, `/vibekit:build`, `/vibekit:run-check`, `/vibekit:run-review`, `/vibekit:new-feature`, `/vibekit:new-bug`, `/vibekit:new-hotfix`, `/vibekit:show-plan`, `/vibekit:show-why`, `/vibekit:analyze`) and hooks. The CLI still has to be on PATH.
 
 ```text
 /plugin marketplace add Pershanthenm/vibekit
@@ -229,7 +230,7 @@ The plugin adds the slash commands (`/vibekit:new-project`, `/vibekit:use-projec
 /reload-plugins
 ```
 
-Later, `/plugin update vibekit` pulls a new release; `/reload-plugins` alone re-reads what is already installed.
+Then `/vibekit:setup` once: it records where your projects live, your name for approvals and where your repositories are, so no helper asks again. Later, `/plugin update vibekit` pulls a new release; `/reload-plugins` alone re-reads what is already installed.
 
 Then `cd your-project && vibekit new project`.
 
