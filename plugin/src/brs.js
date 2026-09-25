@@ -17,6 +17,37 @@ export const BRS_QUESTIONS = Object.freeze([
 
 const OBLIGATION = /\b(?:shall|must|will|is required to|is expected to)\b/i;
 
+/**
+ * Suggested answers, so a person picks rather than types. Half come from the description they
+ * already gave (its clauses, as things people do); half are the answers most apps share. The
+ * analyst treats a picked suggestion exactly like a typed one: it is still the person's word.
+ */
+const GENERIC = Object.freeze({
+  does: ['sign in with their work account', 'see a list of things and search it', 'add or change a record', 'approve or reject something before it counts', 'get a report or an export'],
+  never: ['one user sees another user\'s data', 'something gets posted, paid or sent without approval', 'work is lost when the connection drops', 'a deleted record disappears without a trace', 'anyone can act without signing in'],
+  limits: ['feels instant on a phone', 'hundreds of people using it at once', 'holds personal data, kept only as long as needed', 'single sign-on with the company account', 'exports or syncs to another system every night'],
+});
+
+/** Clauses of the description, as things people do: "Staff count stock on a phone; supervisors review variances" → two suggestions. */
+function clausesOf(description) {
+  return String(description ?? '')
+    .split(/[;.]\s+|\s+(?:and then|, and|and)\s+/i)
+    .map((clause) => clause.trim().replace(/[.;]$/, ''))
+    .filter((clause) => clause.split(/\s+/).length >= 3 && clause.length <= 90)
+    .map((clause) => clause.charAt(0).toLowerCase() + clause.slice(1))
+    .slice(0, 4);
+}
+
+export function suggestionsFor(key, { description = null, does = [] } = {}) {
+  if (key === 'does') {
+    const own = clausesOf(description);
+    return [...own, ...GENERIC.does].filter((item, index, all) => all.indexOf(item) === index).slice(0, 7);
+  }
+  if (key === 'never' || key === 'limits') return [...GENERIC[key]];
+  if (key === 'first') return does.length ? does.map((item) => `first: ${item}`) : ['first: everything above', 'later: reports and integrations'];
+  return [];
+}
+
 /** Split a list answer: lines, or the question's separator, or semicolons; blanks dropped. */
 export function splitAnswer(question, value) {
   if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);

@@ -1,6 +1,6 @@
 import { mkdir, readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
-import { BRS_QUESTIONS, brsBody, brsGaps, parseAnswers } from '../brs.js';
+import { BRS_QUESTIONS, brsBody, brsGaps, parseAnswers, splitAnswer, suggestionsFor } from '../brs.js';
 import { DOCS_DIR } from '../docs/arch/paths.js';
 import { exists, writeText } from '../fsutil.js';
 import { loadProject } from '../project.js';
@@ -27,6 +27,18 @@ export async function newBrs(options) {
   const answers = parseAnswers(options.answer ?? [], fromJson);
   if (!answers.what && config.project.description) answers.what = config.project.description;
 
+  // `--suggest`: the picks each question offers, for a helper that presents them as a menu.
+  if (options.suggest) {
+    const context = { description: answers.what ?? config.project.description ?? null, does: splitAnswer(BRS_QUESTIONS[1], answers.does) };
+    const suggestions = Object.fromEntries(BRS_QUESTIONS.map((question) => [question.key, { question: question.question, example: question.hint.split('\n'), suggestions: suggestionsFor(question.key, context) }]));
+    if (json) return void console.log(JSON.stringify(suggestions, null, 2));
+    for (const [key, entry] of Object.entries(suggestions)) {
+      console.log(`${key.padEnd(8)} ${entry.question}`);
+      for (const item of entry.suggestions) console.log(`         - ${item}`);
+    }
+    return suggestions;
+  }
+
   const asker = options.asker ?? (options.yes || Object.keys(answers).length ? null : (await import('../menu.js')).createAsker());
   try {
     if (asker) {
@@ -36,8 +48,18 @@ export async function newBrs(options) {
       }
       for (const question of BRS_QUESTIONS) {
         if (answers[question.key]) continue;
-        const answer = await asker.text(`${question.question}${question.list ? ' Separate items with ";".' : ''}\n  e.g. ${question.hint.replace(/\n/g, '; ')}`, '');
-        if (String(answer ?? '').trim()) answers[question.key] = answer;
+        const picks = suggestionsFor(question.key, { description: answers.what ?? config.project.description, does: splitAnswer(BRS_QUESTIONS[1], answers.does) });
+        if (!picks.length) {
+          const answer = await asker.text(`${question.question}\n  e.g. ${question.hint.replace(/\n/g, '; ')}`, '');
+          if (String(answer ?? '').trim()) answers[question.key] = answer;
+          continue;
+        }
+        // Pick from suggestions first; then a line for anything the list did not have.
+        const picked = await asker.choose({ id: question.key, header: question.key, question: question.question, title: question.question, multi: true, options: picks.map((item) => ({ id: item, label: item })) });
+        const chosen = Array.isArray(picked) ? picked : picked?.other ? [picked.other] : [];
+        const more = await asker.text('Anything else? Separate with ";", or Enter to move on', '');
+        const items = [...chosen, ...splitAnswer(question, more)];
+        if (items.length) answers[question.key] = items.join('\n');
       }
     }
   } finally {

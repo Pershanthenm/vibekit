@@ -100,6 +100,7 @@ const OPTIONS = {
   remote: { type: 'string' },
   answer: { type: 'string', multiple: true },
   'no-ingest': { type: 'boolean' },
+  suggest: { type: 'boolean' },
   link: { type: 'string' },
   public: { type: 'boolean' },
   'no-push': { type: 'boolean' },

@@ -108,3 +108,29 @@ test('new project --answer builds the document instead of a one-line description
     restoreEnv(original);
   }
 });
+
+test('each question comes with suggestions to pick from, half of them from the description', async () => {
+  const { suggestionsFor } = await import('../src/brs.js');
+  const does = suggestionsFor('does', { description: 'Staff count stock on a phone; supervisors review variances before they are posted' });
+  assert.equal(does[0], 'staff count stock on a phone');
+  assert.equal(does[1], 'supervisors review variances before they are posted');
+  assert.ok(does.includes('approve or reject something before it counts'));
+  assert.ok(suggestionsFor('never', {}).length >= 4);
+  assert.deepEqual(suggestionsFor('first', { does: ['count a shelf', 'approve a difference'] }), ['first: count a shelf', 'first: approve a difference']);
+  assert.deepEqual(suggestionsFor('what', {}), []);
+
+  const original = { ...process.env };
+  isolateHome();
+  process.env.VIBEKIT_HOME = tempDir('vibekit-home-');
+  try {
+    const root = tempDir('vibekit-brs-');
+    await capture(() => run(['new', 'project', 'Stock Take', '--yes', '--describe', 'Staff count stock on a phone; supervisors review variances.', '--platform', 'web', '--dir', root]));
+    const suggested = JSON.parse(await capture(() => run(['new', 'brs', '--suggest', '--json', '--dir', root])));
+    assert.deepEqual(Object.keys(suggested), ['what', 'does', 'never', 'limits', 'first']);
+    assert.equal(suggested.does.suggestions[0], 'staff count stock on a phone');
+    assert.ok(suggested.limits.suggestions.some((item) => /single sign-on/.test(item)));
+    assert.ok(!(await import('node:fs')).existsSync(join(root, 'docs/brs.md')), '--suggest writes nothing');
+  } finally {
+    restoreEnv(original);
+  }
+});

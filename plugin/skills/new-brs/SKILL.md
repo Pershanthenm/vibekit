@@ -1,25 +1,25 @@
 ---
 name: new-brs
-description: No requirements document? Five plain questions become one, and the analyst starts from it
+description: No requirements document? Five questions with suggested answers to pick from become one, and the analyst starts from it
 ---
 
-For a project that has no requirements document. Do not read or explore anything first. Five questions, in plain words, each with an example so the person sees what an answer looks like and types one line. Choices go through the AskUserQuestion tool; here the example is the first option and Other is their own words. Never make them type what you could have listed: offer the project description as the answer to the first question.
+For a project that has no requirements document. Do not read or explore anything first. Run `vibekit new brs --suggest --json`: for each of the five questions it gives the suggestions to offer, half drawn from the project's own description. Choices go through the AskUserQuestion tool: the person picks, and types only what no suggestion covered. Add two or three suggestions of your own to each list when the description makes them obvious, in the same plain words; keep the person's description as the first answer to question 1.
 
 **Screen 1**, one AskUserQuestion call, three questions:
 
-1. **What is it, and who is it for?** First option: the project description (`specs/project.json`, or what they said at new-project). Example: an app where store staff count stock on their phones and supervisors approve the differences.
-2. **What should people be able to do with it?** The main things, one per line. Example: count a shelf and save it; approve or reject a difference; see which shelves are still uncounted.
-3. **What must never happen?** Example: a difference gets posted without approval; one store sees another store's numbers.
+1. **What is it, and who is it for?** First option: the project description. Other for a better sentence.
+2. **What should people be able to do with it?** Multi-select from the suggestions. Other adds their own, separated by ";".
+3. **What must never happen?** Multi-select from the suggestions; Other adds their own.
 
 **Screen 2**, one call, two questions:
 
-4. **Any hard limits, or things it must connect to?** Speed, how many people, sensitive data, other systems. Example: saving a count must feel instant on store wifi; 500 people counting at once; sends the final counts to the ERP every night.
-5. **What is in the first version, and what can wait?** Example: first: counting and approvals; later: purchasing.
+4. **Any hard limits, or things it must connect to?** Multi-select from the suggestions; Other adds their own.
+5. **What is in the first version?** Multi-select over what they picked in question 2; the rest can wait. Other for anything else.
 
-A skipped question is fine: the analyst asks about it first. Then one command, items joined with ";":
+A skipped question is fine: the analyst asks about it first. Then one command, each list joined with ";", and question 5 written as `first: …` for what they picked and `later: …` for the rest:
 
 ```
-vibekit new brs --answer what="…" --answer does="…; …" --answer never="…" --answer limits="…; …" --answer first="first: …; later: …"
+vibekit new brs --answer what="…" --answer does="…; …" --answer never="…; …" --answer limits="…; …" --answer first="first: …; later: …"
 ```
 
-It writes docs/brs.md in five numbered sections, one requirement sentence per line they gave, ingests it as BRS-001, and lists what is still thin. Read that back in two sentences: what was written, and what the analyst will ask about first. Then offer: "Start the analyst's questions" (`/vibekit:run-sprint`, then `/vibekit:answer`), "Let me edit docs/brs.md first" (then `vibekit ingest docs/brs.md`), or "Stop here".
+It writes docs/brs.md in five numbered sections, one requirement sentence per pick, ingests it as BRS-001, and lists what is still thin. Read that back in two sentences: what was written, and what the analyst will ask about first. Then offer: "Start the analyst's questions" (`/vibekit:run-sprint`, then `/vibekit:answer`), "Let me edit docs/brs.md first" (then `vibekit ingest docs/brs.md`), or "Stop here".
