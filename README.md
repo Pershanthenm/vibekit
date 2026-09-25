@@ -4,7 +4,7 @@
 
 # VibeKit
 
-**Spec-driven development for coding agents, with a person deciding every question that matters.**
+**Agents write the code. A person decides every question that matters.**
 
 Coding agents are fast, and they guess. VibeKit puts one folder in your repo, `vibekit/`, that every agent reads: what the app is, what agents may and may not do, what your words mean, what has been decided, and what is next. An agent that lacks information writes an ask and stops. It never fills a gap with a guess. Between every stage is a gate: a line a human writes. Nothing advances itself.
 
@@ -17,68 +17,28 @@ Coding agents are fast, and they guess. VibeKit puts one folder in your repo, `v
 
 **Site:** [pershanthenm.github.io/vibekit](https://pershanthenm.github.io/vibekit/) · **Release:** [VibeKit Alpha](https://github.com/Pershanthenm/vibekit/releases/tag/v0.1.0-alpha)
 
-VibeKit is a Claude Code plugin and a CLI with no runtime dependencies. It works with Claude Code, Cursor, Codex and any MCP client, because everything it enforces is a Markdown file in git. Inspired by [Spec Kit](https://github.com/github/spec-kit) and [Agent OS](https://github.com/buildermethods/agent-os).
+VibeKit is a Claude Code plugin and a CLI with no runtime dependencies. It works with Claude Code, Cursor, Codex and any MCP client, because everything it enforces is a Markdown file in git.
 
 ## Purpose
 
-Other tools help you write a spec and then leave you alone. VibeKit is the operating loop after that: a person still decides, evidence still has to match a commit, and you can still ask why any line of code exists.
+The first version is easy to get. The mess starts the next morning, when nobody can say what was decided, what was guessed, or why a line is there. VibeKit is the loop after that: a person still decides, evidence still has to match a commit, and you can still ask why any line of code exists.
 
 1. **Start from what the business wrote** — a description or a requirements document, sectioned and cited. An existing codebase is imported, not ignored.
 2. **Ask before assuming.** Unknowns become asks with ids. What cannot be asked becomes an assumption with a blast radius, not a silent guess.
 3. **Build one requirement per agent**, on its own branch, with failing tests first. `vibekit verify` writes the exit codes in. A reviewer on a second model writes the verdict. A person sets `done`.
 
-## Why not just Spec Kit?
+## What it does
 
-[Spec Kit](https://github.com/github/spec-kit) gets you to a first version fast, and that's genuinely the hard part starting out. Describe what you want, get a spec, a plan, a task list and working code. [Agent OS](https://github.com/buildermethods/agent-os) solves a different problem well — it learns how your team already writes code and feeds the right conventions to the agent, so you stop repeating yourself in every prompt.
+Six things the folder, the CLI and the phone board are built around.
 
-Both are good. VibeKit borrows from both and maps onto the same steps. **The difference is how far each one takes you.** Spec Kit and Agent OS hand you a first version. VibeKit stays for the whole life of the project.
+- **Asks, not guesses.** An agent that lacks a fact writes an ask with an id and stops.
+- **Gates only you close.** Between every stage is a line a person writes. A tap on the phone is still a commit with your name on it.
+- **Evidence on the commit.** `vibekit verify` writes the exit code into the requirement. `tested` is refused without it.
+- **Why any line exists.** `show why src/x.js:12` walks the requirement, the ask, the assumption, the review.
+- **Several agents, one folder.** `run` works lanes in parallel. A crash or a tool switch picks up the same checkpoint.
+- **The live board in your pocket.** `vibekit tracker` puts the sprint behind a QR code.
 
-Already using either? `vibekit new project --import .` reads what you have. Nothing is lost. From Spec Kit, `vibekit new project --import . --speckit` reads `memory/constitution.md`, `specs/`, `plan.md` and `tasks.md`.
-
-**✓** does it · **◐** partly · **—** doesn't, and isn't trying to
-
-### Before you build
-
-| | Spec Kit | Agent OS | VibeKit |
-|---|---|---|---|
-| Turn an idea into a spec | ✓ | ◐ | ✓ |
-| Read a real requirements document | — | — | ✓ |
-| Ask before assuming | ◐ | ◐ | ✓ |
-| Track every guess and what's riding on it | — | — | ✓ |
-| Learn your team's conventions | — | ✓ | ✓ |
-| Decide whether to build it at all | — | — | ✓ |
-| Work on a codebase you already have | — | ✓ | ✓ |
-
-### While you build
-
-| | Spec Kit | Agent OS | VibeKit |
-|---|---|---|---|
-| Break work into tasks | ✓ | ◐ | ✓ |
-| Write the code | ✓ | ◐ | ✓ |
-| Run several agents at once | — | — | ✓ |
-| Watch it live, from your phone | — | — | ✓ |
-| Prove the tests actually passed | — | — | ✓ |
-| Review on a second model | — | — | ✓ |
-| Survive a crash or a tool switch | — | — | ✓ |
-| Keep small changes small | — | ◐ | ✓ |
-| Use cheap models where they're enough | — | — | ✓ |
-| Cap what it spends | — | — | ✓ |
-
-### After it ships
-
-| | Spec Kit | Agent OS | VibeKit |
-|---|---|---|---|
-| Say why any line exists | — | — | ✓ |
-| Catch the spec drifting from the code | — | — | ✓ |
-| Score security against OWASP, POPIA, CIS | — | — | ✓ |
-| Generate HLD, LLD and diagrams in your brand | — | — | ✓ |
-| Hand a client something to approve | — | — | ✓ |
-| Undo a shipped feature cleanly | — | — | ✓ |
-| Show what the agents cost, and what was wasted | — | — | ✓ |
-| Learn from what went wrong | — | — | ✓ |
-| Onboard someone without you in the room | ◐ | ◐ | ✓ |
-
-The pattern is the point. Nobody loses the first table by much. The third one is empty for everything except VibeKit, because the others were never built for it — they're first-pass tools, and they say so.
+Already have a folder? `vibekit new project --import .` reads it. Nothing is thrown away so you can start again.
 
 ## Watch it work. From anywhere.
 
@@ -129,30 +89,22 @@ Reviews are never cheaper than the work they check — the reviewer always runs 
 
 ## The honest version
 
-Spec Kit is free, mature and backed by GitHub. Agent OS is the best thing going for standards. Both have real users today. VibeKit is an alpha built by one person and parts of it are rough.
-
-If you want a clean first version and you're happy driving from there, use Spec Kit. If agents keep ignoring how your team writes code, use Agent OS. They're not mutually exclusive — Agent OS standards import straight into VibeKit as skills.
-
-VibeKit is for the project where somebody asks, a year later, why a line is there — and you'd like to answer in a second rather than an afternoon.
+VibeKit is an alpha built by one person. Parts of it are rough. The bet is that a year from now you can still say why a line is there, what it cost, and who closed the gate.
 
 ## The helpers
 
-Spec Kit’s slash commands and `.specify` helper scripts walk specify → plan → tasks → implement. VibeKit’s helpers are the same idea with a different centre of gravity: they stop the agent when a person is needed, and they keep going after the code is written.
+Slash commands in Claude Code. They stop the agent when a person is needed, and they keep going after the code is written. The same verbs as the CLI, so Cursor, Codex and an MCP client are never on a different workflow.
 
-| Spec Kit | VibeKit | What changes |
-|---|---|---|
-| `/speckit.constitution` | `standards/` + `vibekit check` | Principles become rules that fire |
-| `/speckit.specify` | `/vibekit.new-feature` · `new project` | The brief is a source, not a one-shot prompt |
-| `/speckit.clarify` | `/vibekit.clarify` · `vibekit show status` | An inbox, not a single pass |
-| `/speckit.plan` | architecture and plan gates | You approve with a line in the file |
-| `/speckit.tasks` | `vibekit plan project` | Sizes, walking skeleton, cost forecast |
-| `/speckit.implement` | `/vibekit.build` · `run` | One requirement per agent; evidence required |
-| `/speckit.analyze` | `vibekit check` · `vibekit drift` | Mechanical, and it runs in CI |
-| `/speckit.converge` | `/vibekit.run-review` · `new sprint` (the gate) | Second model; a person sets `done` |
-| — | `/vibekit.show-why` | The chain Spec Kit does not keep |
-| — | `/vibekit.new-hotfix` · `/vibekit.show-status` · `/vibekit.run-sprint` | Small work stays small; the next step is a command |
-
-The slash commands are a thin layer over the CLI, so Claude Code, Cursor, Codex and an MCP client are never on different workflows.
+| Helper | What it does |
+|---|---|
+| `/vibekit.clarify` | Asks first. Assumptions get ids. |
+| `/vibekit.run-sprint` | Whatever the current gate allows |
+| `/vibekit.build` | One requirement, one branch, evidence |
+| `/vibekit.run-review` | Second model. A person sets done. |
+| `/vibekit.show-status` | Where everything stands, in words |
+| `/vibekit.show-why` | Why this line of code exists |
+| `/vibekit.new-hotfix` | Production is down. Stay small. |
+| `/vibekit.new-feature` | Add work without a new planning pile |
 
 ## Two commands a day
 
@@ -309,7 +261,7 @@ See [ONBOARDING.md](ONBOARDING.md) and [docs/MULTI-EDITOR.md](docs/MULTI-EDITOR.
 
 | Where | For |
 |---|---|
-| [pershanthenm.github.io/vibekit](https://pershanthenm.github.io/vibekit/) | Site: coverage vs Spec Kit and Agent OS, tracker, lanes, cost |
+| [pershanthenm.github.io/vibekit](https://pershanthenm.github.io/vibekit/) | Site: the loop, the commands, tracker, lanes, cost |
 | [GUIDE.md](GUIDE.md) | Working day to day |
 | [ONBOARDING.md](ONBOARDING.md) | Installing on a machine |
 | [docs/BROWNFIELD.md](docs/BROWNFIELD.md) | An existing codebase: `project import` |

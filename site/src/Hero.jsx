@@ -110,8 +110,8 @@ export default function Hero() {
           </div>
 
           <div className="tags-pill">
-            <span>Spec-driven</span>
-            <span>Agent-native</span>
+            <span>Ask-first</span>
+            <span>Human-gated</span>
           </div>
         </div>
 
