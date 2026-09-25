@@ -8,14 +8,11 @@ import { briefGaps, extractStatements, splitSections } from './sources.js';
  */
 
 export const BRS_QUESTIONS = Object.freeze([
-  { key: 'purpose', question: 'What is it for? One sentence.', hint: 'Staff count stock on a phone; supervisors review the variances before they are posted.', list: false },
-  { key: 'users', question: 'Who uses it? The kinds of user, comma-separated.', hint: 'staff, supervisor, admin', list: true, separator: ',' },
-  { key: 'capabilities', question: 'What must it let them do? One per line, as "role: action".', hint: 'staff: count a bin and save the quantity\nsupervisor: review and approve a variance\nadmin: add a location', list: true },
-  { key: 'rules', question: 'What must it never do or allow?', hint: 'post a variance nobody approved\nshow another store\'s counts', list: true },
-  { key: 'targets', question: 'What must be measurable? Response time, uptime, volumes, deadlines.', hint: 'a count saves within 2 seconds on a store wifi\n500 counters at once on stock-take day', list: true },
-  { key: 'data', question: 'What data does it hold, and how sensitive is it? Personal, financial, how long it is kept.', hint: 'staff names and ids (personal)\nstock values in ZAR (financial), kept 7 years', list: true },
-  { key: 'integrations', question: 'What does it talk to? Systems, APIs, files. "None" is an answer.', hint: 'the ERP stock ledger (nightly file)\nsingle sign-on', list: true },
-  { key: 'scope', question: 'What is in the first release, and what is out?', hint: 'in: counting, variance review\nout: purchasing, forecasting', list: true },
+  { key: 'what', question: 'What is it, and who is it for?', hint: 'An app where store staff count stock on their phones and supervisors approve the differences.', list: false },
+  { key: 'does', question: 'What should people be able to do with it? The main things, one per line.', hint: 'count a shelf and save it\napprove or reject a difference\nsee which shelves are still uncounted', list: true },
+  { key: 'never', question: 'What must never happen?', hint: 'a difference gets posted without approval\none store sees another store\'s numbers', list: true },
+  { key: 'limits', question: 'Any hard limits or things it must connect to? Speed, how many people, sensitive data, other systems.', hint: 'saving a count must feel instant on store wifi\n500 people counting at once on stock-take day\nsends the final counts to the ERP every night', list: true },
+  { key: 'first', question: 'What is in the first version, and what can wait?', hint: 'first: counting and approvals\nlater: purchasing, forecasting', list: true },
 ]);
 
 const OBLIGATION = /\b(?:shall|must|will|is required to|is expected to)\b/i;
@@ -50,8 +47,20 @@ const sentence = (text) => {
 };
 const capital = (text) => text.charAt(0).toUpperCase() + text.slice(1);
 
-/** "role: action" → "The system shall let a role action."; a bare action → "The system shall action."; an obligation already phrased is kept. */
-function capability(line) {
+
+const IMPERATIVE = /^(?:allow|let|show|post|send|delete|remove|lose|leak|expose|charge|overwrite|store|share|reveal|accept|skip|bypass|ignore|drop|double|email|display|print|save|change|edit|approve|reject|create|give|grant|permit|log|record|keep|hide|block)\b/i;
+function prohibition(line) {
+  if (/\b(?:must|shall)\s+not\b/i.test(line)) return sentence(capital(line));
+  const text = line.trim().replace(/^(?:it\s+)?(?:must|shall|should|may)\s+(?:not|never)\s+/i, '').replace(/^never\s+/i, '');
+  if (IMPERATIVE.test(text)) return sentence(`The system must not ${text}`);
+  return sentence(`The system must not allow this to happen: ${text}`);
+}
+
+
+
+
+/** A line under "what should people do" → an obligation. "role: action" names the role; a bare action is for everyone. */
+function feature(line) {
   if (OBLIGATION.test(line)) return sentence(capital(line));
   const at = line.indexOf(':');
   if (at > 0) {
@@ -60,58 +69,51 @@ function capability(line) {
     const article = /^[aeiou]/i.test(role) ? 'an' : 'a';
     return sentence(`The system shall let ${article} ${role} ${action}`);
   }
-  return sentence(`The system shall ${line.trim()}`);
+  return sentence(`The system shall let people ${line.trim()}`);
 }
 
-function prohibition(line) {
-  const text = line.trim().replace(/^(?:it\s+)?(?:must|shall|should)\s+(?:not|never)\s+/i, '').replace(/^never\s+/i, '');
-  if (/\b(?:must|shall)\s+not\b/i.test(line)) return sentence(capital(line));
-  return sentence(`The system must not ${text}`);
+/** A limit or a connection: what it talks to reads as an integration, the rest as a target or a data rule. */
+const THIRD_PERSON = /^(sends|receives|exports|imports|syncs|talks|connects|integrates|pushes|pulls|reads|writes|posts|emails|notifies|runs|loads|saves|supports|handles|works|needs|uses|stores|keeps|shows|updates|calls|fetches|checks)\b/i;
+const base = (verb) => (/(?:ches|shes|sses|xes)$/i.test(verb) ? verb.slice(0, -2) : verb.replace(/s$/i, ''));
+function limit(line) {
+  if (/\b(?:should|needs? to|has to)\b/i.test(line) && !OBLIGATION.test(line)) return sentence(capital(line.trim().replace(/\b(?:should|needs? to|has to)\b/i, 'must')));
+  if (OBLIGATION.test(line)) return sentence(capital(line));
+  const text = line.trim();
+  const conjugated = text.match(THIRD_PERSON);
+  if (conjugated) return sentence(`The system will ${base(conjugated[1])}${text.slice(conjugated[1].length)}`);
+  if (/^(?:connect|integrate|talk|sync|send|receive|export|import|push|pull|read|write|notify|call|fetch)\b/i.test(text)) return sentence(`The system will ${text}`);
+  if (/\b(?:sso|sign[- ]on|erp|crm|ledger|api|gateway|webhook|payment|bucket|queue|active directory|ldap|okta|azure ad|entra)\b/i.test(text)) return sentence(`The system will integrate with ${text}`);
+  if (/\b(?:personal|financial|sensitive|private|confidential|retention|kept|delete|gdpr|popia)\b/i.test(text)) return sentence(`The system will hold ${text}`);
+  if (/^\d/.test(text)) return sentence(`The system must handle ${text}`);
+  if (/^(?:be|have|handle|support|work|run|load|save|respond|allow|cope|stay|remain|fit)\b/i.test(text)) return sentence(`The system must ${text}`);
+  return sentence(`The system must meet this limit: ${text}`);
 }
 
-function target(line) {
-  return OBLIGATION.test(line) ? sentence(capital(line)) : sentence(`The system shall meet this target: ${line.trim()}`);
-}
-
-function integration(line) {
-  if (/^(?:none|nothing|n\/a)\.?$/i.test(line.trim())) return 'The system will integrate with nothing in the first release.';
-  return OBLIGATION.test(line) ? sentence(capital(line)) : sentence(`The system will integrate with ${line.trim()}`);
-}
-
-function scope(line) {
-  const match = line.match(/^(in|out)(?:\s+of\s+scope)?\s*:\s*(.+)$/i);
+function first(line) {
+  const match = line.match(/^(first|now|in|v1|later|out|next)(?:\s+version)?\s*:\s*(.+)$/i);
   if (!match) return sentence(capital(line));
-  return match[1].toLowerCase() === 'in' ? sentence(`The first release will include ${match[2].trim()}`) : sentence(`The first release will not include ${match[2].trim()}`);
+  const now = /^(?:first|now|in|v1)$/i.test(match[1]);
+  return sentence(`The first version will ${now ? '' : 'not '}include ${match[2].trim()}`);
 }
 
-/** The document. Every section numbered, every requirement a sentence the parser reads as an obligation. */
+/** The document. Five numbered sections; every line under 2 to 5 an obligation the parser reads. */
 export function brsBody(name, answers, { date = new Date().toISOString().slice(0, 10) } = {}) {
   const get = (key) => splitAnswer(BRS_QUESTIONS.find((question) => question.key === key), answers[key]);
   const numbered = (n, items) => items.map((item, index) => `${n}.${index + 1} ${item}`);
-  const users = get('users');
-  const lines = [
-    `# ${name} — Business Requirements`,
+  const section = (n, title, items, make, empty) => ['', `## ${n}. ${title}`, '', ...(items.length ? numbered(n, items.map(make)) : [`${n}.1 ${empty} is not yet decided.`])];
+  return [
+    `# ${name} — Requirements`,
     '',
-    `Written with \`vibekit new brs\` on ${date}. Edit it freely; \`vibekit ingest docs/brs.md\` re-reads it, and a requirement cites a section by its number.`,
+    `Written with \`vibekit new brs\` on ${date}, from your answers. Edit it freely; \`vibekit ingest docs/brs.md\` re-reads it, and a requirement cites a section by its number.`,
     '',
-    '## 1. Purpose', '',
-    sentence(get('purpose')[0] ?? `${name} is to be built.`), '',
-    '## 2. Users', '',
-    ...(users.length ? numbered(2, users.map((role) => sentence(`${capital(role)} is a kind of user of the system`))) : ['2.1 Who uses the system is not yet decided.']), '',
-    '## 3. Functional requirements', '',
-    ...(get('capabilities').length ? numbered(3, get('capabilities').map(capability)) : ['3.1 What the system must let its users do is not yet decided.']), '',
-    '## 4. Rules and prohibitions', '',
-    ...(get('rules').length ? numbered(4, get('rules').map(prohibition)) : ['4.1 What the system must never do or allow is not yet decided.']), '',
-    '## 5. Measurable targets', '',
-    ...(get('targets').length ? numbered(5, get('targets').map(target)) : ['5.1 What must be measurable is not yet decided.']), '',
-    '## 6. Data', '',
-    ...(get('data').length ? numbered(6, get('data').map((line) => (OBLIGATION.test(line) ? sentence(capital(line)) : sentence(`The system will hold ${line.trim()}`)))) : ['6.1 What data the system holds, and how sensitive it is, is not yet decided.']), '',
-    '## 7. Integrations', '',
-    ...(get('integrations').length ? numbered(7, get('integrations').map(integration)) : ['7.1 What the system talks to is not yet decided.']), '',
-    '## 8. Scope of the first release', '',
-    ...(get('scope').length ? numbered(8, get('scope').map(scope)) : ['8.1 What the first release includes is not yet decided.']), '',
-  ];
-  return lines.join('\n');
+    '## 1. What it is', '',
+    sentence(get('what')[0] ?? `${name} is to be built`),
+    ...section(2, 'What people can do', get('does'), feature, 'What people can do with it'),
+    ...section(3, 'What must never happen', get('never'), prohibition, 'What must never happen'),
+    ...section(4, 'Limits and connections', get('limits'), limit, 'Its limits, and what it connects to,'),
+    ...section(5, 'The first version', get('first'), first, 'What the first version includes'),
+    '',
+  ].join('\n');
 }
 
 /** What the document still does not say, in the words the analyst will use for its first asks. */

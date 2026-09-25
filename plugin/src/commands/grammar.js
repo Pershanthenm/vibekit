@@ -32,7 +32,7 @@ export const newUsage = () => list([
   ['new bug', 'log a defect — assess, fix, verify'],
   ['new hotfix', 'production is broken; skip the ceremony'],
   ['new repo', 'the repository at your provider — GitHub, GitLab or Azure DevOps — with its pipeline, pushed'],
-  ['new brs', 'the requirements document, from eight questions in your words, when you have none'],
+  ['new brs', 'the requirements document, from five plain questions, when you have none'],
 ], 'vibekit new <thing> --help  for more');
 
 export async function newVerb(options) {
@@ -79,7 +79,7 @@ function previewProject(options, name) {
   const { PLATFORMS } = optionsPlatforms();
   const rows = [
     ['Project name', name || '(asked)'],
-    ['What are you building?', 'a sentence or two · build a requirements document with me (eight questions) · the path to a document you have'],
+    ['What are you building?', 'a sentence or two · build a requirements document with me (five questions) · the path to a document you have'],
     ['Where does it run?', PLATFORMS.map((platform) => platform.label).join(' · ')],
     ['Where does it live?', 'this folder · a new folder in your projects folder'],
     ['Link it to a remote repository?', 'create one at your provider (GitHub, GitLab, Azure DevOps) and push · link one you already have · not now'],

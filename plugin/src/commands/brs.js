@@ -7,11 +7,11 @@ import { loadProject } from '../project.js';
 import { folderName } from './folder.js';
 
 /**
- * `vibekit new brs` — build the business requirements document from eight answers, write it to
+ * `vibekit new brs` — build the requirements document from five answers, write it to
  * docs/brs.md, and ingest it as the project's source of record. For the person who has no BRS.
  *
  *   vibekit new brs                                   asked, one question at a time
- *   vibekit new brs --answer users="staff, supervisor" --answer capabilities="staff: count a bin; …"
+ *   vibekit new brs --answer does="count a shelf; approve a difference" --answer never="…"
  *   vibekit new brs --from answers.json               the same keys, as a file
  *   --no-ingest                                       write the document only
  */
@@ -25,13 +25,13 @@ export async function newBrs(options) {
 
   const fromJson = options.from ? JSON.parse(await readFile(resolve(root, options.from), 'utf8')) : null;
   const answers = parseAnswers(options.answer ?? [], fromJson);
-  if (!answers.purpose && config.project.description) answers.purpose = config.project.description;
+  if (!answers.what && config.project.description) answers.what = config.project.description;
 
   const asker = options.asker ?? (options.yes || Object.keys(answers).length ? null : (await import('../menu.js')).createAsker());
   try {
     if (asker) {
       if (!json) {
-        console.log(`A requirements document for ${name}, in your words. Eight questions; Enter skips one, and the analyst asks about it later.`);
+        console.log(`A requirements document for ${name}, in your words. Five questions; Enter skips one, and the analyst asks about it later.`);
         console.log('');
       }
       for (const question of BRS_QUESTIONS) {

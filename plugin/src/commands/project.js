@@ -78,7 +78,7 @@ async function projectNew(options) {
     if (!describe && !options.from && asker) {
       const how = await asker.choose({ id: 'source', title: 'What are you building?', noOther: true, options: [
         { id: 'describe', label: 'a sentence or two — the analyst asks the rest' },
-        { id: 'brs', label: 'build a requirements document with me — eight questions, in your words' },
+        { id: 'brs', label: 'build a requirements document with me — five plain questions' },
         { id: 'file', label: 'I have a requirements document' },
       ] });
       if (how === 'brs') buildBrs = true;
