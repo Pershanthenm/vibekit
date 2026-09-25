@@ -97,6 +97,16 @@ const OPTIONS = {
   reason: { type: 'string' },
   plain: { type: 'string' },
   option: { type: 'string', multiple: true },
+  remote: { type: 'string' },
+  tools: { type: 'string' },
+  mode: { type: 'string' },
+  answer: { type: 'string', multiple: true },
+  'no-ingest': { type: 'boolean' },
+  suggest: { type: 'boolean' },
+  link: { type: 'string' },
+  public: { type: 'boolean' },
+  'no-push': { type: 'boolean' },
+  pipeline: { type: 'boolean' },
   about: { type: 'string' },
   by: { type: 'string' },
   stage: { type: 'string' },
@@ -249,7 +259,7 @@ Flags that appear on more than one command
   --at <tag>   show docs, show cost, run docs   as things were at that commit
   --dir <path> anything             act on this directory (default: here, or the project \`use project\` chose)
 
-A bare verb lists its nouns. Bare \`vibekit\` shows where you are. Every command works with no arguments and asks for what it needs.`;
+A bare verb lists its nouns. Bare \`vibekit\` with nothing here asks what you are building; inside a project it shows where you are. Every command works with no arguments and asks for what it needs.`;
 
 export async function run(argv) {
   const { values, positionals } = parseArgs({ args: argv, options: OPTIONS, allowPositionals: true });
@@ -259,11 +269,23 @@ export async function run(argv) {
   if (name === 'help') return console.log(HELP);
   // Bare `vibekit` is a question, not a mistake: answer it with where you are and what to do next.
   if (!name) {
+    // Init Spec: with nothing here, the first thing on screen is a question to you. With a project
+    // here, a pending question resumes; otherwise where you are, after a one-line note of any
+    // coding tool that appeared since last time.
+    const here = resolve(values.dir ?? '.');
+    const { initFlow, initPending } = await import('./init/flow.js');
+    const { folderIn } = await import('./projects.js');
+    if (!(await folderIn(here)) || (await initPending(here))) return initFlow({ ...values, root: here });
     const { root, redirected } = await resolveRoot({ dir: values.dir });
+    if (!redirected) await initFlow({ ...values, root }).catch(() => null);
     return console.log(await startScreen(root, { via: redirected }));
   }
-  // A typo used to print the help and exit 0, so a script could not tell it from success.
+  // A typo used to print the help and exit 0, so a script could not tell it from success — but
+  // prose, a document path, or a number while a question is pending is an answer, not a typo.
   if (!COMMANDS[name]) {
+    const here = resolve(values.dir ?? '.');
+    const { initFlow, looksLikeInitInput } = await import('./init/flow.js');
+    if (await looksLikeInitInput(here, positionals)) return initFlow({ ...values, root: here, text: positionals.join(' ') });
     console.error(unknownCommand(name, Object.keys(COMMANDS).filter((key) => !ALIASES[key])));
     process.exitCode = 1;
     return;

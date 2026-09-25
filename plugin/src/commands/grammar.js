@@ -31,6 +31,8 @@ export const newUsage = () => list([
   ['new feature', 'add one thing to a project already running'],
   ['new bug', 'log a defect — assess, fix, verify'],
   ['new hotfix', 'production is broken; skip the ceremony'],
+  ['new repo', 'the repository at your provider — GitHub, GitLab or Azure DevOps — with its pipeline, pushed'],
+  ['new brs', 'the requirements document, from five questions with answers to pick from, when you have none'],
 ], 'vibekit new <thing> --help  for more');
 
 export async function newVerb(options) {
@@ -45,6 +47,14 @@ export async function newVerb(options) {
     return project({ ...options, args: ['new'], name: options.name ?? (name || undefined) });
   }
   if (noun === 'sprint') return newSprint(options);
+  if (noun === 'brs') {
+    const { newBrs } = await import('./brs.js');
+    return newBrs(options);
+  }
+  if (noun === 'repo') {
+    const { newRepo } = await import('./repo.js');
+    return newRepo(options);
+  }
   if (noun === 'feature') {
     if (options.preview) return previewFeature(options, name);
     const { feature } = await import('./verbs.js');
@@ -69,9 +79,10 @@ function previewProject(options, name) {
   const { PLATFORMS } = optionsPlatforms();
   const rows = [
     ['Project name', name || '(asked)'],
-    ['Where does it live?', 'this folder · a new local folder · a repository on GitHub, Azure DevOps or GitLab'],
-    ['What are you building?', 'a sentence or two, or the path to a requirements document'],
+    ['What are you building?', 'a sentence or two · build a requirements document with me (five questions) · the path to a document you have'],
     ['Where does it run?', PLATFORMS.map((platform) => platform.label).join(' · ')],
+    ['Where does it live?', 'this folder · a new folder in your projects folder'],
+    ['Link it to a remote repository?', 'create one at your provider (GitHub, GitLab, Azure DevOps) and push · link one you already have · not now'],
     ['Then', 'the analyst\'s questions land in vibekit show status, ten a round; three approvals follow: architecture, design, plan'],
   ];
   if (options.json) return void console.log(JSON.stringify({ questions: rows.map(([question, answers]) => ({ question, answers })), writes: [] }, null, 2));
@@ -250,8 +261,10 @@ async function planProject(options, sprint) {
   const folder = options.folder ?? (await folderName(root));
   if (options.approve) {
     const { apply } = await import('../control.js');
-    if (!options.by) throw new Error('Approving the plan is a human decision: say who with --by "<name>".');
-    const result = await apply(root, null, { action: 'gate.approve', stage: 4, by: options.by });
+    const { personName } = await import('../prompts.js');
+    const by = await personName(options.by);
+    if (!by) throw new Error('Approving the plan is a human decision: say who with --by "<name>", or once with vibekit settings name "<name>".');
+    const result = await apply(root, null, { action: 'gate.approve', stage: 4, by });
     if (options.json) return void console.log(JSON.stringify(result, null, 2));
     console.log(`✔ ${result.message}`);
     console.log('  vibekit run    works the first sprint');

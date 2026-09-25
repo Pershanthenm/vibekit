@@ -9,6 +9,7 @@ import { holdAgeHours, listRequirements, readTasksState } from './folder/require
 import { sprintBoard } from './folder/sprints.js';
 import { currentStage, gateState } from './folder/workflow.js';
 import { exists, ownerOnly, readText, writeText } from './fsutil.js';
+import { readConfig } from './prompts.js';
 
 /**
  * Every project on this machine. Specification §67 (`vibekit project select`).
@@ -138,7 +139,16 @@ export async function summarise(entry, { holdTimeout = 4 } = {}) {
 
 /** Every registered project, summarised, most in need of a person first. */
 export async function listProjects({ needsMe = false, match = null } = {}) {
-  const entries = await readRegistry();
+  let entries = await readRegistry();
+  // Nothing registered yet, but setup said where the projects are: find them, once, instead of
+  // telling a person to run a rescan they have never heard of.
+  if (!entries.length) {
+    const home = (await readConfig())['projects-root'];
+    if (home && (await exists(home))) {
+      await rescan(home).catch(() => []);
+      entries = await readRegistry();
+    }
+  }
   const summaries = [];
   for (const entry of entries) {
     if (match && !String(entry.name).toLowerCase().includes(String(match).toLowerCase()) && entry.path !== resolve(match)) continue;

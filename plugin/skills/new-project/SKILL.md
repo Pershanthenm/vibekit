@@ -1,13 +1,29 @@
 ---
 name: new-project
-description: Start a project here. Name it, describe it, say where it runs; the analyst's questions follow.
-argument-hint: ["<name>"] [--import .]
+description: Start a project. Say what you are building; pick the answers that shape it; then the repository.
+argument-hint: ["<name>"]
 ---
 
-Start a VibeKit project: `$ARGUMENTS`. Choices go through the AskUserQuestion tool: list the options, the person picks one. Never make them type what you could have listed; free text is only for what nobody can list.
+Do not read or explore anything first. Choices go through the AskUserQuestion tool: list the options, the person picks one. Never make them type what you could have listed. The CLI does the asking; you relay its questions as pickers and pass back the number.
 
-1. **Where.** Look at the folder first. If it already holds code and the words do not say `--import`, ask: "Read the code that is here" (recommended), "Start a new spec beside it", or "A new folder". For `--import` or "read the code": `vibekit new project --import . --yes`, then skip to step 5.
-2. **Name.** Offer the folder name as the first option (recommended) and the words the user typed, if any, as the second. Other is free text.
-3. **Where it runs.** One multi-select question: Web browser, iOS, Android, Desktop, API only, Command line, Something else. Ids: web, ios, android, desktop, api, cli, other.
-4. **What it is.** Ask for a sentence or two, or the path to a requirements document; if the folder has a README or a docs/ file that describes the product, offer that file as the first option so the person does not have to type. Run `vibekit new project "<name>" --describe "<their words>" --platform <ids> --yes` (or `--from <file>`). If `vibekit` is not on PATH, say so and stop: the CLI is installed separately (`npm install -g vibekit`).
-5. Read back what it printed in plain words: what was written and the Next line. Then ask one question: "Answer the analyst's first questions now" (recommended, runs `/vibekit:run-sprint` then `/vibekit:answer`), "Show me the folder first", or "Stop here".
+**Screen 1**, one AskUserQuestion call, three questions:
+
+1. **What are you building?** Options: "I'll say it in a sentence" (Other: the sentence), "Build a requirements document with me" (recommended when they have nothing written; ask for one line anyway so the folder has a description), "I have a requirements document" (Other: the file path).
+2. **Project name.** Options: the current folder's name (recommended) and, if given, `$ARGUMENTS`. Other for their own.
+3. **Where does the folder go?** Options: "This folder" (recommended), "A new folder in my projects folder" (the `projects-root` from `/vibekit:setup`, or beside this folder if none is set; named after the project).
+
+Then start it. Run, in the current folder:
+
+```
+vibekit "<their sentence>" --name "<name>" --where here|local
+```
+
+or `vibekit --from "<path>" --name "<name>" --where here|local` for a document. Inside Claude Code the CLI is in agent mode: it sets up every coding tool it finds, reports that in a few lines, and prints **one question at a time** as Markdown, each with numbered options and "I don't know". If `vibekit` is not on PATH, say so and stop (`npm install -g vibekit`).
+
+**The shape questions.** For each question the CLI prints, ask it with AskUserQuestion: the question as the question, its consequence as the description, its options as the options, and "I don't know" as the last option. Pass the pick back as its number: `vibekit <number>` (run it in the project folder: `--dir` if the folder is not the current one). Other is their own words: `vibekit "<their words>"`. Do not answer for them, do not skip one, do not batch them: one question, one pick, one command, until the CLI says it has everything it needs.
+
+**If they chose "build a requirements document with me"**, now run the `/vibekit:new-brs` flow in the project folder.
+
+**The repository**, one question. Run `vibekit settings git-provider` first to know whether a provider is set. Ask: "Create one at <provider> and push" (recommended; only when a provider is set; `vibekit new repo`), "Link a repository I already have" (Other: the URL; `vibekit new repo --link <url>`, then say `git push -u origin main` pushes it), "Set up my provider first" (only when none is set; `/vibekit:setup`), "Not now" (`vibekit new repo` works any time).
+
+Finish in two sentences: what was written and where, the repository if there is one, and that the analyst continues from their answers. Offer: "Answer what's waiting" (`/vibekit:answer`), "Start the first work" (`/vibekit:run-sprint`), or "Stop here". Nothing else.

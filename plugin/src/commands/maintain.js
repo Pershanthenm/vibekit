@@ -194,7 +194,7 @@ export async function config(options) {
     console.log('Machine settings — per install, never in the folder.');
     console.log('');
     for (const [name, description] of Object.entries(CONFIG_KEYS)) {
-      console.log(`  ${name.padEnd(14)} ${current[name] ?? 'not set'}`);
+      console.log(`  ${name.padEnd(14)} ${current[name] === undefined ? 'not set' : name.endsWith('-token') ? 'set · hidden' : current[name]}`);
       console.log(`  ${''.padEnd(14)} ${description}`);
     }
     console.log('');
@@ -204,7 +204,7 @@ export async function config(options) {
 
   if (!value) {
     const current = await readConfig();
-    console.log(current[key] ?? `${key} is not set.`);
+    console.log(current[key] === undefined ? `${key} is not set.` : key.endsWith('-token') ? 'set · hidden' : current[key]);
     return;
   }
 

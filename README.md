@@ -93,11 +93,13 @@ VibeKit is an alpha built by one person. Parts of it are rough. The bet is that 
 
 ## The helpers
 
-Eighteen slash commands, one per CLI verb you would type yourself. Type `/vibekit:` in Claude Code and the list completes. Each one asks with a picker, not a prompt: where a project lives, which project to work on, which answer to an analyst's question, whether to approve a gate. You choose; you type only what nobody could have listed. They stop the agent when a person is needed, and they keep going after the code is written. The same verbs as the CLI, so Cursor, Codex and an MCP client are never on a different workflow.
+Twenty slash commands, one per CLI verb you would type yourself. Type `/vibekit:` in Claude Code and the list completes. Each one asks with a picker, not a prompt: where a project lives, which project to work on, which answer to an analyst's question, whether to approve a gate. You choose; you type only what nobody could have listed. They stop the agent when a person is needed, and they keep going after the code is written. The same verbs as the CLI, so Cursor, Codex and an MCP client are never on a different workflow.
 
 | Helper | What it does |
 |---|---|
-| `/vibekit:new-project` | Start here. Pick where it lives and where it runs; describe it once |
+| `/vibekit:setup` | Once, after install: where projects live, who you are, which provider and token |
+| `/vibekit:new-project` | Start here. Name, platforms, what it is; then the repository, created for you or linked |
+| `/vibekit:new-brs` | No requirements document? Five questions, answers to pick from, and the analyst starts from it |
 | `/vibekit:use-project` | Pick the project to work on from the ones on this machine |
 | `/vibekit:answer` | Everything waiting on you, one question at a time, by picking |
 | `/vibekit:show-status` | Where everything stands, in words, then what to do about it |
@@ -115,6 +117,16 @@ Eighteen slash commands, one per CLI verb you would type yourself. Type `/vibeki
 | `/vibekit:show-plan` | Sprints, pieces of work, pace, approval |
 | `/vibekit:show-why` | Why this line of code exists |
 | `/vibekit:analyze` | Explain a codebase back. Changes nothing. |
+
+## The first run
+
+In an empty folder, `vibekit` opens with one question: what are you building? Not a logo, not a menu, not a list of tools to pick from. Type a sentence or two, or drop a requirements document on it.
+
+It then works out which coding tools you have — Claude Code, Cursor, Codex, Gemini, Copilot, Windsurf, Cline, Zed, Aider, Amazon Q — and writes a pointer file for every one of them, plus `AGENTS.md` for the ones you have not installed yet. Setup is something it tells you about afterwards, in three lines, not something it asks you to configure. `--tools claude,cursor` restricts it; a tool that appears later gets one line, once, and no question.
+
+Then the questions that change the shape of the app, one per screen, with options where they exist and "I don't know" always among them. A don't-know is recorded as an assumption with a confidence and a blast radius, which is a better outcome than a silent guess.
+
+Inside Claude Code or any coding agent it never blocks: each run prints one question as Markdown and exits, and the next run carries the answer (`vibekit 2`, or `vibekit "in your own words"`). In CI or a pipe it prints one fact per line. `--mode agent|plain|full` forces a surface so you can see what an agent sees.
 
 ## Two commands a day
 
@@ -152,7 +164,7 @@ Eight verbs, each followed by what you want it to act on. Verb first, always. Th
 
 | Verb | Means | Takes |
 |---|---|---|
-| `new` | Start something that did not exist | `new project "Hello World"` · `new sprint` · `new feature "…"` · `new bug "…" --test <path>` · `new hotfix "…"` |
+| `new` | Start something that did not exist | `new project "Hello World"` · `new sprint` · `new feature "…"` · `new bug "…" --test <path>` · `new hotfix "…"` · `new repo` · `new brs` |
 | `use` | Switch what I am working on | `use project "Hello World 2"` · `use sprint 2` · `use` (pick from a list) |
 | `show` | Tell me something, change nothing | `show` · `show project` · `show plan` · `show sprint` · `show status` · `show cost` · `show security` · `show backlog` · `show docs` · `show why src/x.js:12` · `show team` · `show migration` · `show differences` — all take `--all` and `--json` |
 | `plan` | Decide the order of work | `plan project [--approve --by "<name>"]` · `plan sprint [--order …] [--defer …]` |
@@ -221,7 +233,7 @@ Then, in a project: `vibekit new project`. On a repo you already have: `vibekit 
 
 ### Claude Code
 
-The plugin adds the slash commands (`/vibekit:new-project`, `/vibekit:use-project`, `/vibekit:answer`, `/vibekit:show-status`, `/vibekit:run-sprint`, `/vibekit:clarify`, `/vibekit:plan-project`, `/vibekit:plan-sprint`, `/vibekit:new-sprint`, `/vibekit:build`, `/vibekit:run-check`, `/vibekit:run-review`, `/vibekit:new-feature`, `/vibekit:new-bug`, `/vibekit:new-hotfix`, `/vibekit:show-plan`, `/vibekit:show-why`, `/vibekit:analyze`) and hooks. The CLI still has to be on PATH.
+The plugin adds the slash commands (`/vibekit:setup`, `/vibekit:new-project`, `/vibekit:new-brs`, `/vibekit:use-project`, `/vibekit:answer`, `/vibekit:show-status`, `/vibekit:run-sprint`, `/vibekit:clarify`, `/vibekit:plan-project`, `/vibekit:plan-sprint`, `/vibekit:new-sprint`, `/vibekit:build`, `/vibekit:run-check`, `/vibekit:run-review`, `/vibekit:new-feature`, `/vibekit:new-bug`, `/vibekit:new-hotfix`, `/vibekit:show-plan`, `/vibekit:show-why`, `/vibekit:analyze`) and hooks. The CLI still has to be on PATH.
 
 ```text
 /plugin marketplace add Pershanthenm/vibekit
@@ -229,7 +241,7 @@ The plugin adds the slash commands (`/vibekit:new-project`, `/vibekit:use-projec
 /reload-plugins
 ```
 
-Later, `/plugin update vibekit` pulls a new release; `/reload-plugins` alone re-reads what is already installed.
+Then `/vibekit:setup` once: it records where your projects live, your name for approvals, and your GitHub, GitLab or Azure DevOps organisation and token, so no helper asks again. From then on `vibekit new repo` (or `new project --where remote`) creates the repository at the provider, writes the pipeline in that provider's dialect, pushes, and on Azure DevOps registers the pipeline; branch policies, permissions and secrets stay at the provider. Later, `/plugin update vibekit` pulls a new release; `/reload-plugins` alone re-reads what is already installed.
 
 Then `cd your-project && vibekit new project`.
 

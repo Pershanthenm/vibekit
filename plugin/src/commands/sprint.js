@@ -278,7 +278,9 @@ async function close(root, folder, rest, options) {
     return;
   }
 
-  if (!options.by) {
+  const { personName } = await import('../prompts.js');
+  const by = await personName(options.by);
+  if (!by) {
     if (options.json) return void console.log(JSON.stringify({ n, ok: true, rows, produced, closed: false, why: 'a human closes the sprint: --by "<name>"' }, null, 2));
     console.log(`Sprint ${n} finished.`);
     for (const row of [...rows, ...produced]) console.log(`  ✔ ${row.what.padEnd(40)} ${row.why ?? row.detail ?? ''}`);
@@ -287,7 +289,7 @@ async function close(root, folder, rest, options) {
     return;
   }
 
-  const closed = await closeSprint(root, n, { by: options.by, folder, tag: options['no-tag'] ? false : options.tag !== false });
+  const closed = await closeSprint(root, n, { by, folder, tag: options['no-tag'] ? false : options.tag !== false });
   // A closed sprint cannot be the working sprint; the choice falls back to what the plan says.
   const { workingSprint: chosenSprint, setWorkingSprint } = await import('../current.js');
   if ((await chosenSprint(root)) === n) await setWorkingSprint(root, null).catch(() => {});

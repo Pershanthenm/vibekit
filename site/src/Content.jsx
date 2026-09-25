@@ -12,7 +12,9 @@ const IDEAS = [
 ];
 
 const HELPERS = [
-  ["/vibekit:new-project", "Start here. Pick where it lives and where it runs; describe it once"],
+  ["/vibekit:setup", "Once, after install: where projects live, who you are, which provider and token"],
+  ["/vibekit:new-project", "Start here. Name, platforms, what it is; then the repository, created for you or linked"],
+  ["/vibekit:new-brs", "No requirements document? Five questions, answers to pick from"],
   ["/vibekit:use-project", "Pick the project to work on from the ones on this machine"],
   ["/vibekit:answer", "Everything waiting on you, one question at a time, by picking"],
   ["/vibekit:show-status", "Where everything stands, in words, then what to do about it"],
@@ -39,6 +41,8 @@ const COMMANDS = [
     ["new feature \"…\"", "One feature, mid-project, sized and slotted"],
     ["new bug \"…\" --test <path>", "A bug is a requirement with its failing test"],
     ["new hotfix \"…\"", "Production is broken; skip the ceremony"],
+    ["new repo", "The repository at GitHub, GitLab or Azure DevOps, its pipeline file, the first push"],
+    ["new brs", "The requirements document, from five questions with answers to pick from, when you have none"],
   ]],
   ["use · switch what I am working on", [
     ["use project \"Hello World 2\"", "Everything after applies there, until you switch again"],
@@ -130,7 +134,7 @@ export default function Content() {
       <section className="block" id="helpers">
         <p className="kicker">03 · Helpers</p>
         <h2>The helpers</h2>
-        <p className="prose">Eighteen slash commands in Claude Code, one per CLI verb: type <code>/vibekit:</code> and the list completes. Each asks with a picker, so you choose rather than type. They are a thin layer over the CLI, so Cursor, Codex and an MCP client stay on the same workflow.</p>
+        <p className="prose">Twenty slash commands in Claude Code, one per CLI verb: type <code>/vibekit:</code> and the list completes. Each asks with a picker, so you choose rather than type. They are a thin layer over the CLI, so Cursor, Codex and an MCP client stay on the same workflow.</p>
         <div className="helpers">
           {HELPERS.map(([name, desc]) => (
             <div className="helper" key={name}><b>{name}</b><span>{desc}</span></div>

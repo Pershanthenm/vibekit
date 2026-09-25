@@ -34,7 +34,9 @@ In Claude Code:
 /reload-plugins
 ```
 
-The plugin adds the slash commands (`/vibekit:new-project`, `/vibekit:use-project`, `/vibekit:answer`, `/vibekit:show-status`, `/vibekit:run-sprint`, `/vibekit:clarify`, `/vibekit:plan-project`, `/vibekit:plan-sprint`, `/vibekit:new-sprint`, `/vibekit:build`, `/vibekit:run-check`, `/vibekit:run-review`, `/vibekit:new-feature`, `/vibekit:new-bug`, `/vibekit:new-hotfix`, `/vibekit:show-plan`, `/vibekit:show-why`, `/vibekit:analyze`; type `/vibekit:` and Claude Code completes the list, and each one asks with a picker rather than making you type) and three hooks: at session start it hands the agent the load order and `status.md`; before a write it refuses generated files, denied paths and other agents' requirements; at the end of a turn it runs `vibekit check`.
+Then `/vibekit:setup` once. It asks where your projects live, your name for approvals, your git provider (GitHub, GitLab or Azure DevOps), its organisation URL and a token, and writes them to machine settings so no helper asks again. With those set, `vibekit new repo` creates the repository at the provider, writes its pipeline file and pushes; `vibekit new repo --check` says whose token it is.
+
+The plugin adds the slash commands (`/vibekit:setup`, `/vibekit:new-project`, `/vibekit:new-brs`, `/vibekit:use-project`, `/vibekit:answer`, `/vibekit:show-status`, `/vibekit:run-sprint`, `/vibekit:clarify`, `/vibekit:plan-project`, `/vibekit:plan-sprint`, `/vibekit:new-sprint`, `/vibekit:build`, `/vibekit:run-check`, `/vibekit:run-review`, `/vibekit:new-feature`, `/vibekit:new-bug`, `/vibekit:new-hotfix`, `/vibekit:show-plan`, `/vibekit:show-why`, `/vibekit:analyze`; type `/vibekit:` and Claude Code completes the list, and each one asks with a picker rather than making you type) and three hooks: at session start it hands the agent the load order and `status.md`; before a write it refuses generated files, denied paths and other agents' requirements; at the end of a turn it runs `vibekit check`.
 
 Cursor, Codex and the rest need nothing extra as a plugin: `vibekit new project` writes the pointer files (`.cursorrules`, `AGENTS.md`, `CLAUDE.md`) they read. Attach `vibekit serve --stdio` as an MCP server when you want the runner to enforce what they may read, write and run. For Cursor and the Cursor CLI, that is `~/.cursor/mcp.json`:
 
@@ -53,8 +55,10 @@ Cursor, Codex and the rest need nothing extra as a plugin: `vibekit new project`
 
 ```bash
 mkdir ~/projects/my-app && cd ~/projects/my-app
-vibekit new project
+vibekit
 ```
+
+It opens with one question — what are you building? — sets up every coding tool it finds on the machine (and `AGENTS.md` for the rest), and asks the six questions that change the shape of the app, one per screen. `vibekit new project` is the same thing with the name, folder and repository questions first.
 
 Or, on a repository you already have: `vibekit new project --import .`.
 
