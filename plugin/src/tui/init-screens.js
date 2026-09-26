@@ -17,7 +17,7 @@ export const OPENING = Object.freeze({
 const s = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 /** §2. The first screen: one question, a gutter, nothing about VibeKit. */
-export function openingScreen({ surface, palette: c, existingFiles = 0, resume = false }) {
+export function openingScreen({ surface, palette: c, existingFiles = 0, resume = false, because = null }) {
   const existing = existingFiles ? `${s(existingFiles, 'file')} here already — I'll read them before I ask anything.` : null;
   if (surface === 'agent') {
     return [
@@ -27,6 +27,7 @@ export function openingScreen({ surface, palette: c, existingFiles = 0, resume =
       `**${OPENING.question}** ${OPENING.hint}`,
       '',
       `Reply, and I run: \`vibekit "<your answer>"\`${resume ? '' : ' (or `vibekit --from <file>` for a document)'}.`,
+      ...(because ? ['', `_Agent mode, because ${because} is set in this shell. On your own terminal, \`vibekit --mode full\` gives the screens._`] : []),
     ].join('\n');
   }
   if (surface === 'plain') {

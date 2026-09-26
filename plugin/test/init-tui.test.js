@@ -44,6 +44,8 @@ test('surface detection: not a TTY is plain; an agent env is agent; TERM=dumb an
   assert.equal(detectSurface({ env: { CLAUDECODE: '1' }, isTTY: false }), 'agent', 'an agent\'s shell is not a TTY, and is still an agent');
   assert.equal(detectSurface({ env: { CLAUDECODE: '1' }, isTTY: true }), 'agent');
   assert.equal(detectSurface({ env: { CURSOR_AGENT: '1' }, isTTY: true }), 'agent');
+  assert.equal(detectSurface({ env: { AGENT: 'ssh' }, isTTY: true }), 'full', 'AGENT alone on a real terminal is somebody else\'s variable');
+  assert.equal(detectSurface({ env: { AGENT: '1' }, isTTY: false }), 'agent');
   assert.equal(detectSurface({ env: { TERM: 'dumb' }, isTTY: true }), 'plain');
   assert.equal(detectSurface({ env: { CI: 'true' }, isTTY: true }), 'plain');
   assert.equal(detectSurface({ env: {}, isTTY: true }), 'full');
@@ -65,6 +67,7 @@ test('the opening screen is a question, with no wordmark, no menu and no box; ag
   const agent = openingScreen({ surface: 'agent', palette: palette({ env: {}, surface: 'agent' }) });
   assert.match(agent, /^Before I build anything, I need to understand what you want\.\n\n\*\*What are you building\?\*\*/);
   assert.doesNotMatch(agent, /\x1b/, 'no escape codes for a model to relay');
+  assert.match(openingScreen({ surface: 'agent', palette: palette({ env: {}, surface: 'agent' }), because: 'CLAUDECODE' }), /Agent mode, because CLAUDECODE is set in this shell\. On your own terminal, `vibekit --mode full` gives the screens\./);
   const withCode = openingScreen({ surface: 'full', palette: c, existingFiles: 19 });
   assert.match(withCode, /19 files here already — I'll read them before I ask anything\./);
   assert.match(openingScreen({ surface: 'plain', palette: c, existingFiles: 3 }), /^existing 3 files\nquestion What are you building\?/);

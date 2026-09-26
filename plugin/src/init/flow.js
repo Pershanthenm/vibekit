@@ -5,7 +5,7 @@ import { generateFolder } from '../folder/generate.js';
 import { exists, readText, writeText } from '../fsutil.js';
 import { folderIn } from '../projects.js';
 import { loadProject, saveProject } from '../project.js';
-import { detectSurface, palette as makePalette } from '../tui/surface.js';
+import { agentMarker, detectSurface, palette as makePalette } from '../tui/surface.js';
 import { DONT_KNOW, doneScreen, errorScreen, noticedLine, openingScreen, plainFacts, questionScreen, setupReport } from '../tui/init-screens.js';
 import { assumptionFor, selectQuestions, SHAPE_QUESTIONS } from './questions.js';
 import { detectTools, parseToolsFlag, writeToolFiles } from './tools.js';
@@ -77,7 +77,8 @@ export async function initFlow(options) {
     let text = options.text ?? options.describe ?? null;
     let from = options.from ?? null;
     if (!text && !from) {
-      out(openingScreen({ surface, palette: c, existingFiles }));
+      const isTTY = options.isTTY ?? Boolean(process.stdout.isTTY);
+      out(openingScreen({ surface, palette: c, existingFiles, because: surface === 'agent' && isTTY && !options.mode ? agentMarker(env, isTTY) : null }));
       if (surface !== 'full') return { asked: 'description' };
       const { readDescription } = await import('../tui/input.js');
       text = await readDescription({ palette: c });
