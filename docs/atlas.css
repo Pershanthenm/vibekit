@@ -23,17 +23,17 @@
    To rebrand: change the primitives in :root (brand-*), never the components.
    --------------------------------------------------------------------- */
 :root{
-  /* Brand primitives (swap these to recolour; red example in DESIGN-SYSTEM.md) */
-  --brand-500:#cdf34a;
-  --brand-300:#e6fa9c;
-  --brand-100:#f3fdd0;
-  --brand-ink:#1c1b2e;
-  --brand-glow-a:#f0b429;
-  --brand-glow-b:#cdf34a;
+  /* Brand primitives — same paper as the Pages site: white field, black ink, one teal gutter. */
+  --brand-500:#000000;
+  --brand-300:#333333;
+  --brand-100:#f4f4f4;
+  --brand-ink:#ffffff;
+  --brand-glow-a:#5fafaf;
+  --brand-glow-b:#000000;
 
   /* Neutral primitives */
-  --n-0:#ffffff;  --n-50:#fafafb; --n-100:#f3f3f5; --n-200:#e6e6ea; --n-300:#c7c7cf;
-  --n-500:#6b6b7a; --n-700:#3a3950; --n-800:#26253a; --n-900:#1c1b2e; --n-950:#111120;
+  --n-0:#ffffff;  --n-50:#fafafa; --n-100:#ffffff; --n-200:#e8e8e8; --n-300:#c8c8c8;
+  --n-500:#737373; --n-700:#404040; --n-800:#1a1a1a; --n-900:#111111; --n-950:#000000;
 
   /* Status primitives */
   --green-100:#eaf7c8; --green-700:#3f6a00;
@@ -77,8 +77,8 @@
   --chart-line-b:var(--brand-glow-b);
 
   /* Typography */
-  --font-sans:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --font-mono:ui-monospace,"SF Mono",Menlo,monospace;
+  --font-sans:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
   --text-xs:11px; --text-sm:12px; --text-md:13px; --text-base:14px; --text-lg:16px;
   --text-xl:18px; --text-2xl:22px; --text-3xl:28px; --text-4xl:40px;
   --leading-tight:1.15; --leading-normal:1.5;
@@ -109,12 +109,12 @@
   color-scheme:light;
 }
 [data-theme="dark"]{
-  --bg:#0f0f1c; --surface:#1c1b2e; --surface-2:#26253a; --surface-hover:#222138; --surface-inverse:#15142a;
-  --border:#2f2e45; --border-strong:#454461;
-  --fg:#f4f4f8; --fg-muted:#9a9aad; --fg-faint:#4a4960;
-  --accent-tint:#2b3318; --accent-soft:#5c6e1e;
-  --ok-bg:#2b3318; --ok-fg:#cdf34a; --warn-bg:#3a2e12; --warn-fg:#ffcf6b; --danger-bg:#3d1b18; --danger-fg:#ff8a80; --info-bg:#172a45; --info-fg:#8ec1ff;
-  --chart-2:#4a4960;
+  --bg:#000000; --surface:#111111; --surface-2:#1a1a1a; --surface-hover:#222222; --surface-inverse:#0a0a0a;
+  --border:#2a2a2a; --border-strong:#3d3d3d;
+  --fg:#f4f4f4; --fg-muted:#8a8a8a; --fg-faint:#3d3d3d;
+  --accent:#ffffff; --accent-fg:#000000; --accent-tint:#1a1a1a; --accent-soft:#2a2a2a;
+  --ok-bg:#142014; --ok-fg:#c8e6c8; --warn-bg:#2a220e; --warn-fg:#e6c86b; --danger-bg:#2a1210; --danger-fg:#ff8a80; --info-bg:#12181f; --info-fg:#9ec1e6;
+  --chart-2:#3d3d3d;
   --shadow-sm:0 1px 2px rgba(0,0,0,.4); --shadow-md:0 6px 18px rgba(0,0,0,.4); --shadow-lg:0 16px 40px rgba(0,0,0,.6);
   color-scheme:dark;
 }
@@ -307,7 +307,7 @@ select.input{appearance:none;background-image:linear-gradient(45deg,transparent 
 .delta .ic{width:11px;height:11px}
 
 /* Avatar */
-.avatar{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-weight:700;font-size:var(--text-md);color:var(--brand-ink);background:linear-gradient(135deg,var(--accent),#5fd3ff);flex:none;overflow:hidden}
+.avatar{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-weight:600;font-size:var(--text-md);color:var(--accent-fg);background:var(--accent);flex:none;overflow:hidden}
 .avatar.sm{width:28px;height:28px;border-radius:9px;font-size:var(--text-xs)}
 .avatar.lg{width:48px;height:48px;border-radius:14px;font-size:var(--text-lg)}
 .avatar img{width:100%;height:100%;object-fit:cover}
