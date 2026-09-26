@@ -1,3 +1,4 @@
+import TuiDemo from "./TuiDemo.jsx";
 import "./Content.css";
 
 const ALPHA = "https://github.com/Pershanthenm/vibekit/releases/tag/v0.1.0-alpha";
@@ -86,9 +87,9 @@ export default function Content() {
     <main className="page">
       <section className="block" id="intro">
         <ol className="ledger">
-          <li><b>01</b><span>Watch it</span><em>From your phone</em></li>
-          <li><b>02</b><span>Several agents</span><em>No collisions</em></li>
-          <li><b>03</b><span>Cheap models</span><em>Where they work</em></li>
+          <li><b>01</b><span>First run</span><em>One question</em></li>
+          <li><b>02</b><span>Watch it</span><em>From your phone</em></li>
+          <li><b>03</b><span>Several agents</span><em>No collisions</em></li>
           <li><b>04</b><span>After it ships</span><em>Still the chain</em></li>
         </ol>
       </section>
@@ -116,8 +117,16 @@ export default function Content() {
         </div>
       </section>
 
+      <section className="block" id="first-run">
+        <p className="kicker">02 · First run</p>
+        <h2>The first run is a question, not a menu.</h2>
+        <p className="prose">In an empty folder, <code>vibekit</code> does not show a logo or a list of tools. It asks what you are building. Type a sentence, or drop a requirements document. Setup is reported afterwards, in three lines. Then the questions that change the shape of the app, one screen at a time. &ldquo;I don&apos;t know&rdquo; is always there, and it is recorded as an assumption with a blast radius — not a silent guess.</p>
+        <TuiDemo />
+        <p className="prose">Inside Claude Code it never blocks: one question as Markdown, then exit. The next run carries the answer (<code>vibekit 2</code>, or <code>vibekit &quot;in your words&quot;</code>). A pipe or CI gets one fact per line. <code>--mode agent|plain|full</code> forces the surface so you can see what an agent sees.</p>
+      </section>
+
       <section className="block" id="coverage">
-        <p className="kicker">02 · What it does</p>
+        <p className="kicker">03 · What it does</p>
         <h2>A loop that stays after the first version.</h2>
         <p className="prose">VibeKit is the folder agents have to read, the ask they have to write, and the gate only you can close. The first version is the start of the project, not the end of the tool.</p>
         <div className="cards">
@@ -132,7 +141,7 @@ export default function Content() {
       </section>
 
       <section className="block" id="helpers">
-        <p className="kicker">03 · Helpers</p>
+        <p className="kicker">04 · Helpers</p>
         <h2>The helpers</h2>
         <p className="prose">Twenty slash commands in Claude Code, one per CLI verb: type <code>/vibekit:</code> and the list completes. Each asks with a picker, so you choose rather than type. They are a thin layer over the CLI, so Cursor, Codex and an MCP client stay on the same workflow.</p>
         <div className="helpers">
@@ -143,7 +152,7 @@ export default function Content() {
       </section>
 
       <section className="block" id="commands">
-        <p className="kicker">04 · Commands</p>
+        <p className="kicker">05 · Commands</p>
         <h2>The command surface</h2>
         <p className="prose">Grouped the way <code>vibekit --help</code> prints it. A working day is still <code>vibekit show status</code>, then <code>vibekit run</code>.</p>
         <pre>{`vibekit show status     # what needs you, most blocking first
@@ -162,33 +171,33 @@ vibekit tracker stock   # QR code; approve gates from your phone`}</pre>
       </section>
 
       <section className="block" id="tracker">
-        <p className="kicker">05 · Tracker</p>
+        <p className="kicker">06 · Tracker</p>
         <h2>Watch it work. From anywhere.</h2>
         <p className="prose">Agents run for hours. You shouldn't have to sit there. <code>vibekit tracker</code> puts a live board behind a link. Scan the QR code and it's on your phone.</p>
         <p className="prose">“Creating a list”, not <code>REQ-007 step 4/5</code>. You can act from it: answer the question, approve a gate, reorder the sprint. Every tap is a commit with your name on it.</p>
       </section>
 
       <section className="block" id="lanes">
-        <p className="kicker">06 · Lanes</p>
+        <p className="kicker">07 · Lanes</p>
         <h2>Several agents. No collisions.</h2>
         <p className="prose">One agent at a time is a waiting game. <code>vibekit run</code> works several pieces at once, across whatever tools you've got. Two lanes is the default. Four is about the limit.</p>
       </section>
 
       <section className="block" id="cost">
-        <p className="kicker">07 · Cost</p>
+        <p className="kicker">08 · Cost</p>
         <h2>Stop paying premium rates for scaffolding</h2>
         <p className="prose">Your best model doesn't need to write test fixtures. VibeKit sends each piece to the cheapest thing that does it well. Reviews are never cheaper than the work they check. Seats you already pay for go first.</p>
       </section>
 
       <section className="block" id="honest">
-        <p className="kicker">08 · Honest</p>
+        <p className="kicker">09 · Honest</p>
         <h2>The honest version</h2>
         <p className="prose">VibeKit is an alpha built by one person. Parts of it are rough. The bet is that a year from now you can still say why a line is there, what it cost, and who closed the gate.</p>
         <p className="prose strong">That is the product. Not a first-pass spec. The chain that survives the morning after.</p>
       </section>
 
       <section className="block" id="install">
-        <p className="kicker">09 · Install</p>
+        <p className="kicker">10 · Install</p>
         <h2>Install</h2>
         <p className="prose">Node.js 20+ and Git. The CLI is the same on every tool. Claude Code also gets a plugin; Cursor, Codex and the rest read the pointer files <code>vibekit new project</code> writes.</p>
         <pre>{`npm install -g https://github.com/Pershanthenm/vibekit/releases/download/v0.1.0-alpha/vibekit-0.1.0-alpha.tgz

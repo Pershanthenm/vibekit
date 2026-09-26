@@ -47,13 +47,12 @@ const MARKUP = `<svg viewBox="420 240 840 400" preserveAspectRatio="xMidYMid mee
           <rect x="826" y="294" width="276" height="166" fill="#07080b"/>
           <rect x="826" y="294" width="276" height="16" fill="#0d0f13"/>
           <circle cx="838" cy="302" r="3" fill="#2f333b"/><circle cx="850" cy="302" r="3" fill="#2f333b"/><circle cx="862" cy="302" r="3" fill="#2f333b"/>
-          <text x="836" y="330" class="t t1" opacity="0">$ vibekit run<set attributeName="opacity" to="0" begin="walk.begin; walk.repeatEvent"/><set attributeName="opacity" to="1" begin="walk.begin+7.3s; walk.repeatEvent+7.3s"/></text>
-          <text x="836" y="350" class="t t2" opacity="0">Sprint 3 · 5 items ready · 2 lanes<set attributeName="opacity" to="0" begin="walk.begin; walk.repeatEvent"/><set attributeName="opacity" to="1" begin="walk.begin+7.8s; walk.repeatEvent+7.8s"/></text>
-          <rect x="836" y="360" width="0" height="8" rx="2" fill="#4ade9d"><set attributeName="width" to="0" begin="walk.begin; walk.repeatEvent"/><animate attributeName="width" from="0" to="190" dur="2.4s" begin="walk.begin+8.3s; walk.repeatEvent+8.3s" fill="freeze" calcMode="spline" keySplines="0.2 0 0.2 1"/></rect>
-          <text x="836" y="382" class="t" opacity="0">Creating a list<set attributeName="opacity" to="0" begin="walk.begin; walk.repeatEvent"/><set attributeName="opacity" to="1" begin="walk.begin+8.3s; walk.repeatEvent+8.3s"/></text>
-          <rect x="836" y="392" width="0" height="8" rx="2" fill="#4ade9d"><set attributeName="width" to="0" begin="walk.begin; walk.repeatEvent"/><animate attributeName="width" from="0" to="150" dur="2.8s" begin="walk.begin+9.0s; walk.repeatEvent+9.0s" fill="freeze" calcMode="spline" keySplines="0.2 0 0.2 1"/></rect>
-          <text x="836" y="414" class="t" opacity="0">Marking a task done<set attributeName="opacity" to="0" begin="walk.begin; walk.repeatEvent"/><set attributeName="opacity" to="1" begin="walk.begin+9.0s; walk.repeatEvent+9.0s"/></text>
-          <text x="836" y="440" class="t t2" opacity="0">2 of 5 done · R 88 spent<set attributeName="opacity" to="0" begin="walk.begin; walk.repeatEvent"/><set attributeName="opacity" to="1" begin="walk.begin+11.2s; walk.repeatEvent+11.2s"/></text>
+          <text x="836" y="328" class="t t2" opacity="0">Before I build anything…<set attributeName="opacity" to="0" begin="walk.begin; walk.repeatEvent"/><set attributeName="opacity" to="1" begin="walk.begin+7.3s; walk.repeatEvent+7.3s"/></text>
+          <text x="836" y="348" class="t t1" opacity="0">What are you building?<set attributeName="opacity" to="0" begin="walk.begin; walk.repeatEvent"/><set attributeName="opacity" to="1" begin="walk.begin+7.8s; walk.repeatEvent+7.8s"/></text>
+          <text x="836" y="370" class="t t-teal" opacity="0">▏ A shared list for a team<set attributeName="opacity" to="0" begin="walk.begin; walk.repeatEvent"/><set attributeName="opacity" to="1" begin="walk.begin+8.5s; walk.repeatEvent+8.5s"/></text>
+          <text x="836" y="396" class="t t1" opacity="0">Where will people use it?<set attributeName="opacity" to="0" begin="walk.begin; walk.repeatEvent"/><set attributeName="opacity" to="1" begin="walk.begin+10.0s; walk.repeatEvent+10.0s"/></text>
+          <text x="836" y="416" class="t t-teal" opacity="0">▸ 1  In a web browser<set attributeName="opacity" to="0" begin="walk.begin; walk.repeatEvent"/><set attributeName="opacity" to="1" begin="walk.begin+10.5s; walk.repeatEvent+10.5s"/></text>
+          <text x="836" y="436" class="t t2" opacity="0">  2  On their phones<set attributeName="opacity" to="0" begin="walk.begin; walk.repeatEvent"/><set attributeName="opacity" to="1" begin="walk.begin+10.5s; walk.repeatEvent+10.5s"/></text>
         </g>
       </g>
     </g>

@@ -9,9 +9,9 @@ const ALPHA = "https://github.com/Pershanthenm/vibekit/releases/tag/v0.1.0-alpha
 
 const LINKS = [
   { href: "#install", label: "Get Started" },
+  { href: "#first-run", label: "First run" },
   { href: "#commands", label: "Developers" },
   { href: "#coverage", label: "Features" },
-  { href: "#helpers", label: "Resources" },
 ];
 
 function LogoMark() {
@@ -167,8 +167,8 @@ export default function Hero() {
             <a className="btn solid" href={ALPHA}>
               Get the alpha
             </a>
-            <a className="btn ghost" href="#coverage" onClick={(event) => jump(event, "#coverage")}>
-              See how it works
+            <a className="btn ghost" href="#first-run" onClick={(event) => jump(event, "#first-run")}>
+              See the first run
             </a>
           </motion.div>
         </div>
