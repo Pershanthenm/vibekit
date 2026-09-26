@@ -135,7 +135,7 @@ export function brsBody(name, answers, { date = new Date().toISOString().slice(0
   return [
     `# ${name} — Requirements`,
     '',
-    `Written with \`vibekit new brs\` on ${date}, from your answers. Edit it freely; \`vibekit ingest docs/brs.md\` re-reads it, and a requirement cites a section by its number.`,
+    `Written with \`vibekit new spec\` on ${date}, from your answers. Edit it freely; \`vibekit ingest docs/spec.md\` re-reads it, and a requirement cites a section by its number.`,
     '',
     '## 1. What it is', '',
     sentence(get('what')[0] ?? `${name} is to be built`),

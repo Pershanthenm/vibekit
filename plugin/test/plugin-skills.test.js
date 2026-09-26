@@ -41,7 +41,7 @@ test('every skill directory holds one SKILL.md whose name is the directory, with
 
 test('one skill per verb a person types on a normal day', async () => {
   const dirs = await skillDirs();
-  for (const name of ['setup', 'new-brs', 'use-project', 'answer', 'new-project', 'new-sprint', 'new-feature', 'new-bug', 'new-hotfix', 'plan-project', 'plan-sprint', 'run-sprint', 'run-check', 'run-review', 'show-status', 'show-plan', 'show-why', 'clarify', 'build', 'analyze']) {
+  for (const name of ['setup', 'new-spec', 'use-project', 'answer', 'new-project', 'new-sprint', 'new-feature', 'new-bug', 'new-hotfix', 'plan-project', 'plan-sprint', 'run-sprint', 'run-check', 'run-review', 'show-status', 'show-plan', 'show-why', 'clarify', 'build', 'analyze']) {
     assert.ok(dirs.includes(name), `/vibekit:${name}`);
   }
 });

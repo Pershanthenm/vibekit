@@ -22,7 +22,7 @@ or `vibekit --from "<path>" --name "<name>" --where here|local` for a document. 
 
 **The shape questions.** For each question the CLI prints, ask it with AskUserQuestion: the question as the question, its consequence as the description, its options as the options, and "I don't know" as the last option. Pass the pick back as its number: `vibekit <number>` (run it in the project folder: `--dir` if the folder is not the current one). Other is their own words: `vibekit "<their words>"`. Do not answer for them, do not skip one, do not batch them: one question, one pick, one command, until the CLI says it has everything it needs.
 
-**If they chose "build a requirements document with me"**, now run the `/vibekit:new-brs` flow in the project folder.
+**If they chose "build a requirements document with me"**, now run the `/vibekit:new-spec` flow in the project folder.
 
 **The repository**, one question. Run `vibekit settings git-provider` first to know whether a provider is set. Ask: "Create one at <provider> and push" (recommended; only when a provider is set; `vibekit new repo`), "Link a repository I already have" (Other: the URL; `vibekit new repo --link <url>`, then say `git push -u origin main` pushes it), "Set up my provider first" (only when none is set; `/vibekit:setup`), "Not now" (`vibekit new repo` works any time).
 

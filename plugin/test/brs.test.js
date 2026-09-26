@@ -8,7 +8,7 @@ import { extractStatements, splitSections } from '../src/sources.js';
 import { isolateHome, restoreEnv, tempDir } from './helpers.js';
 
 /**
- * `vibekit new brs`: eight answers in a person's words become a document the parser reads as
+ * `vibekit new spec`: eight answers in a person's words become a document the parser reads as
  * numbered sections and obligations, ingested as BRS-001, with what is still thin named.
  */
 
@@ -67,7 +67,7 @@ test('answers come from flags or a file; unknown keys are refused; lists split o
   assert.deepEqual(splitAnswer(BRS_QUESTIONS.find((question) => question.key === 'what'), 'one; two'), ['one; two']);
 });
 
-test('vibekit new brs writes docs/brs.md, ingests it as BRS-001 and becomes the source the analyst reads', async () => {
+test('vibekit new spec writes docs/spec.md, ingests it as BRS-001 and becomes the source the analyst reads', async () => {
   const original = { ...process.env };
   isolateHome();
   process.env.VIBEKIT_HOME = tempDir('vibekit-home-');
@@ -75,9 +75,9 @@ test('vibekit new brs writes docs/brs.md, ingests it as BRS-001 and becomes the 
     const root = tempDir('vibekit-brs-');
     await capture(() => run(['new', 'project', 'Stock Take', '--yes', '--describe', 'Staff count stock on a phone.', '--platform', 'web', '--dir', root]));
     const flags = Object.entries(ANSWERS).filter(([key]) => key !== 'what').flatMap(([key, value]) => ['--answer', `${key}=${value}`]);
-    const out = await capture(() => run(['new', 'brs', ...flags, '--dir', root]));
-    assert.match(out, /docs\/brs\.md · 5 sections · \d+ requirement statement\(s\) · ingested as BRS-001/);
-    const doc = await readFile(join(root, 'docs/brs.md'), 'utf8');
+    const out = await capture(() => run(['new', 'spec', ...flags, '--dir', root]));
+    assert.match(out, /docs\/spec\.md · 5 sections · \d+ requirement statement\(s\) · ingested as BRS-001/);
+    const doc = await readFile(join(root, 'docs/spec.md'), 'utf8');
     assert.match(doc, /^## 1\. What it is\n\nStaff count stock on a phone\./m, 'the project description answers the first question when none was given');
     assert.match(await readFile(join(root, 'vibekit/product/sources/index.md'), 'utf8'), /BRS-001/);
     assert.ok((await readFile(join(root, 'vibekit/product/sources/BRS-001/source.md'), 'utf8')).includes('The system shall let a supervisor approve or reject a difference.'));
@@ -85,7 +85,7 @@ test('vibekit new brs writes docs/brs.md, ingests it as BRS-001 and becomes the 
     // A file of answers works the same, and the JSON form reports the gaps.
     const answers = join(root, 'answers.json');
     await writeFile(answers, JSON.stringify({ does: 'count a shelf' }));
-    const result = JSON.parse(await capture(() => run(['new', 'brs', '--from', 'answers.json', '--no-ingest', '--json', '--dir', root])));
+    const result = JSON.parse(await capture(() => run(['new', 'spec', '--from', 'answers.json', '--no-ingest', '--json', '--dir', root])));
     assert.equal(result.source, null);
     assert.ok(result.gaps.some((gap) => /§3 What must never happen is still empty/.test(gap)));
   } finally {
@@ -125,11 +125,11 @@ test('each question comes with suggestions to pick from, half of them from the d
   try {
     const root = tempDir('vibekit-brs-');
     await capture(() => run(['new', 'project', 'Stock Take', '--yes', '--describe', 'Staff count stock on a phone; supervisors review variances.', '--platform', 'web', '--dir', root]));
-    const suggested = JSON.parse(await capture(() => run(['new', 'brs', '--suggest', '--json', '--dir', root])));
+    const suggested = JSON.parse(await capture(() => run(['new', 'spec', '--suggest', '--json', '--dir', root])));
     assert.deepEqual(Object.keys(suggested), ['what', 'does', 'never', 'limits', 'first']);
     assert.equal(suggested.does.suggestions[0], 'staff count stock on a phone');
     assert.ok(suggested.limits.suggestions.some((item) => /single sign-on/.test(item)));
-    assert.ok(!(await import('node:fs')).existsSync(join(root, 'docs/brs.md')), '--suggest writes nothing');
+    assert.ok(!(await import('node:fs')).existsSync(join(root, 'docs/spec.md')), '--suggest writes nothing');
   } finally {
     restoreEnv(original);
   }

@@ -32,7 +32,7 @@ export const newUsage = () => list([
   ['new bug', 'log a defect — assess, fix, verify'],
   ['new hotfix', 'production is broken; skip the ceremony'],
   ['new repo', 'the repository at your provider — GitHub, GitLab or Azure DevOps — with its pipeline, pushed'],
-  ['new brs', 'the requirements document, from five questions with answers to pick from, when you have none'],
+  ['new spec', 'the requirements document, from five questions with answers to pick from, when you have none'],
 ], 'vibekit new <thing> --help  for more');
 
 export async function newVerb(options) {
@@ -47,7 +47,7 @@ export async function newVerb(options) {
     return project({ ...options, args: ['new'], name: options.name ?? (name || undefined) });
   }
   if (noun === 'sprint') return newSprint(options);
-  if (noun === 'brs') {
+  if (noun === 'spec' || noun === 'brs') {
     const { newBrs } = await import('./brs.js');
     return newBrs(options);
   }
