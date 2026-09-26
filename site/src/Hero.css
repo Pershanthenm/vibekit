@@ -46,6 +46,7 @@
 
 .scene-svg .t1 { fill: #e8edf8; }
 .scene-svg .t2 { fill: #7e8799; }
+.scene-svg .t-teal { fill: #5fafaf; }
 
 .nav {
   position: fixed;

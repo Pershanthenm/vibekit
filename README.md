@@ -122,11 +122,49 @@ Twenty slash commands, one per CLI verb you would type yourself. Type `/vibekit:
 
 In an empty folder, `vibekit` opens with one question: what are you building? Not a logo, not a menu, not a list of tools to pick from. Type a sentence or two, or drop a requirements document on it.
 
-It then works out which coding tools you have — Claude Code, Cursor, Codex, Gemini, Copilot, Windsurf, Cline, Zed, Aider, Amazon Q — and writes a pointer file for every one of them, plus `AGENTS.md` for the ones you have not installed yet. Setup is something it tells you about afterwards, in three lines, not something it asks you to configure. `--tools claude,cursor` restricts it; a tool that appears later gets one line, once, and no question.
+```
+  Before I build anything, I need to understand what you want.
+
+  What are you building?
+
+  ▏ A shared list for a team that leaves.
+  ⏎ when you're done  ·  or drop a requirements document here
+```
+
+It then works out which coding tools you have — Claude Code, Cursor, Codex, Gemini, Copilot, Windsurf, Cline, Zed, Aider, Amazon Q — and writes a pointer file for every one of them, plus `AGENTS.md` for the ones you have not installed yet. Setup is something it tells you about afterwards, in three lines, not something it asks you to configure.
+
+```
+  Got it.
+
+  Reading what's here     nothing here yet — starting from your description
+  Setting up              Claude Code, Cursor — and AGENTS.md for the rest
+  Checking                nothing existing was changed
+
+  Now — 6 questions. 4 of them change the shape of the app.
+```
 
 Then the questions that change the shape of the app, one per screen, with options where they exist and "I don't know" always among them. A don't-know is recorded as an assumption with a confidence and a blast radius, which is a better outcome than a silent guess.
 
-Inside Claude Code or any coding agent it never blocks: each run prints one question as Markdown and exits, and the next run carries the answer (`vibekit 2`, or `vibekit "in your own words"`). In CI or a pipe it prints one fact per line. `--mode agent|plain|full` forces a surface so you can see what an agent sees.
+```
+  1 of 6                                              4 change the shape
+
+  Where will people use it?
+
+  This decides the architecture, the kinds of test, and whether there
+  is a design stage at all. Changing it later means a different front end.
+
+  ▸ 1   In a web browser
+    2   On their phones (iOS and Android)
+    3   Both: a browser and a phone app
+    4   It is an API; something else has the screens
+    5   On the command line
+
+    ?   I don't know          records it as a guess for you to check
+
+  ↑↓ move  ⏎ choose  t type something else  esc back
+```
+
+Inside Claude Code or any coding agent it never blocks: each run prints one question as Markdown and exits, and the next run carries the answer (`vibekit 2`, or `vibekit "in your own words"`). In CI or a pipe it prints one fact per line. `--mode agent|plain|full` forces a surface so you can see what an agent sees. The site plays the same screens: [pershanthenm.github.io/vibekit/#first-run](https://pershanthenm.github.io/vibekit/#first-run).
 
 ## Two commands a day
 
