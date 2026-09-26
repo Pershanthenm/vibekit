@@ -43,8 +43,8 @@ const PAGE_STYLE = `
 .options li{margin:3px 0}
 .item-foot{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
 .actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-.act{font:inherit;font-size:13px;font-weight:600;padding:7px 12px;border-radius:7px;cursor:pointer;
-  border:1px solid var(--accent);background:var(--accent);color:#fff}
+.act{font:inherit;font-size:13px;font-weight:500;padding:8px 14px;border-radius:999px;cursor:pointer;
+  border:1px solid var(--fg);background:var(--fg);color:var(--bg)}
 .act.ghost{background:transparent;color:var(--fg);border-color:var(--border)}
 .act:disabled{opacity:.5;cursor:default}
 .detail{margin:0}
@@ -352,7 +352,7 @@ export const webManifest = ({ name, start }) => ({
   scope: start,
   display: 'standalone',
   background_color: '#ffffff',
-  theme_color: '#1F5673',
+  theme_color: '#000000',
   icons: [],
 });
 
@@ -373,7 +373,7 @@ export function renderDashboard(state, { live = false, intervalSeconds = 3, stre
     APP_SCRIPT,
     stream ? STREAM_SCRIPT : '',
   ].filter(Boolean).join('\n');
-  const pwa = prefix ? `<link rel="manifest" href="${escape(`${prefix}/manifest.webmanifest`)}">\n<meta name="theme-color" content="#1F5673">\n` : '';
+  const pwa = prefix ? `<link rel="manifest" href="${escape(`${prefix}/manifest.webmanifest`)}">\n<meta name="theme-color" content="#000000">\n` : '';
 
   return shell({
     title: `${state.project.name} — tracker`,

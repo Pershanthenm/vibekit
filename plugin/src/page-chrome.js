@@ -4,8 +4,8 @@
 // the first time either one is touched. Both pages call `shell()`, so a change to the sidebar, the
 // topbar or the palette lands on both at once.
 //
-// The look itself is the Atlas design system (src/atlas.css), vendored unchanged. Pages compose
-// its components; they do not restyle them. Two notes on where these pages are opened:
+// The look is Atlas tokens (src/atlas.css) plus the site shell (src/site-shell.css): the same
+// white paper, black pills and Inter / IBM Plex Mono as the Pages landing. Two notes:
 //
 //   * The stylesheet is inlined, not linked. The dashboard is opened from a file:// path while a
 //     build runs, often on a locked-down machine, and a linked stylesheet would not load.
@@ -27,7 +27,7 @@ const read = (name) => readFileSync(fileURLToPath(new URL(`./${name}`, import.me
  * The design system, read once at module load and inlined into every page. Kept as a .css file
  * rather than a template literal so it stays editable — and diffable — as the stylesheet it is.
  */
-export const THEME = read('atlas.css');
+export const THEME = `${read('atlas.css')}\n${read('site-shell.css')}`;
 
 /**
  * dashboard-render.js as the browser can run it: the same functions the server just used, with
@@ -51,7 +51,7 @@ export const browserSource = () => BROWSER_MODULES
 
 export const FONT_LINK = `<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 `;
 
 /**
@@ -98,7 +98,7 @@ ${FONT_LINK}${head}<title>${escape(title)}</title>
 <div class="app">
   <aside class="sidebar" id="sidebar">
     <div class="brand">
-      <div class="brand-mark">V</div>
+      <div class="brand-mark" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="13" height="5" rx="2.5" fill="currentColor" transform="rotate(-35 3 7)"/><rect x="9" y="13" width="13" height="5" rx="2.5" fill="currentColor" transform="rotate(-35 9 13)"/></svg></div>
       <div class="brand-name">VibeKit<small>${escape(brand || sub)}</small></div>
       <button type="button" class="collapse-btn" id="collapseBtn" aria-label="Collapse navigation">${icon('chevron')}</button>
     </div>

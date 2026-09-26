@@ -18,11 +18,20 @@ export function detectSurface({ env = process.env, isTTY = Boolean(process.stdou
     return mode;
   }
   // An agent's shell is not a TTY either, so the agent markers are read first: a model relaying
-  // plain facts is worse than a model relaying Markdown written for it.
-  if (env.CLAUDECODE || env.CURSOR_AGENT || env.AGENT) return 'agent';
+  // plain facts is worse than a model relaying Markdown written for it. `AGENT` is a generic
+  // name that other software sets, so on a real terminal it does not count on its own.
+  if (agentMarker(env, isTTY)) return 'agent';
   if (!isTTY) return 'plain';
   if (env.TERM === 'dumb' || (env.CI && env.CI !== 'false' && env.CI !== '0')) return 'plain';
   return 'full';
+}
+
+/** Which variable made this an agent surface, so the output can say so; null when none did. */
+export function agentMarker(env = process.env, isTTY = Boolean(process.stdout.isTTY)) {
+  if (env.CLAUDECODE) return 'CLAUDECODE';
+  if (env.CURSOR_AGENT) return 'CURSOR_AGENT';
+  if (env.AGENT && !isTTY) return 'AGENT';
+  return null;
 }
 
 /**

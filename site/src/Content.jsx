@@ -15,7 +15,7 @@ const IDEAS = [
 const HELPERS = [
   ["/vibekit:setup", "Once, after install: where projects live, who you are, which provider and token"],
   ["/vibekit:new-project", "Start here. Name, platforms, what it is; then the repository, created for you or linked"],
-  ["/vibekit:new-brs", "No requirements document? Five questions, answers to pick from"],
+  ["/vibekit:new-spec", "No requirements document? Five questions, answers to pick from"],
   ["/vibekit:use-project", "Pick the project to work on from the ones on this machine"],
   ["/vibekit:answer", "Everything waiting on you, one question at a time, by picking"],
   ["/vibekit:show-status", "Where everything stands, in words, then what to do about it"],
@@ -43,7 +43,7 @@ const COMMANDS = [
     ["new bug \"…\" --test <path>", "A bug is a requirement with its failing test"],
     ["new hotfix \"…\"", "Production is broken; skip the ceremony"],
     ["new repo", "The repository at GitHub, GitLab or Azure DevOps, its pipeline file, the first push"],
-    ["new brs", "The requirements document, from five questions with answers to pick from, when you have none"],
+    ["new spec", "The requirements document, from five questions with answers to pick from, when you have none"],
   ]],
   ["use · switch what I am working on", [
     ["use project \"Hello World 2\"", "Everything after applies there, until you switch again"],
@@ -174,7 +174,35 @@ vibekit tracker stock   # QR code; approve gates from your phone`}</pre>
         <p className="kicker">06 · Tracker</p>
         <h2>Watch it work. From anywhere.</h2>
         <p className="prose">Agents run for hours. You shouldn't have to sit there. <code>vibekit tracker</code> puts a live board behind a link. Scan the QR code and it's on your phone.</p>
-        <p className="prose">“Creating a list”, not <code>REQ-007 step 4/5</code>. You can act from it: answer the question, approve a gate, reorder the sprint. Every tap is a commit with your name on it.</p>
+        <p className="prose">“Creating a list”, not <code>REQ-007 step 4/5</code>. You can act from it: answer the question, approve a gate, reorder the sprint. Every tap is a commit with your name on it. Same paper as this site: white, black pills, a question waiting on you.</p>
+        <figure className="board" aria-label="Tracker board">
+          <div className="board-bar">
+            <b>VibeKit</b>
+            <span>Tracker</span>
+            <i>Needs you</i>
+            <i>Board</i>
+            <i>Cost</i>
+          </div>
+          <div className="board-hero">
+            <p className="over">Where we are</p>
+            <h3>Sprint 3 of 5 — Lists and tasks</h3>
+            <ol>
+              <li><b>1</b><span>need you</span></li>
+              <li><b>2</b><span>being built</span></li>
+              <li><b>0</b><span>waiting on an answer</span></li>
+              <li><b>2/5</b><span>done</span></li>
+            </ol>
+          </div>
+          <div className="board-card">
+            <p className="over">Needs you</p>
+            <h3>Who can see a list after someone leaves the team?</h3>
+            <p>Assigning a task cannot finish until this is answered. A guess would invent a policy.</p>
+            <div className="board-acts">
+              <span>Answer in my own words</span>
+              <span className="ghost">Not doing it</span>
+            </div>
+          </div>
+        </figure>
       </section>
 
       <section className="block" id="lanes">

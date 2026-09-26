@@ -7,20 +7,20 @@ import { loadProject } from '../project.js';
 import { folderName } from './folder.js';
 
 /**
- * `vibekit new brs` — build the requirements document from five answers, write it to
+ * `vibekit new spec` — build the requirements document from five answers, write it to
  * docs/brs.md, and ingest it as the project's source of record. For the person who has no BRS.
  *
- *   vibekit new brs                                   asked, one question at a time
- *   vibekit new brs --answer does="count a shelf; approve a difference" --answer never="…"
- *   vibekit new brs --from answers.json               the same keys, as a file
+ *   vibekit new spec                                   asked, one question at a time
+ *   vibekit new spec --answer does="count a shelf; approve a difference" --answer never="…"
+ *   vibekit new spec --from answers.json               the same keys, as a file
  *   --no-ingest                                       write the document only
  */
-export const BRS_PATH = `${DOCS_DIR}/brs.md`;
+export const BRS_PATH = `${DOCS_DIR}/spec.md`;
 
 export async function newBrs(options) {
   const { root, json } = options;
   const config = await loadProject(root).catch(() => null);
-  if (!config?.project?.name) throw new Error('No project here. `vibekit new project` first; `new brs` writes its requirements document.');
+  if (!config?.project?.name) throw new Error('No project here. `vibekit new project` first; `new spec` writes its requirements document.');
   const name = config.project.name;
 
   const fromJson = options.from ? JSON.parse(await readFile(resolve(root, options.from), 'utf8')) : null;
@@ -80,7 +80,7 @@ export async function newBrs(options) {
     const log = console.log;
     console.log = (...args) => lines.push(args.join(' '));
     try {
-      await ingest({ ...options, root, folder, args: [BRS_PATH], yes: true, json: false, title: `${name} BRS` });
+      await ingest({ ...options, root, folder, args: [BRS_PATH], yes: true, json: false, title: `${name} requirements` });
     } finally {
       console.log = log;
     }
